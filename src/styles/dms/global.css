@@ -1,0 +1,1357 @@
+:root {
+  --light-gray: #f8f9fa;
+  --dark-blue: #213555;
+  --primary-blue: #007bff;
+  --black: #000;
+  --medium-gray: #ddd;
+  --dark-gray: #343a40;
+  --link-blue: #0d6efd;
+  --muted-gray: #6c757d;
+  --pure-white: white;
+  --white: #fff;
+  --danger-red: #dc3545;
+  --border-gray: #ccc;
+  --white-transparent-20: rgba(255, 255, 255, 0.2);
+  --light-border-gray: #e0e0e0;
+  --white-transparent-10: rgba(255, 255, 255, 0.1);
+  --text-gray: #495057;
+  --secondary-gray: #343a40;
+  --light-border: #dee2e6;
+  --light-background: #f1f3f5;
+  --success-green: #28a745;
+  --warning-yellow: #FEBA17;
+  --danger-red-alt: #dc3545;
+  --card-background: #e9ecef;
+  --dark-link-hover: #0056b3;
+  --dark-muted-gray: #5a6268;
+  --basic-blue: blue;
+  --basic-green: green;
+  --basic-red: red;
+  --dark-black: #111;
+  --off-white: #f1f1f1;
+  --dark-charcoal: #333;
+  --orange-color: #F26B0F;
+}
+
+hr {
+  padding: 0;
+  margin: 0;
+}
+
+/* Header Styles */
+.dms-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background-color: var(--light-gray);
+  height: 60px;
+  border-bottom: 1px solid var(--medium-gray);
+  width: 100%;
+}
+
+/* Navigation */
+.dms-header-nav {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-grow: 1;
+}
+
+.dms-header-link {
+  text-decoration: none;
+  color: var(--dark-gray);
+  font-weight: 500;
+  margin-right: 20px;
+  font-size: 1rem;
+  transition: color 0.3s ease;
+}
+
+.dms-header-link:hover {
+  color: var(--link-blue);
+}
+
+/* Right Section */
+.dms-header-right {
+  display: flex;
+  align-items: center;
+}
+
+.dms-header-right .btn {
+  background-color: transparent;
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+}
+
+/* Dropdown styles */
+.dms-header-right .dropdown-toggle {
+  display: flex;
+  align-items: center;
+  background-color: transparent;
+  border: none;
+  padding: 10px;
+  color: var(--muted-gray);
+}
+
+.dms-header-right .dropdown-menu {
+  border-radius: 5px;
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+.dms-header-right .dropdown-menu .dropdown-item {
+  font-size: 14px;
+}
+
+.dms-header-right .dropdown-menu .dropdown-item:hover {
+  background-color: var(--dark-blue);
+  color: var(--pure-white);
+}
+
+/* Hamburger Menu Button */
+.dms-header .btn-light {
+  background-color: transparent;
+  border: none;
+  padding: 10px;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+/* === Responsive Design === */
+/* Tablets & Small Laptops */
+@media (max-width: 1024px) {
+  .dms-header {
+    padding: 10px 15px;
+  }
+
+  .dms-header-link {
+    font-size: 0.95rem;
+    margin-right: 15px;
+  }
+
+  .dms-header-right .dropdown-toggle {
+    font-size: 0.9rem;
+  }
+}
+
+/* Mobile View: Hide the main navigation and show the hamburger icon */
+@media (max-width: 768px) {
+  .dms-header-nav {
+    display: none;
+    flex-direction: column;
+    text-align: center;
+    width: 100%;
+    position: absolute;
+    top: 60px;
+    left: 0;
+    background: var(--light-gray);
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+  }
+
+  .dms-header-nav.active {
+    display: flex;
+  }
+
+  .dms-header-nav .dms-header-link {
+    margin: 15px 0;
+    font-size: 1.2rem;
+  }
+
+  /* Hide right section on small screens */
+  .dms-header-right {
+    display: none;
+  }
+
+  .dms-header .btn-light {
+    font-size: 24px;
+    padding: 10px;
+  }
+}
+
+/* Small Phones */
+@media (max-width: 480px) {
+  .dms-header {
+    padding: 10px;
+    height: 55px;
+  }
+
+  .dms-header-link {
+    font-size: 0.9rem;
+  }
+
+  .dms-header-right .dropdown-toggle {
+    font-size: 0.85rem;
+  }
+}
+
+/* iPads & Large Tablets */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .dms-header {
+    padding: 12px 18px;
+  }
+
+  .dms-header-nav {
+    justify-content: center;
+  }
+
+  .dms-header-link {
+    font-size: 1rem;
+  }
+}
+/* Header */
+
+/* Notification */
+.dms-notification-list {
+  position: absolute;
+  top: 50px;
+  right: 20px;
+  width: 300px;
+  border-radius: 8px;
+  background-color: var(--white);
+  z-index: 1050;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.dms-notification-list h6 {
+  margin-bottom: 16px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+/* Style for the notification badge */
+.btn-light.position-relative .badge {
+  position: absolute;
+  top: 20px;
+  /* Adjust vertical alignment */
+  transform: translate(-50%, -50%);
+  background-color: var(--danger-red);
+  /* Red color for the badge */
+  color: var(--pure-white);
+  font-size: 12px;
+  /* Adjust size of the badge text */
+  padding: 4px 6px;
+  /* Space inside the badge */
+  border-radius: 50%;
+  /* Makes it circular */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  /* Optional: Adds depth */
+}
+
+.dms-notification-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.dms-notification-list li {
+  display: flex;
+  align-items: start;
+  margin-bottom: 12px;
+}
+
+.dms-notification-list ul li {
+  display: flex;
+  align-items: start;
+  margin-bottom: 12px;
+  border-radius: 4px;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.dms-notification-list ul li:hover {
+  background-color: var(--light-gray);
+  /* Light gray background */
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+  /* Subtle shadow */
+  cursor: pointer;
+}
+
+.dms-notification-list ul li .text-muted {
+  color: var(--muted-gray);
+}
+
+.dms-notification-list li div:first-child {
+  margin-right: 8px;
+}
+
+.dms-notification-list ul li:last-child {
+  border-bottom: none;
+  /* Remove divider for the last item */
+}
+
+.dms-notification-list ul li div {
+  margin-right: 10px;
+  /* Reduce space between icon and text */
+}
+
+.dms-notification-list li small {
+  color: var(--muted-gray);
+}
+
+.dms-notification-list hr {
+  border-top: 2px solid var(--border-gray);
+  margin: 12px 0;
+}
+
+.dms-notification-list .btn-link {
+  color: var(--primary-blue);
+  font-size: 14px;
+}
+
+@media (max-width: 576px) {
+  .dms-notification-list {
+    width: 75vw;
+    /* Adjusts width based on screen */
+    max-width: 75vw;
+    top: 50px;
+    font-size: 14px;
+    overflow-y: auto;
+    /* Enables scrolling for many notifications */
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+    /* Ensure shadow */
+    left: 50%;
+    /* Center it horizontally */
+    transform: translateX(-50%);
+    /* Corrects the position to truly center */
+  }
+
+  .dms-notification-list ul {
+    padding: 5px;
+  }
+
+  .dms-notification-list ul li {
+    flex-direction: row;
+    align-items: center;
+    padding: 8px;
+    word-wrap: break-word;
+    white-space: normal;
+    /* Ensures text wraps properly */
+  }
+
+  .dms-notification-list ul li div {
+    font-size: 14px;
+  }
+
+  .dms-notification-list .btn-link {
+    font-size: 14px;
+  }
+}
+/* Notification */
+
+/* Sidebar */
+.bg-color {
+  background-color: var(--dark-blue);
+}
+
+.dms-sidebar {
+  width: 250px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+  z-index: 1000;
+  overflow-y: auto;
+  max-height: 100vh;  
+}
+
+/* Custom Scrollbar */
+.dms-sidebar::-webkit-scrollbar {
+  width: 8px; /* Thin scrollbar */
+}
+
+.dms-sidebar::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+}
+
+.dms-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dms-sidebar .sidebar-title {
+  display: flex;
+  align-items: center;
+  justify-content: left;
+  /* Center content horizontally */
+  width: 100%;
+  height: 58px;
+  padding: 15px;
+}
+
+.rotate {
+  transform: rotate(180deg);
+}
+
+/* Sidebar HR Alignment */
+.dms-sidebar hr {
+  margin: 0;
+  border-top: 2px solid var(--border-gray);
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.dms-sidebar.closed .sidebar-title {
+  justify-content: center;
+}
+
+.dms-sidebar .sidebar-title h4 {
+  margin: 0;
+}
+
+.dms-sidebar.closed {
+  width: 120px;
+  overflow: visible;
+}
+
+.dms-sidebar .dms-nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 6px 15px;
+  margin-bottom: 4px;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.dms-sidebar.closed .dms-nav-link {
+  justify-content: center;
+  text-align: center;
+  margin-bottom: 2px;
+  padding: 10px 0;
+}
+
+.dms-sidebar.closed .dms-nav-link .me-2 {
+  margin: 0;
+  margin-bottom: 4px;
+  font-size: 1.3rem;
+}
+
+.dms-sidebar .collapse .dms-nav-link {
+  padding: 4px 10px;
+  /* Reduced padding for submenu items */
+  margin-bottom: 2px;
+  /* Submenu spacing */
+}
+
+.dms-sidebar.closed .sidebar-title h4 {
+  display: none;
+}
+
+.dms-nav-link.active {
+  background-color: var(--white-transparent-10);
+  /* Blue background or any color you like */
+  color: var(--white);
+  /* White text */
+  font-weight: bold;
+  /* Optional: Make the text bold */
+}
+
+.dms-sidebar .child-menu-title {
+  font-size: 0.95rem; /* Adjust to desired size */
+}
+
+/* Submenu styles */
+.submenu {
+  display: none;
+  /* Initially hidden */
+  list-style: none;
+  padding-left: 20px;
+  /* Indent submenu items */
+  margin-top: 5px;
+  max-height: 500px;
+  /* Set a max height for the submenu */
+}
+
+.submenu.show {
+  display: block;
+  /* Show submenu when toggled */
+  padding-left: 20px;
+}
+
+.submenu .dms-nav-item .dms-nav-link {
+  padding: 5px 10px;
+  font-size: 0.9rem;
+  /* Smaller font for submenu items */
+  color: var(--light-border-gray);
+  /* Lighter color for submenu links */
+  transition: background 0.3s ease;
+}
+
+.submenu .dms-nav-item .dms-nav-link:hover {
+  background-color: var(--white-transparent-10);
+  /* Highlight effect */
+}
+
+.dms-sidebar.closed .submenu {
+  position: absolute;
+  top: 120px;
+  left: 100%;
+  /* Position the submenu to the right of the parent */
+  background-color: var(--dark-blue);
+  /* Background color for submenu */
+  min-width: 150px;
+  /* Set a minimum width for submenu */
+  display: none;
+  /* Initially hidden */
+  z-index: 1000;
+  /* Ensure submenu appears on top */
+}
+
+.dms-sidebar.closed .submenu.show {
+  display: block;
+  /* Show submenu when active */
+}
+
+.dms-sidebar.closed .submenu .dms-nav-link {
+  padding: 8px 15px;
+  color: var(--white);
+  /* White text for submenu */
+  text-align: left;
+}
+
+.dms-sidebar.closed .submenu .dms-nav-link:hover {
+  background-color: var(--white-transparent-20);
+}
+
+/* Submenu links */
+.submenu .dms-nav-link {
+  display: block;
+  color: var(--white);
+  text-decoration: none;
+  text-align: left;
+  /* Force text alignment to the left */
+  font-size: 0.9rem;
+  width: 100%;
+  /* Ensure the link occupies full width */
+  padding: 0;
+  /* Reset default padding */
+}
+
+/* Closed Sidebar - Submenu Alignment */
+.dms-sidebar.closed .dms-nav-item {
+  position: relative;
+  /* Ensure submenu aligns relative to parent */
+}
+
+.dms-sidebar.closed .submenu {
+  position: absolute;
+  top: 0;
+  left: 100%;
+  /* Position submenu next to the parent */
+  min-width: 180px;
+  /* Define width */
+  background-color: var(--dark-blue);
+  /* Submenu background color */
+  z-index: 1000;
+  display: none;
+  border-left: 2px solid var(--white-transparent-10);
+  padding-left: 20px;
+  /* Remove left padding */
+}
+
+.dms-sidebar.closed .submenu.show {
+  display: block;
+  /* Display the submenu */
+}
+
+.dms-sidebar.closed .submenu .dms-nav-item {
+  position: relative;
+  /* Allow for sub-submenus */
+}
+
+.dms-sidebar.closed .submenu .submenu {
+  top: 0;
+  left: 100%;
+  /* Align sub-submenu next to the submenu */
+  min-width: 150px;
+  background-color: var(--dark-blue);
+  /* Slightly darker background for distinction */
+  display: none;
+}
+
+.dms-sidebar.closed .submenu .submenu.show {
+  display: block;
+}
+
+/* Submenu Links */
+.dms-sidebar.closed .submenu .dms-nav-link {
+  padding: 10px 15px;
+  font-size: 0.9rem;
+  color: var(--white);
+  text-align: left;
+  transition: background 0.3s;
+}
+
+.dms-sidebar.closed .submenu .dms-nav-link:hover {
+  background-color: var(--white-transparent-20);
+}
+
+/* Parent and Submenu Hover Effect */
+.dms-sidebar.closed .dms-nav-item:hover>.submenu {
+  display: block;
+}
+
+@media (max-width:768px) {
+  .dms-sidebar.closed{
+    display: none !important;
+  }
+}
+/* Sidebar */
+
+/* Footer */
+.dms-footer {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  font-size: 0.9rem;
+  background-color: var(--light-gray);
+  text-align: center;
+  padding: 15px 0;
+  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+}
+/* Footer */
+
+/* Admin Layout css */
+/* Main container */
+.dms-app-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Sidebar and content layout */
+.dms-main-content {
+  flex-grow: 1;
+  margin-left: 250px;
+  /* Default sidebar open width */
+  transition: margin-left 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Adjust when sidebar is closed */
+.dms-main-content.sidebar-closed {
+  margin-left: 120px;
+  /* Sidebar collapsed width */
+}
+
+.dms-page-content {
+  flex: 1;
+  /* Ensures content grows properly */
+  padding: 20px;
+  overflow: auto;
+}
+
+/* Responsive Sidebar */
+@media (max-width: 768px) {
+  .dms-main-content.sidebar-closed {
+    margin-left: 0;
+    /* Sidebar completely disappears */
+  }
+
+  /* Keep main content fixed */
+  .dms-main-content {
+    margin-left: 0 !important;
+    width: 100%;
+    /* Ensure full width */
+    transition: none;
+    /* No shifting effect */
+  }
+
+  /* Dim background when sidebar is open */
+  .dms-main-content.overlay {
+    position: relative;
+  }
+
+  .dms-main-content.overlay::after {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    /* Dark overlay */
+    z-index: 900;
+  }
+}
+/* Admin Layout Css */
+
+/* Cards */
+.card {
+  height: 100px;
+  /* Fixed height */
+  width: 100%;
+  border: none;
+  border-radius: 20px;
+  background-color: var(--white);
+  box-shadow: none;
+  transition: transform 0.2s ease-in-out;
+}
+
+.card-body-custom p {
+  margin-bottom: 0.25rem;
+  /* Adjust this value as needed */
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .card {
+    max-width: 90%;
+    /* Makes the card adapt to smaller screens */
+    min-height: auto;
+    /* Allows flexibility */
+  }
+}
+
+@media (max-width: 480px) {
+  .card {
+    max-width: 100%;
+    /* Uses full width on very small screens */
+    padding: 0.8rem;
+  }
+}
+/* Cards */
+
+/* Dashboard cards 1 */
+.dashboard-container {
+  padding: 20px;
+  background-color: var(--light-gray);
+}
+
+.dashboard-stat-icon {
+  font-size: 1rem;
+  color: var(--primary-blue);
+}
+
+.dashboard-stat-title {
+  font-size: 1rem;
+  color: var(--text-gray);
+}
+
+.dashboard-stat-value {
+  font-size: 1rem;
+  font-weight: bold;
+  color: var(--dark-gray);
+}
+/* Dashboard Cards 1 */
+
+/* Dashboard 2 Css */
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  /* Ensures even spacing */
+  align-items: center;
+  /* Aligns items vertically */
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-weight: bold;
+  width: 100%;
+  /* Ensures full width */
+  padding: 0 8px;
+}
+
+.stat-title {
+  flex-grow: 1;
+  /* Takes available space */
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.stat-value {
+  min-width: 80px;
+  /* Ensures the values align properly */
+  text-align: right;
+  /* Right aligns numbers */
+  font-size: 1.1rem;
+  color: #333;
+  margin-top: 20px;
+}
+/* Dasboard 2 CSS */
+
+/* Auth Background css */
+.dms-auth-wrapper {
+  background-color: var(--light-gray);
+}
+/* Auth Background css */
+
+/* Global Styles for List Pages */
+/* Container Styling */
+.list-container {
+  padding: 1.5rem;
+  background-color: var(--light-gray);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Sticky Header Styling */
+.sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: var(--pure-white);
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--light-border);
+}
+
+/* Header Title */
+h3 {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin: 0;
+}
+
+/* Table Styling */
+.dms-table-container {
+  overflow-x: auto;
+}
+
+table {
+  background-color: var(--pure-white);
+  border-collapse: collapse;
+}
+
+.table th {
+  background-color: var(--dark-gray);
+  color: var(--pure-white);
+  text-align: left;
+  vertical-align: middle;
+  font-weight: bold;
+  font-size: 0.95rem;
+}
+
+.table td {
+  text-align: left;
+  vertical-align: middle;
+  font-size: 0.85rem;
+}
+
+.table tr {
+  border: 1px solid #ccc ;
+}
+
+
+.table tbody tr:hover {
+  background-color: var(--light-background);
+}
+
+/* Search bar */
+.input-group.dms-custom-width {
+  width: 340px;
+}
+
+/* Filter and Dropdown Styling */
+.dropdown-toggle {
+  border-radius: 50px;
+  font-size: 0.9rem;
+  padding: 0.5rem 1rem;
+}
+
+.dropdown-item {
+  font-size: 0.9rem;
+}
+
+.table-actions svg {
+  cursor: pointer;
+  font-size: 1.1rem;
+  margin: 0 5px;
+}
+
+.table-actions svg:hover {
+  opacity: 0.8;
+}
+
+.table-status {
+  font-weight: bold;
+  text-transform: capitalize;
+}
+
+.table-status.active {
+  color: var(--success-green);
+}
+
+.table-status.inactive {
+  color: var(--danger-red);
+}
+
+.table-hr {
+  margin: 40px;
+}
+
+/* Filter and Search */
+.filter-search-container, .save-edit-btn, .view-download-icon{
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.filter-container, .live-count-container{
+  display: flex;
+  gap: 10px;
+}
+
+/* Live count */
+.live-count {
+  display: flex;
+  align-items: center;
+  gap: 1rem; 
+  margin-bottom: 0.5rem; 
+}
+
+@media (min-width: 768px) {
+  .live-count {
+    margin-bottom: 0; 
+  }
+}
+
+/* Export import add container */
+.export-import-container{
+   display: flex;
+}
+
+/* Pagination */
+.pagination-container{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 30px;
+  margin-bottom: 30px;
+}
+
+.pagination-option {
+  width: 150px;
+  margin-top: 18px;
+  display: inline-block;
+}
+
+.pagination {
+  margin-top: 1rem;
+  margin-bottom: 60px;
+}
+
+.pagination .page-item.active .page-link {
+  background-color: var(--primary-blue);
+  border-color: var(--primary-blue);
+}
+
+.pagination .page-link {
+  color: var(--primary-blue);
+}
+
+.pagination .page-link:hover {
+  background-color: var(--card-background);
+}
+
+.pagination .page-item.disabled .page-link {
+  color: var(--muted-gray);
+}
+/* pagination */
+
+/* button and icon */
+/* Button Styles */
+.save-and-cancel-btn{
+  display: flex;
+  margin-top: 10px;
+}
+
+button {
+  padding: 0.5rem 1.25rem;
+  font-size: 1rem;
+  border-radius: 0.25rem;
+  border: none;
+  cursor: pointer;
+}
+
+/* Primary Button */
+button[type="submit"] {
+  background-color: var(--primary-blue);
+  border-color: var(--primary-blue);
+  color: var(--pure-white);
+  transition: background-color 0.3s;
+  border: none;
+  padding: 0.4rem 1.2rem;
+}
+
+button[type="submit"]:hover {
+  background-color: var(--dark-link-hover);
+  border: none;
+}
+
+/* Secondary Button */
+button[type="cancel"],
+button.ms-2 {
+  background-color: var(--muted-gray);
+  border-color: var(--muted-gray);
+  color: var(--pure-white);
+  transition: background-color 0.3s;
+  border: none;
+  padding: 0.4rem 1.2rem;
+}
+
+button[type="cancel"]:hover {
+  background-color: var(--dark-muted-gray);
+  border: none;
+}
+
+button[type="danger"]
+{
+  background-color: var(--danger-red);
+  border-color: var(--danger-red);
+  color: var(--pure-white);
+  transition: background-color 0.3s;
+  border: none;
+  padding: 0.4rem 1.2rem;
+}
+
+button[type="success"] {
+  background-color: var(--success-green);
+  border-color: var(--success-green);
+  color: var(--pure-white);
+  transition: background-color 0.3s;
+  border: none;
+  padding: 0.4rem 1.2rem;
+}
+
+.back-button {
+  margin-top: 0;
+  /* Align it with the wallet section */
+  border: none !important;
+  background-color: var(--dark-muted-gray) !important;
+}
+
+.yellow-button{
+  margin-top: 0;
+  /* Align it with the wallet section */
+  border: none !important;
+  background-color: var(--warning-yellow) !important;
+}
+
+.green-button{
+  margin-top: 0;
+  /* Align it with the wallet section */
+  border: none !important;
+  background-color: var(--success-green) !important;
+}
+
+.edit-button{
+  background-color: var(--secondary-gray) !important;
+  border: none !important;
+  margin-bottom: 10px;
+}
+
+.btn-primary {
+  border-radius: 50px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  border: none;
+}
+
+.btn-primary svg {
+  margin-right: 5px;
+}
+
+.icon-blue {
+  color: var(--basic-blue);
+  cursor: pointer;
+}
+
+.icon-green {
+  color: var(--basic-green);
+  cursor: pointer;
+}
+
+.icon-red {
+  color: var(--basic-red);
+  cursor: pointer;
+}
+
+.icon-black {
+  color: var(--dark-black);
+  cursor: pointer;
+}
+
+.icon-orange {
+  color: var(--orange-color);
+  cursor: pointer;
+}
+
+.icon {
+  margin-right: 10px;
+  transition: color 0.3s;
+}
+
+.icon:hover {
+  opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+  .sticky-header {
+    flex-wrap: wrap;
+  }
+
+  .dms-table-container {
+    overflow-x: auto;
+  }
+
+  .btn-primary {
+    margin-bottom: 0.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .input-group.dms-custom-width {
+    width: 50%;
+  }
+}
+
+@media (min-width: 577px) and (max-width: 768px) {
+  .input-group.dms {
+    width: 50%;
+  }
+}
+/* CSS for List Pages */
+
+/* Global Styles for Forms and Buttons fo Edit Page */
+/* Form Container */
+.dms-form-container {
+  border: 1px solid var(--border-gray);
+  border-radius: 0.25rem;
+  padding: 1.5rem;
+}
+
+/* Form Group Spacing */
+.dms-form-group {
+  margin-bottom: 1.5rem;
+}
+
+/* Input fields styling */
+.form-control,
+.form-select {
+  padding: 0.75rem;
+  border-radius: 0.25rem;
+  border: 1px solid var(--border-gray);
+  font-size: 1rem;
+}
+
+/* Checkbox Styling */
+.form-check-label {
+  font-size: 1rem;
+}
+
+/* Padding for containers */
+.dms-container {
+  padding: 2rem;
+}
+
+/* Margin for form headers */
+h3 {
+  margin-bottom: 1.5rem;
+}
+
+/* Success and Error Messages */
+.alert-success,
+.alert-danger {
+  margin-top: 1.5rem;
+}
+/* Css For Button and Forms Edit Page */
+
+/* Common styles for the action menu of vehicle and driver management */
+.dms-show-actions-menu {
+  position: absolute;
+  background-color: white;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 10px;
+  z-index: 1000;
+  border-radius: 8px;
+  width: 200px;
+  right: 0; /* or left: 0 based on placement */
+}
+.dms-show-actions-menu ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.dms-show-actions-menu li {
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+.dms-menu-icon {
+  margin-right: 10px;
+}
+
+.dms-show-actions-menu li:hover {
+  background-color: var(--off-white);
+}
+
+.dms-span-action {
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  color: var(--dark-charcoal);
+  /* Default color */
+}
+
+td.action {
+  text-align: left;
+  vertical-align: middle;
+  position: relative;
+}
+/* Common styles for the action menu of vehicle and driver management */
+
+/* Images Css */
+/* Profile Image */
+.profile-img {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border: none;
+  margin-right: 15px;
+}
+
+/* Vehicle image */
+.vehicle-img {
+  width: 200px;
+  height: auto;
+}
+/* Images Css */
+
+/* Css for all pages header */
+.dms-pages-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.dms-pages-header h3 {
+  font-size: 1.5rem;
+}
+/* Css for all pages header */
+
+/* Css for driver id link and rider id link on tables */
+.driver-id-link,
+.support-details-link,
+.user-id-link,
+.trip-id-link,
+.rider-id-link {
+  text-decoration: none;
+  color: var(--black-color);
+}
+
+.driver-id-link:hover,
+.support-details-link:hover,
+.user-id-link:hover,
+.trip-id-link:hover,
+.rider-id-link:hover {
+  text-decoration: none;
+  color: var(--primary-blue);
+}
+/* Css for driver id link and rider id link on tables */
+
+/* Cancel button color on filters  */
+.dropdown-item.text-custom-danger {
+  color: var(--danger-red);
+}
+/* Cancel button color on filters  */
+
+/* Driver Location Css */
+.map-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  width: 100%;
+}
+
+.map-iframe {
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  height: 100%;
+  width: 100%;
+}
+/* Driver Location Css */
+
+/* Star icon */
+.star-icon {
+  color: var(--orange-color);
+  font-size: 1rem;
+}
+
+/* Support Request Details */
+.support-profile-image {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  margin-bottom: 10px;
+}
+/* Support Request Details */
+
+/* Trip Map Container */
+.trip-map-container{
+  height: 400px;
+  width: 100%;
+}
+
+.trip-iframe{
+  height: 100%;
+  width: 100%;
+  margin-top: 10px;
+}
+/* Trip Map Container */
+
+/* Kyc container */
+.kyc-container{
+  display: flex;
+  gap: 10px;
+}
+
+/* Driver Approval card header */
+.approval-card-header{
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.approval-btn{
+  background-color: var(--success-green) !important;
+  border: none !important;
+}
+
+.reject-btn{
+  background-color: var(--danger-red) !important;
+  border: none !important;
+}
+
+.partially-approve-btn{
+  background-color: var(--warning-yellow) !important;
+  border: none !important;
+}
+
+.reason-verified-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.reason-verified-container .form-select {
+  min-width: 200px;
+  margin-bottom: 0;
+}
