@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import {
     Table,
     InputGroup,
@@ -13,8 +12,6 @@ import { FaEye, FaEdit, FaFileExport, FaFileExcel, FaFilePdf } from "react-icons
 import { AdminLayout } from "../../../../layouts/dms/AdminLayout/AdminLayout";
 import { useNavigate } from "react-router-dom";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
 export const TripList = () => {
     const navigate = useNavigate();
     const [trips, setTrips] = useState([]);
@@ -23,65 +20,71 @@ export const TripList = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
-    const [loading, setLoading] = useState(false);
     const [itemsPerPage, setItemsPerPage] = useState(10);
-    const userData = JSON.parse(localStorage.getItem("userData"));
 
-    let permissions = [];
-
-    if (Array.isArray(userData?.employeeRole)) {
-        for (const role of userData.employeeRole) {
-            for (const child of role.childMenus || []) {
-                for (const mod of child.modules || []) {
-                    if (mod.moduleUrl?.toLowerCase() === "trip") {
-                        permissions = mod.permission
-                            ?.toLowerCase()
-                            .split(',')
-                            .map(p => p.trim()) || [];
-                    }
-                }
-            }
-        }
-    }
-
-    const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
-        if (permissions.includes(permissionType)) {
-            action(); // allowed, run the actual function
-        } else {
-            alert(fallbackMessage || `You don't have permission to ${permissionType} this employee.`);
-        }
-    };
+    // 🔹 Dummy Trips
+    const dummyTrips = [
+        {
+            ride_id: "1",
+            tripName: "Morning Office Ride",
+            riderName: "Rahul Sharma",
+            driverName: "Amit Verma",
+            rideType: "Normal",
+            pickup_add: "MG Road, Pune",
+            drop_add: "Infosys Phase 2, Hinjewadi",
+            fare: 250.50,
+            status: "completed",
+            createdAt: "2025-09-01T09:00:00Z",
+        },
+        {
+            ride_id: "2",
+            tripName: "Emergency Ride",
+            riderName: "Priya Mehta",
+            driverName: "Rohit Kumar",
+            rideType: "Emergency",
+            pickup_add: "FC Road, Pune",
+            drop_add: "Ruby Hall Clinic, Pune",
+            fare: 450.00,
+            status: "emergency",
+            createdAt: "2025-09-03T15:30:00Z",
+        },
+        {
+            ride_id: "3",
+            tripName: "Airport Drop",
+            riderName: "Ankit Joshi",
+            driverName: "Sunil Patil",
+            rideType: "Rental",
+            pickup_add: "Kothrud, Pune",
+            drop_add: "Pune Airport",
+            fare: 800.75,
+            status: "cancelled",
+            createdAt: "2025-09-05T22:15:00Z",
+        },
+    ];
 
     useEffect(() => {
-        fetchTrips(currentPage);
-    }, [currentPage, itemsPerPage]);
+        // simulate pagination
+        let filtered = dummyTrips.filter((trip) =>
+            trip.tripName.toLowerCase().includes(search.toLowerCase()) ||
+            trip.riderName.toLowerCase().includes(search.toLowerCase()) ||
+            trip.driverName.toLowerCase().includes(search.toLowerCase())
+        );
 
-    const fetchTrips = async (page) => {
-        setLoading(true); // Start loading
-        try {
-            const res = await axios.get(`${API_BASE_URL}/getAllRides?page=${page}&limit=${itemsPerPage}`);
-            setTrips(res.data.data);
-            setTotalItems(res.data.totalItems);
-            setTotalPages(res.data.totalPages);
-            setCurrentPage(res.data.currentPage);
-        } catch (err) {
-            console.error("Failed to fetch trips:", err);
-        } finally {
-            setLoading(false); // End loading
+        if (filter) {
+            filtered = filtered.filter((trip) => trip.status === filter);
         }
-    };
+
+        const pageCount = Math.ceil(filtered.length / itemsPerPage);
+        setTotalPages(pageCount);
+        setTotalItems(filtered.length);
+
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const paginatedData = filtered.slice(startIndex, startIndex + itemsPerPage);
+
+        setTrips(paginatedData);
+    }, [search, filter, currentPage, itemsPerPage]);
 
     const handleSearch = (e) => setSearch(e.target.value);
-
-    // Filter and search only on current page trips fetched from API
-    const filteredTrips = trips.filter((trip) => {
-        const matchesSearch =
-            trip.id.toString().includes(search) ||
-            trip.riderId.toString().includes(search) ||
-            trip.driverId.toString().includes(search);
-        const matchesFilter = filter ? trip.paymentStatus === filter : true;
-        return matchesSearch && matchesFilter;
-    });
 
     const handlePageChange = (pageNumber) => {
         if (pageNumber >= 1 && pageNumber <= totalPages) {
@@ -109,10 +112,11 @@ export const TripList = () => {
             </div>
 
             <div className="filter-search-container">
-                <DropdownButton variant="primary" title="Filter Payment Status" id="filter-dropdown">
+                <DropdownButton variant="primary" title="Filter Status" id="filter-dropdown">
                     <Dropdown.Item onClick={() => setFilter("")}>All</Dropdown.Item>
                     <Dropdown.Item onClick={() => setFilter("completed")}>Completed</Dropdown.Item>
                     <Dropdown.Item onClick={() => setFilter("cancelled")} className="text-custom-danger">Cancelled</Dropdown.Item>
+                    <Dropdown.Item onClick={() => setFilter("emergency")} className="text-custom-warning">Emergency</Dropdown.Item>
                 </DropdownButton>
 
                 <InputGroup className="dms-custom-width">
@@ -125,74 +129,67 @@ export const TripList = () => {
             </div>
 
             <div className="dms-table-container">
-                {loading ? (
-                    <div className="text-center py-5 fs-4">Loading...</div>
-                ) : (
-                    <Table striped bordered hover responsive>
-                        <thead>
-                            <tr>
-                                <th>S.No</th>
-                                <th>Trip Name</th>
-                                <th>Rider Name</th>
-                                <th>Driver Name</th>
-                                <th>Ride Type</th>
-                                <th>Source</th>
-                                <th>Destination</th>
-                                <th>Fare</th>
-                                <th>Status</th>
-                                <th>Trip Date</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredTrips.length > 0 ? (
-                                filteredTrips.map((trip, idx) => (
-                                    <tr key={trip.id}>
-                                        <td>{idx + 1}</td>
-                                        <td>{trip.tripName || "-"}</td>
-                                        <td>{trip.riderName || "-"}</td>
-                                        <td>{trip.driverName || "-"}</td>
-                                        <td>{trip.rideType || "-"}</td>
-                                        <td>{trip.startLocation}</td>
-                                        <td>{trip.endLocation}</td>
-                                        <td>{`₹${trip.fare}`}</td>
-                                        <td>{trip.paymentStatus}</td>
-                                        <td>{new Date(trip.createdAt).toLocaleDateString()}</td>
-                                        <td>
-                                            <FaEye
-                                                title="View"
-                                                className="icon icon-blue"
-                                                onClick={() =>
-                                                    handlePermissionCheck("view", () =>
-                                                        navigate(`/dms/trip/view/${trip.id}`, {
-                                                            state: { tripId: trip.id },
-                                                        })
-                                                    )
-                                                }
-                                            />
-                                            <FaEdit
-                                                title="Edit"
-                                                className="icon icon-green"
-                                                onClick={() =>
-                                                    handlePermissionCheck("edit", () =>
-                                                        navigate("/dms/trip/edit", { state: { trip } })
-                                                    )
-                                                }
-                                            />
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="11" className="text-center">
-                                        No trips found.
+                <Table striped bordered hover responsive>
+                    <thead>
+                        <tr>
+                            <th>S.No</th>
+                            <th>Trip Name</th>
+                            <th>Rider Name</th>
+                            <th>Driver Name</th>
+                            <th>Ride Type</th>
+                            <th>Pickup</th>
+                            <th>Drop</th>
+                            <th>Fare</th>
+                            <th>Status</th>
+                            <th>Trip Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {trips.length > 0 ? (
+                            trips.map((trip, idx) => (
+                                <tr key={trip.ride_id}>
+                                    <td>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
+                                    <td>{trip.tripName}</td>
+                                    <td>{trip.riderName}</td>
+                                    <td>{trip.driverName}</td>
+                                    <td>{trip.rideType}</td>
+                                    <td>{trip.pickup_add}</td>
+                                    <td>{trip.drop_add}</td>
+                                    <td>{`₹${trip.fare}`}</td>
+                                    <td>{trip.status}</td>
+                                    <td>{new Date(trip.createdAt).toLocaleDateString()}</td>
+                                    <td>
+                                        <FaEye
+                                            title="View"
+                                            className="icon icon-blue"
+                                            onClick={() =>
+                                                navigate(`/dms/trip/view/${trip.ride_id}`, {
+                                                    state: { trip },
+                                                })
+                                            }
+                                        />
+                                        <FaEdit
+                                            title="Edit"
+                                            className="icon icon-green"
+                                            onClick={() =>
+                                                navigate("/dms/trip/edit", { state: { trip } })
+                                            }
+                                        />
                                     </td>
                                 </tr>
-                            )}
-                        </tbody>
-                    </Table>
-                )}
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan="11" className="text-center">
+                                    No trips found.
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </Table>
 
+                {/* Pagination */}
                 <div className="pagination-container">
                     <Pagination className="mb-0">
                         <Pagination.Prev

@@ -82,9 +82,14 @@ import { CommissionFeeAdd } from '../pages/dms/App/PaymentPage/CommissionFee/Com
 import { CommissionFeeEdit } from '../pages/dms/App/PaymentPage/CommissionFee/CommissionFeeEdit';
 /* Settings */
 import {RideFareSetting} from '../pages/dms/App/Settings/RideFareSetting/RideFareSetting'
-import { FaChartLine, } from "react-icons/fa";
 import { FareSettingAdd } from '../pages/dms/App/Settings/RideFareSetting/FareSettingAdd';
 import { FareSettingEdit } from '../pages/dms/App/Settings/RideFareSetting/FareSettingEdit';
+/* Ride Type */
+import { RideTypeAdd } from '../pages/dms/App/TripsPPage/RideTypes/RideTypeAdd';
+import { RideTypeEdit } from '../pages/dms/App/TripsPPage/RideTypes/RideTypeEdit';
+/* Icon */
+import { FaChartLine, } from "react-icons/fa";
+import { RideTypelIST } from '../pages/dms/App/TripsPPage/RideTypes/RideTypelIST.JSX';
 
 export const moduleComponentMap = {
   dashboard: {
@@ -152,6 +157,11 @@ export const moduleComponentMap = {
     view: TripList,
     edit: TripEdit,
     viewDetails: TripDetails
+  },
+  ridetypes:{
+   view: RideTypelIST,
+   add: RideTypeAdd,
+   edit: RideTypeEdit
   },
   brand: {
     view: BrandList,

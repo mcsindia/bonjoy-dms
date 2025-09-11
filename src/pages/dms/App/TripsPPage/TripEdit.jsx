@@ -9,7 +9,6 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 export const TripEdit = () => {
   const location = useLocation();
   const navigate = useNavigate();
-
   const trip = location.state?.trip;
 
   const [formValues, setFormValues] = useState(trip || {});
@@ -21,15 +20,15 @@ export const TripEdit = () => {
     return (
       <div className="text-center">
         <h3>Trip not found</h3>
-        <Button onClick={() => navigate("/dms/trips")}>Go Back</Button>
+        <Button onClick={() => navigate("/dms/trip")}>Go Back</Button>
       </div>
     );
   }
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormValues((prevState) => ({
-      ...prevState,
+    setFormValues((prev) => ({
+      ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
   };
@@ -43,32 +42,33 @@ export const TripEdit = () => {
     try {
       const url = `${API_BASE_URL}/updateRide/${trip.id}`;
 
-      // Build payload with all editable fields
       const payload = {
-        riderId: Number(formValues.riderId),
-        driverId: Number(formValues.driverId),
-        rideTypeId: Number(formValues.rideTypeId),
-        startLocation: formValues.startLocation,
-        endLocation: formValues.endLocation,
-        startPoint: formValues.startPoint,
-        endPoint: formValues.endPoint,
+        riderId: formValues.riderId,
+        driverId: formValues.driverId,
+        rideTypeId: formValues.rideTypeId,
+        pickup_add: formValues.pickup_add,
+        pickup_lat: formValues.pickup_lat,
+        pickup_lng: formValues.pickup_lng,
+        drop_add: formValues.drop_add,
+        drop_lat: formValues.drop_lat,
+        drop_lng: formValues.drop_lng,
         fare: parseFloat(formValues.fare),
         distance: parseFloat(formValues.distance),
-        emergencyRide: formValues.emergencyRide === true || formValues.emergencyRide === "true",
-        scheduledTime: formValues.scheduledTime,
-        pickupTime: formValues.pickupTime,
-        dropTime: formValues.dropTime,
-        completedAt: formValues.completedAt,
-        paymentStatus: formValues.paymentStatus,
-        cancelledAt: formValues.cancelledAt,
-        emergencyTriggeredAt: formValues.emergencyTriggeredAt,
+        emergency: formValues.emergency || false,
+        status: formValues.status,
+        scheduled_time: formValues.scheduled_time,
+        pickup_time: formValues.pickup_time,
+        drop_time: formValues.drop_time,
+        completed_at: formValues.completed_at,
+        cancelled_at: formValues.cancelled_at,
+        emergency_triggered_at: formValues.emergency_triggered_at,
+        payment_status: formValues.payment_status,
       };
 
       const response = await axios.put(url, payload);
 
       if (response.data.success) {
         setSuccessMessage("Trip updated successfully!");
-        console.log("Update successful:", response.data.message);
         navigate("/dms/trip");
       } else {
         setError("Update failed");
@@ -85,211 +85,298 @@ export const TripEdit = () => {
     <AdminLayout>
       <div className="dms-container">
         <h4>Edit Trip Details</h4>
-        <div className="dms-form-container">
-          <Form onSubmit={handleSubmit}>
-            <Form.Group className="mb-3">
-              <Form.Label>Trip ID</Form.Label>
-              <Form.Control type="text" value={formValues.id} readOnly />
-            </Form.Group>
+              <div className="dms-form-container">
+        <Form onSubmit={handleSubmit}>
+          <Row className="mb-3">
+            <Col md={6}>
+               <Form.Group className="dms-form-group mt-3">
+                <Form.Label>Rider Name</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="riderId"
+                  value={formValues.riderId || ""}
+                  onChange={handleInputChange}
+                  required
+                />
+              </Form.Group>
+            </Col>
+            <Col md={6}>
+               <Form.Group className="dms-form-group mt-3">
+                <Form.Label>Driver Name</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="driverId"
+                  value={formValues.driverId || ""}
+                  onChange={handleInputChange}
+                />
+              </Form.Group>
+            </Col>
+          </Row>
 
-            <Form.Group className="mb-3">
-              <Form.Label>Rider ID</Form.Label>
-              <Form.Control
-                type="number"
-                name="riderId"
-                value={formValues.riderId || ""}
-                onChange={handleInputChange}
-                required
-              />
-            </Form.Group>
+          <Row className="mb-3">
+            <Col md={4}>
+               <Form.Group className="dms-form-group mt-3">
+                <Form.Label>Ride Type ID</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="rideTypeId"
+                  value={formValues.rideTypeId || ""}
+                  onChange={handleInputChange}
+                  required
+                />
+              </Form.Group>
+            </Col>
+            <Col md={4}>
+               <Form.Group className="dms-form-group mt-3">
+                <Form.Label>Status</Form.Label>
+                <Form.Control
+                  as="select"
+                  name="status"
+                  value={formValues.status || ""}
+                  onChange={handleInputChange}
+                >
+                  <option value="booked">Booked</option>
+                  <option value="accepted">Accepted</option>
+                  <option value="ongoing">Ongoing</option>
+                  <option value="completed">Completed</option>
+                  <option value="cancelled">Cancelled</option>
+                  <option value="emergency">Emergency</option>
+                </Form.Control>
+              </Form.Group>
+            </Col>
+            <Col md={4}>
+              <Form.Group className="mt-4">
+                <Form.Check
+                  type="checkbox"
+                  label="Emergency"
+                  name="emergency"
+                  checked={formValues.emergency || false}
+                  onChange={handleInputChange}
+                />
+              </Form.Group>
+            </Col>
+          </Row>
 
-            <Form.Group className="mb-3">
-              <Form.Label>Driver ID</Form.Label>
-              <Form.Control
-                type="number"
-                name="driverId"
-                value={formValues.driverId || ""}
-                onChange={handleInputChange}
-                required
-              />
-            </Form.Group>
+          <Row className="mb-3">
+            <Col md={4}>
+               <Form.Group className="dms-form-group mt-3">
+                <Form.Label>Pickup Address</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="pickup_add"
+                  value={formValues.pickup_add || ""}
+                  onChange={handleInputChange}
+                />
+              </Form.Group>
+            </Col>
+            <Col md={4}>
+               <Form.Group className="dms-form-group mt-3">
+                <Form.Label>Pickup Latitude</Form.Label>
+                <Form.Control
+                  type="number"
+                  step="0.00000001"
+                  name="pickup_lat"
+                  value={formValues.pickup_lat || ""}
+                  onChange={handleInputChange}
+                />
+              </Form.Group>
+            </Col>
+            <Col md={4}>
+               <Form.Group className="dms-form-group mt-3">
+                <Form.Label>Pickup Longitude</Form.Label>
+                <Form.Control
+                  type="number"
+                  step="0.00000001"
+                  name="pickup_lng"
+                  value={formValues.pickup_lng || ""}
+                  onChange={handleInputChange}
+                />
+              </Form.Group>
+            </Col>
+          </Row>
 
-            <Form.Group className="mb-3">
-              <Form.Label>Ride Type ID</Form.Label>
-              <Form.Control
-                type="number"
-                name="rideTypeId"
-                value={formValues.rideTypeId || ""}
-                onChange={handleInputChange}
-                required
-              />
-            </Form.Group>
+          <Row className="mb-3">
+            <Col md={4}>
+               <Form.Group className="dms-form-group mt-3">
+                <Form.Label>Drop Address</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="drop_add"
+                  value={formValues.drop_add || ""}
+                  onChange={handleInputChange}
+                />
+              </Form.Group>
+            </Col>
+            <Col md={4}>
+               <Form.Group className="dms-form-group mt-3">
+                <Form.Label>Drop Latitude</Form.Label>
+                <Form.Control
+                  type="number"
+                  step="0.00000001"
+                  name="drop_lat"
+                  value={formValues.drop_lat || ""}
+                  onChange={handleInputChange}
+                />
+              </Form.Group>
+            </Col>
+            <Col md={4}>
+               <Form.Group className="dms-form-group mt-3">
+                <Form.Label>Drop Longitude</Form.Label>
+                <Form.Control
+                  type="number"
+                  step="0.00000001"
+                  name="drop_lng"
+                  value={formValues.drop_lng || ""}
+                  onChange={handleInputChange}
+                />
+              </Form.Group>
+            </Col>
+          </Row>
 
-            <Form.Group className="mb-3">
-              <Form.Label>Start Location</Form.Label>
-              <Form.Control
-                type="text"
-                name="startLocation"
-                value={formValues.startLocation || ""}
-                onChange={handleInputChange}
-                required
-              />
-            </Form.Group>
+          <Row className="mb-3">
+            <Col md={3}>
+               <Form.Group className="dms-form-group mt-3">
+                <Form.Label>Fare</Form.Label>
+                <Form.Control
+                  type="number"
+                  step="0.01"
+                  name="fare"
+                  value={formValues.fare || ""}
+                  onChange={handleInputChange}
+                />
+              </Form.Group>
+            </Col>
+            <Col md={3}>
+               <Form.Group className="dms-form-group mt-3">
+                <Form.Label>Distance (km)</Form.Label>
+                <Form.Control
+                  type="number"
+                  step="0.01"
+                  name="distance"
+                  value={formValues.distance || ""}
+                  onChange={handleInputChange}
+                />
+              </Form.Group>
+            </Col>
+            <Col md={3}>
+               <Form.Group className="dms-form-group mt-3">
+                <Form.Label>Scheduled Time</Form.Label>
+                <Form.Control
+                  type="datetime-local"
+                  name="scheduled_time"
+                  value={formValues.scheduled_time || ""}
+                  onChange={handleInputChange}
+                />
+              </Form.Group>
+            </Col>
+            <Col md={3}>
+               <Form.Group className="dms-form-group mt-3">
+                <Form.Label>Pickup Time</Form.Label>
+                <Form.Control
+                  type="datetime-local"
+                  name="pickup_time"
+                  value={formValues.pickup_time || ""}
+                  onChange={handleInputChange}
+                />
+              </Form.Group>
+            </Col>
+          </Row>
 
-            <Form.Group className="mb-3">
-              <Form.Label>End Location</Form.Label>
-              <Form.Control
-                type="text"
-                name="endLocation"
-                value={formValues.endLocation || ""}
-                onChange={handleInputChange}
-                required
-              />
-            </Form.Group>
+          <Row className="mb-3">
+            <Col md={3}>
+               <Form.Group className="dms-form-group mt-3">
+                <Form.Label>Drop Time</Form.Label>
+                <Form.Control
+                  type="datetime-local"
+                  name="drop_time"
+                  value={formValues.drop_time || ""}
+                  onChange={handleInputChange}
+                />
+              </Form.Group>
+            </Col>
+            <Col md={3}>
+               <Form.Group className="dms-form-group mt-3">
+                <Form.Label>Completed At</Form.Label>
+                <Form.Control
+                  type="datetime-local"
+                  name="completed_at"
+                  value={formValues.completed_at || ""}
+                  onChange={handleInputChange}
+                />
+              </Form.Group>
+            </Col>
+            <Col md={3}>
+               <Form.Group className="dms-form-group mt-3">
+                <Form.Label>Cancelled At</Form.Label>
+                <Form.Control
+                  type="datetime-local"
+                  name="cancelled_at"
+                  value={formValues.cancelled_at || ""}
+                  onChange={handleInputChange}
+                />
+              </Form.Group>
+            </Col>
+            <Col md={3}>
+               <Form.Group className="dms-form-group mt-3">
+                <Form.Label>Emergency Triggered At</Form.Label>
+                <Form.Control
+                  type="datetime-local"
+                  name="emergency_triggered_at"
+                  value={formValues.emergency_triggered_at || ""}
+                  onChange={handleInputChange}
+                />
+              </Form.Group>
+            </Col>
+          </Row>
 
-            <Form.Group className="mb-3">
-              <Form.Label>Start Point</Form.Label>
-              <Form.Control
-                type="text"
-                name="startPoint"
-                value={formValues.startPoint || ""}
-                onChange={handleInputChange}
-              />
-            </Form.Group>
+          <Row className="mb-3">
+            <Col md={4}>
+               <Form.Group className="dms-form-group mt-3">
+                <Form.Label>Payment Status</Form.Label>
+                <Form.Control
+                  as="select"
+                  name="payment_status"
+                  value={formValues.payment_status || ""}
+                  onChange={handleInputChange}
+                >
+                  <option value="">Select</option>
+                  <option value="pending">Pending</option>
+                  <option value="completed">Completed</option>
+                  <option value="failed">Failed</option>
+                  <option value="refunded">Refunded</option>
+                </Form.Control>
+              </Form.Group>
+            </Col>
+            <Col md={4}>
+               <Form.Group className="dms-form-group mt-3">
+                <Form.Label>Created At</Form.Label>
+                <Form.Control
+                  type="datetime-local"
+                  name="createdAt"
+                  value={formValues.createdAt || ""}
+                  readOnly
+                />
+              </Form.Group>
+            </Col>
+          </Row>
 
-            <Form.Group className="mb-3">
-              <Form.Label>End Point</Form.Label>
-              <Form.Control
-                type="text"
-                name="endPoint"
-                value={formValues.endPoint || ""}
-                onChange={handleInputChange}
-              />
-            </Form.Group>
+          {error && <p className="text-danger mt-2">{error}</p>}
+          {successMessage && <p className="text-success mt-2">{successMessage}</p>}
 
-            <Form.Group className="mb-3">
-              <Form.Label>Fare</Form.Label>
-              <Form.Control
-                type="number"
-                step="0.01"
-                name="fare"
-                value={formValues.fare || ""}
-                onChange={handleInputChange}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Distance (km)</Form.Label>
-              <Form.Control
-                type="number"
-                step="0.01"
-                name="distance"
-                value={formValues.distance || ""}
-                onChange={handleInputChange}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Check
-                type="checkbox"
-                label="Emergency Ride"
-                name="emergencyRide"
-                checked={formValues.emergencyRide || false}
-                onChange={handleInputChange}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Scheduled Time</Form.Label>
-              <Form.Control
-                type="time"
-                name="scheduledTime"
-                value={formValues.scheduledTime || ""}
-                onChange={handleInputChange}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Pickup Time</Form.Label>
-              <Form.Control
-                type="time"
-                name="pickupTime"
-                value={formValues.pickupTime || ""}
-                onChange={handleInputChange}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Drop Time</Form.Label>
-              <Form.Control
-                type="time"
-                name="dropTime"
-                value={formValues.dropTime || ""}
-                onChange={handleInputChange}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Completed At</Form.Label>
-              <Form.Control
-                type="time"
-                name="completedAt"
-                value={formValues.completedAt || ""}
-                onChange={handleInputChange}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Payment Status</Form.Label>
-              <Form.Control
-                as="select"
-                name="paymentStatus"
-                value={formValues.paymentStatus || ""}
-                onChange={handleInputChange}
-              >
-                <option value="">Select Payment Status</option>
-                <option value="pending">Pending</option>
-                <option value="completed">Completed</option>
-                <option value="failed">Failed</option>
-              </Form.Control>
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Cancelled At</Form.Label>
-              <Form.Control
-                type="time"
-                name="cancelledAt"
-                value={formValues.cancelledAt || ""}
-                onChange={handleInputChange}
-              />
-            </Form.Group>
-
-            <Form.Group className="mb-3">
-              <Form.Label>Emergency Triggered At</Form.Label>
-              <Form.Control
-                type="time"
-                name="emergencyTriggeredAt"
-                value={formValues.emergencyTriggeredAt || ""}
-                onChange={handleInputChange}
-              />
-            </Form.Group>
-
-            {error && <p className="text-danger mt-2">{error}</p>}
-            {successMessage && <p className="text-success mt-2">{successMessage}</p>}
-
-            <div className="save-and-cancel-btn">
-              <Button type="submit" disabled={loading}>
-                {loading ? "Saving..." : "Save changes"}
-              </Button>
-              <Button
-                type="cancel"
-                className="ms-2"
-                onClick={() => navigate(-1)}
-                disabled={loading}
-              >
-                Cancel
-              </Button>
-            </div>
-          </Form>
+          <div className="d-flex mt-3">
+            <Button type="submit" disabled={loading}>
+              {loading ? "Saving..." : "Save changes"}
+            </Button>
+            <Button
+              type="button"
+              className="ms-2"
+              onClick={() => navigate(-1)}
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+          </div>
+        </Form>
         </div>
       </div>
     </AdminLayout>
