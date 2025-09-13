@@ -3,6 +3,9 @@ import { Button, Table, Form, InputGroup, Pagination, Modal } from 'react-bootst
 import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
 import { AdminLayout } from '../../../../../layouts/dms/AdminLayout/AdminLayout';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const RideTypelIST = () => {
     const navigate = useNavigate();
@@ -13,6 +16,8 @@ export const RideTypelIST = () => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedRideType, setSelectedRideType] = useState(null);
     const [itemsPerPage, setItemsPerPage] = useState(10);
+    const [loading, setLoading] = useState(false);
+
     const userData = JSON.parse(localStorage.getItem("userData"));
     let permissions = [];
 
@@ -33,63 +38,47 @@ export const RideTypelIST = () => {
 
     const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
         if (permissions.includes(permissionType)) {
-            action(); // allowed, run the actual function
+            action();
         } else {
-            alert(fallbackMessage || `You don't have permission to ${permissionType} this employee.`);
+            alert(fallbackMessage || `You don't have permission to ${permissionType} ride type.`);
         }
     };
 
-    // Dummy data
-    const dummyRideTypes = [
-        {
-            id: 1,
-            name: "Normal",
-            fareMultiplier: 1.0,
-            description: "Standard ride with regular fares.",
-            createdAt: "2025-09-01T10:00:00Z",
-            updatedAt: "2025-09-05T12:00:00Z",
-        },
-        {
-            id: 2,
-            name: "Emergency",
-            fareMultiplier: 1.5,
-            description: "Priority rides during urgent situations.",
-            createdAt: "2025-09-02T11:30:00Z",
-            updatedAt: "2025-09-06T14:20:00Z",
-        },
-        {
-            id: 3,
-            name: "Rental",
-            fareMultiplier: 2.0,
-            description: "Rent a car for multiple hours.",
-            createdAt: "2025-09-03T09:15:00Z",
-            updatedAt: "2025-09-07T16:45:00Z",
-        },
-    ];
+    const fetchRideTypes = async (page = 1, searchValue = '') => {
+        setLoading(true);
+        try {
+            const response = await axios.get(`${API_BASE_URL}/getAllRideType`, {
+                params: {
+                    page,
+                    limit: itemsPerPage,
+                    name: searchValue || undefined
+                }
+            });
+
+            const apiData = response.data?.data?.models || [];
+            const totalItems = response.data?.data?.totalItems || 0;
+            const totalPages = response.data?.data?.totalPages || 1;
+
+            setRideTypes(apiData);
+            setTotalPages(totalPages);
+        } catch (error) {
+            console.error("Error fetching ride types:", error);
+            setRideTypes([]);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        let filtered = dummyRideTypes.filter(rt =>
-            rt.name.toLowerCase().includes(search.toLowerCase())
-        );
+        fetchRideTypes(currentPage, search);
+    }, [currentPage, itemsPerPage]);
 
-        const pageCount = Math.ceil(filtered.length / itemsPerPage);
-        setTotalPages(pageCount);
-
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        const paginatedData = filtered.slice(startIndex, startIndex + itemsPerPage);
-
-        setRideTypes(paginatedData);
-    }, [search, currentPage, itemsPerPage]);
-
+    // Search
     const handleSearch = (e) => {
-        setSearch(e.target.value);
+        const searchValue = e.target.value;
+        setSearch(searchValue);
         setCurrentPage(1);
-    };
-
-    const handlePageChange = (pageNumber) => {
-        if (pageNumber >= 1 && pageNumber <= totalPages) {
-            setCurrentPage(pageNumber);
-        }
+        fetchRideTypes(1, searchValue);
     };
 
     const handleDelete = (rideType) => {
@@ -97,18 +86,39 @@ export const RideTypelIST = () => {
         setShowDeleteModal(true);
     };
 
-    const confirmDelete = () => {
-        const updatedList = rideTypes.filter(rt => rt.id !== selectedRideType.id);
-        setRideTypes(updatedList);
+    const confirmDelete = async () => {
+        try {
+
+            await axios.delete(`${API_BASE_URL}/deleteRideType/${selectedRideType.id}`, {
+            });
+
+            // Refresh list after deletion
+            fetchRideTypes(currentPage, search);
+
+            alert("Ride type deleted successfully!");
+        } catch (error) {
+            console.error("Failed to delete ride type:", error);
+            alert("Failed to delete ride type. Please try again.");
+        }
+
         setShowDeleteModal(false);
         setSelectedRideType(null);
     };
+
+    function stripHtmlTags(html) {
+        const tmp = document.createElement('DIV');
+        tmp.innerHTML = html;
+        return tmp.textContent || tmp.innerText || '';
+    }
 
     return (
         <AdminLayout>
             <div className="dms-pages-header sticky-header">
                 <h3>Ride Type List</h3>
-                <Button variant="primary" onClick={() => handlePermissionCheck("add", () => navigate('/dms/ridetypes/add'))}>
+                <Button
+                    variant="primary"
+                    onClick={() => handlePermissionCheck("add", () => navigate('/dms/ridetypes/add'))}
+                >
                     <FaPlus /> Add Ride Type
                 </Button>
             </div>
@@ -124,72 +134,80 @@ export const RideTypelIST = () => {
             </div>
 
             <div className="dms-table-container">
-                <Table striped bordered hover responsive>
-                    <thead>
-                        <tr>
-                            <th>S.No</th>
-                            <th>Name</th>
-                            <th>Fare Multiplier</th>
-                            <th>Description</th>
-                            <th>Created At</th>
-                            <th>Updated At</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {rideTypes.length > 0 ? (
-                            rideTypes.map((ride, index) => (
-                                <tr key={ride.id}>
-                                    <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
-                                    <td>{ride.name}</td>
-                                    <td>{ride.fareMultiplier}</td>
-                                    <td>{ride.description}</td>
-                                    <td>{new Date(ride.createdAt).toLocaleString()}</td>
-                                    <td>{new Date(ride.updatedAt).toLocaleString()}</td>
-                                    <td className="actions">
-                                        <FaEdit
-                                            className="icon icon-green"
-                                            title="Edit"
-                                            onClick={() =>
-                                                handlePermissionCheck("edit", () =>
-                                                    navigate('/dms/ridetypes/edit', { state: { rideType: ride } })
-                                                )
-                                            }
-                                        />
-                                        <FaTrash
-                                            className="icon icon-red"
-                                            title="Delete"
-                                            onClick={() => handleDelete(ride)}
-                                        />
-                                    </td>
-                                </tr>
-                            ))
-                        ) : (
+                {loading ? (
+                    <div className="text-center py-5 fs-4">Loading...</div>
+                ) : (
+                    <Table striped bordered hover responsive>
+                        <thead>
                             <tr>
-                                <td colSpan="7" className="text-center">No ride types found.</td>
+                                <th>S.No</th>
+                                <th>Name</th>
+                                <th>Fare Multiplier</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                                <th>Created At</th>
+                                <th>Updated At</th>
+                                <th>Action</th>
                             </tr>
-                        )}
-                    </tbody>
-                </Table>
+                        </thead>
+                        <tbody>
+                            {rideTypes.length > 0 ? (
+                                rideTypes.map((ride, index) => (
+                                    <tr key={ride.id}>
+                                        <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                                        <td>{ride.name}</td>
+                                        <td>{ride.multiplier}</td>
+                                        <td>{stripHtmlTags(ride.description)}</td>
+                                        <td>{ride.status}</td>
+                                        <td>{new Date(ride.createdAt).toLocaleString()}</td>
+                                        <td>{new Date(ride.updatedAt).toLocaleString()}</td>
+                                        <td className="actions">
+                                            <FaEdit
+                                                className="icon icon-green"
+                                                title="Edit"
+                                                onClick={() =>
+                                                    handlePermissionCheck("edit", () =>
+                                                        navigate('/dms/ridetypes/edit', { state: { rideType: ride } })
+                                                    )
+                                                }
+                                            />
+                                            <FaTrash
+                                                className="icon icon-red"
+                                                title="Delete"
+                                                onClick={() =>
+                                                    handlePermissionCheck("delete", () => handleDelete(ride))
+                                                }
+                                            />
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="8" className="text-center">No ride types found.</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </Table>
+                )}
 
                 {/* Pagination */}
                 <div className="pagination-container">
                     <Pagination className="mb-0">
                         <Pagination.Prev
-                            onClick={() => handlePageChange(currentPage - 1)}
+                            onClick={() => setCurrentPage(currentPage - 1)}
                             disabled={currentPage === 1}
                         />
                         {[...Array(totalPages)].map((_, index) => (
                             <Pagination.Item
                                 key={index + 1}
                                 active={index + 1 === currentPage}
-                                onClick={() => handlePageChange(index + 1)}
+                                onClick={() => setCurrentPage(index + 1)}
                             >
                                 {index + 1}
                             </Pagination.Item>
                         ))}
                         <Pagination.Next
-                            onClick={() => handlePageChange(currentPage + 1)}
+                            onClick={() => setCurrentPage(currentPage + 1)}
                             disabled={currentPage === totalPages}
                         />
                     </Pagination>

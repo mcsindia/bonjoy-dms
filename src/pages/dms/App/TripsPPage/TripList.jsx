@@ -6,11 +6,14 @@ import {
     Pagination,
     Dropdown,
     DropdownButton,
-    Button
+    Button,
 } from "react-bootstrap";
 import { FaEye, FaEdit, FaFileExport, FaFileExcel, FaFilePdf } from "react-icons/fa";
 import { AdminLayout } from "../../../../layouts/dms/AdminLayout/AdminLayout";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const TripList = () => {
     const navigate = useNavigate();
@@ -21,70 +24,50 @@ export const TripList = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
     const [itemsPerPage, setItemsPerPage] = useState(10);
+    const [loading, setLoading] = useState(false);
 
-    // 🔹 Dummy Trips
-    const dummyTrips = [
-        {
-            ride_id: "1",
-            tripName: "Morning Office Ride",
-            riderName: "Rahul Sharma",
-            driverName: "Amit Verma",
-            rideType: "Normal",
-            pickup_add: "MG Road, Pune",
-            drop_add: "Infosys Phase 2, Hinjewadi",
-            fare: 250.50,
-            status: "completed",
-            createdAt: "2025-09-01T09:00:00Z",
-        },
-        {
-            ride_id: "2",
-            tripName: "Emergency Ride",
-            riderName: "Priya Mehta",
-            driverName: "Rohit Kumar",
-            rideType: "Emergency",
-            pickup_add: "FC Road, Pune",
-            drop_add: "Ruby Hall Clinic, Pune",
-            fare: 450.00,
-            status: "emergency",
-            createdAt: "2025-09-03T15:30:00Z",
-        },
-        {
-            ride_id: "3",
-            tripName: "Airport Drop",
-            riderName: "Ankit Joshi",
-            driverName: "Sunil Patil",
-            rideType: "Rental",
-            pickup_add: "Kothrud, Pune",
-            drop_add: "Pune Airport",
-            fare: 800.75,
-            status: "cancelled",
-            createdAt: "2025-09-05T22:15:00Z",
-        },
-    ];
+    const fetchTrips = async (page = 1, searchValue = "", statusFilter = "") => {
+        setLoading(true);
+        try {
+            const token = JSON.parse(localStorage.getItem("userData"))?.token;
+
+            const response = await axios.get(`${API_BASE_URL}/getAllRides`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+                params: {
+                    page,
+                    limit: itemsPerPage,
+                    search: searchValue || undefined,
+                    status: statusFilter || undefined,
+                },
+            });
+
+            const apiData = response.data?.data || [];
+            const totalItems = response.data?.totalItems || 0;
+            const totalPages = response.data?.totalPages || 1;
+
+            setTrips(apiData);
+            setTotalItems(totalItems);
+            setTotalPages(totalPages);
+        } catch (error) {
+            console.error("Error fetching trips:", error);
+            setTrips([]);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        // simulate pagination
-        let filtered = dummyTrips.filter((trip) =>
-            trip.tripName.toLowerCase().includes(search.toLowerCase()) ||
-            trip.riderName.toLowerCase().includes(search.toLowerCase()) ||
-            trip.driverName.toLowerCase().includes(search.toLowerCase())
-        );
+        fetchTrips(currentPage, search, filter);
+    }, [currentPage, itemsPerPage, filter]);
 
-        if (filter) {
-            filtered = filtered.filter((trip) => trip.status === filter);
-        }
-
-        const pageCount = Math.ceil(filtered.length / itemsPerPage);
-        setTotalPages(pageCount);
-        setTotalItems(filtered.length);
-
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        const paginatedData = filtered.slice(startIndex, startIndex + itemsPerPage);
-
-        setTrips(paginatedData);
-    }, [search, filter, currentPage, itemsPerPage]);
-
-    const handleSearch = (e) => setSearch(e.target.value);
+    const handleSearch = (e) => {
+        const value = e.target.value;
+        setSearch(value);
+        setCurrentPage(1);
+        fetchTrips(1, value, filter);
+    };
 
     const handlePageChange = (pageNumber) => {
         if (pageNumber >= 1 && pageNumber <= totalPages) {
@@ -98,25 +81,53 @@ export const TripList = () => {
                 <div className="live-count">
                     <h3>Trips List</h3>
                     <div className="live-count-container">
-                        <Button className='green-button'>
+                        <Button className="green-button">
                             🏍️ Total Trips: {totalItems}
                         </Button>
                     </div>
                 </div>
                 <div className="export-import-container">
-                    <DropdownButton variant="primary" title={<><FaFileExport /> Export</>} className="me-2">
-                        <Dropdown.Item><FaFileExcel className="icon-green" /> Export to Excel</Dropdown.Item>
-                        <Dropdown.Item><FaFilePdf className="icon-red" /> Export to PDF</Dropdown.Item>
+                    <DropdownButton
+                        variant="primary"
+                        title={
+                            <>
+                                <FaFileExport /> Export
+                            </>
+                        }
+                        className="me-2"
+                    >
+                        <Dropdown.Item>
+                            <FaFileExcel className="icon-green" /> Export to Excel
+                        </Dropdown.Item>
+                        <Dropdown.Item>
+                            <FaFilePdf className="icon-red" /> Export to PDF
+                        </Dropdown.Item>
                     </DropdownButton>
                 </div>
             </div>
 
             <div className="filter-search-container">
-                <DropdownButton variant="primary" title="Filter Status" id="filter-dropdown">
+                <DropdownButton
+                    variant="primary"
+                    title="Filter Status"
+                    id="filter-dropdown"
+                >
                     <Dropdown.Item onClick={() => setFilter("")}>All</Dropdown.Item>
-                    <Dropdown.Item onClick={() => setFilter("completed")}>Completed</Dropdown.Item>
-                    <Dropdown.Item onClick={() => setFilter("cancelled")} className="text-custom-danger">Cancelled</Dropdown.Item>
-                    <Dropdown.Item onClick={() => setFilter("emergency")} className="text-custom-warning">Emergency</Dropdown.Item>
+                    <Dropdown.Item onClick={() => setFilter("completed")}>
+                        Completed
+                    </Dropdown.Item>
+                    <Dropdown.Item
+                        onClick={() => setFilter("cancelled")}
+                        className="text-custom-danger"
+                    >
+                        Cancelled
+                    </Dropdown.Item>
+                    <Dropdown.Item
+                        onClick={() => setFilter("emergency")}
+                        className="text-custom-warning"
+                    >
+                        Emergency
+                    </Dropdown.Item>
                 </DropdownButton>
 
                 <InputGroup className="dms-custom-width">
@@ -129,65 +140,69 @@ export const TripList = () => {
             </div>
 
             <div className="dms-table-container">
-                <Table striped bordered hover responsive>
-                    <thead>
-                        <tr>
-                            <th>S.No</th>
-                            <th>Trip Name</th>
-                            <th>Rider Name</th>
-                            <th>Driver Name</th>
-                            <th>Ride Type</th>
-                            <th>Pickup</th>
-                            <th>Drop</th>
-                            <th>Fare</th>
-                            <th>Status</th>
-                            <th>Trip Date</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {trips.length > 0 ? (
-                            trips.map((trip, idx) => (
-                                <tr key={trip.ride_id}>
-                                    <td>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
-                                    <td>{trip.tripName}</td>
-                                    <td>{trip.riderName}</td>
-                                    <td>{trip.driverName}</td>
-                                    <td>{trip.rideType}</td>
-                                    <td>{trip.pickup_add}</td>
-                                    <td>{trip.drop_add}</td>
-                                    <td>{`₹${trip.fare}`}</td>
-                                    <td>{trip.status}</td>
-                                    <td>{new Date(trip.createdAt).toLocaleDateString()}</td>
-                                    <td>
-                                        <FaEye
-                                            title="View"
-                                            className="icon icon-blue"
-                                            onClick={() =>
-                                                navigate(`/dms/trip/view/${trip.ride_id}`, {
-                                                    state: { trip },
-                                                })
-                                            }
-                                        />
-                                        <FaEdit
-                                            title="Edit"
-                                            className="icon icon-green"
-                                            onClick={() =>
-                                                navigate("/dms/trip/edit", { state: { trip } })
-                                            }
-                                        />
+                {loading ? (
+                    <div className="text-center py-5 fs-4">Loading...</div>
+                ) : (
+                    <Table striped bordered hover responsive>
+                        <thead>
+                            <tr>
+                                <th>S.No</th>
+                                <th>Rider Name</th>
+                                <th>Driver Name</th>
+                                <th>Ride Type</th>
+                                <th>Pickup</th>
+                                <th>Drop</th>
+                                <th>Fare</th>
+                                <th>Status</th>
+                                <th>Trip Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {trips.length > 0 ? (
+                                trips.map((trip, idx) => (
+                                    <tr key={trip.id}>
+                                        <td>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
+                                        <td>{trip.rider_name}</td>
+                                        <td>{trip.driver_name}</td>
+                                        <td>{trip.ride_type}</td>
+                                        <td>{trip.pickup_address}</td>
+                                        <td>{trip.drop_address}</td>
+                                        <td>₹{trip.fare}</td>
+                                        <td>{trip.status}</td>
+                                        <td>
+                                            {trip.createdAt
+                                                ? new Date(trip.createdAt).toLocaleDateString()
+                                                : "-"}
+                                        </td>
+                                        <td>
+                                            <FaEye
+                                                title="View"
+                                                className="icon icon-blue"
+                                                onClick={() =>
+                                                    navigate(`/dms/trip/view/${trip.id}`, { state: { trip } })
+                                                }
+                                            />
+                                            <FaEdit
+                                                title="Edit"
+                                                className="icon icon-green"
+                                                onClick={() =>
+                                                    navigate("/dms/trip/edit", { state: { trip } })
+                                                }
+                                            />
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="11" className="text-center">
+                                        No trips found.
                                     </td>
                                 </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan="11" className="text-center">
-                                    No trips found.
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </Table>
+                            )}
+                        </tbody>
+                    </Table>
+                )}
 
                 {/* Pagination */}
                 <div className="pagination-container">
@@ -217,7 +232,7 @@ export const TripList = () => {
                             setItemsPerPage(Number(e.target.value));
                             setCurrentPage(1);
                         }}
-                        className='pagination-option w-auto'
+                        className="pagination-option w-auto"
                     >
                         <option value="5">Show 5</option>
                         <option value="10">Show 10</option>

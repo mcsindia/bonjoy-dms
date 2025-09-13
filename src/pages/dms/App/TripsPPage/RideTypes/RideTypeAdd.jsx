@@ -2,7 +2,10 @@ import React, { useState } from 'react';
 import { Button, Container, Form, Alert } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from '../../../../../layouts/dms/AdminLayout/AdminLayout';
+import axios from 'axios';
 import { QuillEditor } from '../../../../../components/dms/QuillEditor/QuillEditor';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const RideTypeAdd = () => {
   const navigate = useNavigate();
@@ -11,6 +14,7 @@ export const RideTypeAdd = () => {
     name: '',
     fareMultiplier: '',
     description: '',
+    status: 'Active'
   });
 
   const [error, setError] = useState('');
@@ -47,11 +51,31 @@ export const RideTypeAdd = () => {
       setIsLoading(true);
       setError('');
 
-      setSuccessMessage('Ride Type created successfully.');
+      const response = await axios.post(
+        `${API_BASE_URL}/createRideType`,
+        {
+          name: formData.name,
+          multiplier: parseFloat(formData.fareMultiplier),
+          description: formData.description,
+          status: formData.status,
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
-      setTimeout(() => {
-        navigate('/dms/ridetypes'); 
-      }, 1500);
+      if (response.data.success) {
+        setSuccessMessage(response.data.message || 'Ride Type created successfully.');
+        setFormData({ name: '', fareMultiplier: '', description: '', status: 'Active' });
+
+        setTimeout(() => {
+          navigate('/dms/ridetypes');
+        }, 1500);
+      } else {
+        setError(response.data.message || 'Something went wrong.');
+      }
     } catch (err) {
       console.error('Error adding ride type:', err);
       setError('Failed to add ride type. Please try again later.');

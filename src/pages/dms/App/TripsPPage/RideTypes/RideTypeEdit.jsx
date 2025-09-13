@@ -1,19 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button, Container, Form, Alert } from 'react-bootstrap';
+import axios from 'axios';
 import { AdminLayout } from '../../../../../layouts/dms/AdminLayout/AdminLayout';
 import { QuillEditor } from '../../../../../components/dms/QuillEditor/QuillEditor';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const RideTypeEdit = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { rideType } = location.state || {}; // comes from list page
+  const { rideType } = location.state || {}; 
 
   const [formData, setFormData] = useState({
     id: '',
     name: '',
     fareMultiplier: '',
-    description: ''
+    description: '',
+    status: 'Active'
   });
 
   const [error, setError] = useState('');
@@ -25,8 +29,9 @@ export const RideTypeEdit = () => {
       setFormData({
         id: rideType.id || '',
         name: rideType.name || '',
-        fareMultiplier: rideType.fareMultiplier || '',
-        description: rideType.description || ''
+        fareMultiplier: rideType.multiplier || rideType.fareMultiplier || '',
+        description: rideType.description || '',
+        status: rideType.status || 'Active'
       });
       setHasInitialized(true);
     }
@@ -57,9 +62,30 @@ export const RideTypeEdit = () => {
 
     try {
       setError('');
-      // dummy success since no API
-      setSuccess('Ride Type updated successfully!');
-      setTimeout(() => navigate('/dms/ridetypes'), 1500);
+      const token = JSON.parse(localStorage.getItem("userData"))?.token;
+
+      const response = await axios.put(
+        `${API_BASE_URL}/updateRideType/${formData.id}`,
+        {
+          name: formData.name,
+          multiplier: parseFloat(formData.fareMultiplier),
+          description: formData.description,
+          status: formData.status,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (response.data.success) {
+        setSuccess(response.data.message || 'Ride Type updated successfully!');
+        setTimeout(() => navigate('/dms/ridetypes'), 1500);
+      } else {
+        setError(response.data.message || 'Something went wrong.');
+      }
     } catch (err) {
       console.error('Update failed:', err);
       setError('Failed to update Ride Type. Please try again later.');
@@ -72,16 +98,8 @@ export const RideTypeEdit = () => {
         <h4>Edit Ride Type</h4>
         <div className="dms-form-container">
 
-          {error && (
-            <Alert variant="danger" onClose={() => setError('')} dismissible>
-              {error}
-            </Alert>
-          )}
-          {success && (
-            <Alert variant="success" onClose={() => setSuccess('')} dismissible>
-              {success}
-            </Alert>
-          )}
+          {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
+          {success && <Alert variant="success" onClose={() => setSuccess('')} dismissible>{success}</Alert>}
 
           <Form onSubmit={handleSubmit}>
             {/* Ride Type Name */}
@@ -125,16 +143,23 @@ export const RideTypeEdit = () => {
               )}
             </Form.Group>
 
-            <div className="save-and-cancel-btn mt-4">
-              <Button type="submit" className="me-2">
-                Save Changes
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => navigate('/dms/ridetypes')}
+            {/* Status */}
+            <Form.Group className="dms-form-group mt-3">
+              <Form.Label>Status</Form.Label>
+              <Form.Select
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                required
               >
-                Cancel
-              </Button>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+              </Form.Select>
+            </Form.Group>
+
+            <div className="save-and-cancel-btn mt-4">
+              <Button type="submit" className="me-2">Save Changes</Button>
+              <Button variant="secondary" onClick={() => navigate('/dms/ridetypes')}>Cancel</Button>
             </div>
           </Form>
         </div>
