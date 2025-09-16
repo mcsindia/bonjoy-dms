@@ -17,7 +17,7 @@ export const RideTypelIST = () => {
     const [selectedRideType, setSelectedRideType] = useState(null);
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [loading, setLoading] = useState(false);
-
+    const token = JSON.parse(localStorage.getItem("userData"))?.token;
     const userData = JSON.parse(localStorage.getItem("userData"));
     let permissions = [];
 
@@ -52,6 +52,9 @@ export const RideTypelIST = () => {
                     page,
                     limit: itemsPerPage,
                     name: searchValue || undefined
+                },
+                headers: {
+                    Authorization: `Bearer ${token}`
                 }
             });
 
@@ -88,8 +91,10 @@ export const RideTypelIST = () => {
 
     const confirmDelete = async () => {
         try {
-
             await axios.delete(`${API_BASE_URL}/deleteRideType/${selectedRideType.id}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
             });
 
             // Refresh list after deletion

@@ -11,6 +11,7 @@ export const RideTypeEdit = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { rideType } = location.state || {}; 
+  const token = JSON.parse(localStorage.getItem("userData"))?.token;
 
   const [formData, setFormData] = useState({
     id: '',

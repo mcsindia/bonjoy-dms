@@ -66,10 +66,34 @@ export const UserProfile = () => {
   ];
 
   const walletData = [
-    { date: '2023-12-18', transactionId: 'TID001', amount: '+ ₹20' },
-    { date: '2023-12-17', transactionId: 'TID002', amount: '- ₹15' },
-    { date: '2023-12-16', transactionId: 'TID003', amount: '+ ₹50' },
-  ];
+  {
+    date: '2023-12-18',
+    transactionId: 'TID001',
+    rideId: 'RID123',
+    type: 'credit',
+    amount: 20,
+    description: 'Wallet top-up',
+    createdAt: '2023-12-18 10:15 AM'
+  },
+  {
+    date: '2023-12-17',
+    transactionId: 'TID002',
+    rideId: 'RID124',
+    type: 'debit',
+    amount: 15,
+    description: 'Ride payment',
+    createdAt: '2023-12-17 05:20 PM'
+  },
+  {
+    date: '2023-12-16',
+    transactionId: 'TID003',
+    rideId: null,
+    type: 'bonus',
+    amount: 50,
+    description: 'Referral bonus',
+    createdAt: '2023-12-16 09:45 AM'
+  },
+];
 
   // Pagination state for each section
   const [feedbackPage, setFeedbackPage] = useState(1);
@@ -297,25 +321,34 @@ export const UserProfile = () => {
         {/* Wallet & Payments */}
         <section className="mt-4">
           <div className="dms-pages-header">
-            <h4>Wallet & Payments</h4>
-            <div className="d-flex">
-              <Button variant="primary" className="me-3" >
-                <FaPlus /> Add Money
-              </Button>
-              <Button variant="primary" onClick={() => navigate('/')}>
-                View All
-              </Button>
-            </div>
+            <h4>Wallet Transaction List</h4>
           </div>
-          <p>
-            <strong>Wallet Balance:</strong> ₹150
-          </p>
+
+          {/* Wallet Summary */}
+          <Card className="mb-3">
+            <Card.Body className="d-flex justify-content-between">
+              <div>
+                <p><strong>Wallet Balance:</strong> ₹150</p>
+                <p><strong>Currency:</strong> INR</p>
+              </div>
+              <div>
+                <p><strong>Last Updated:</strong> 2023-12-18</p>
+              </div>
+            </Card.Body>
+          </Card>
+
+          {/* Transactions Table */}
+          {/* Transactions Table */}
           <Table striped bordered hover>
             <thead>
               <tr>
                 <th>Date</th>
                 <th>Transaction ID</th>
+                <th>Ride ID</th>
+                <th>Type</th>
                 <th>Amount</th>
+                <th>Description</th>
+                <th>Created At</th>
               </tr>
             </thead>
             <tbody>
@@ -323,11 +356,33 @@ export const UserProfile = () => {
                 <tr key={index}>
                   <td>{transaction.date}</td>
                   <td>{transaction.transactionId}</td>
+                  <td>{transaction.rideId || "—"}</td>
+                  <td>
+                    <Badge
+                      bg={
+                        transaction.type === "credit"
+                          ? "success"
+                          : transaction.type === "debit"
+                            ? "danger"
+                            : transaction.type === "refund"
+                              ? "info"
+                              : transaction.type === "bonus"
+                                ? "primary"
+                                : "warning"
+                      }
+                    >
+                      {transaction.type}
+                    </Badge>
+                  </td>
                   <td>{transaction.amount}</td>
+                  <td>{transaction.description || "—"}</td>
+                  <td>{transaction.createdAt || "—"}</td>
                 </tr>
               ))}
             </tbody>
           </Table>
+
+          {/* Pagination */}
           <Pagination className="justify-content-center">
             <Pagination.Prev
               onClick={() => setWalletPage(walletPage - 1)}
@@ -347,25 +402,6 @@ export const UserProfile = () => {
               disabled={walletPage === walletPages}
             />
           </Pagination>
-        </section>
-        <hr className="table-hr" />
-
-        {/* Account Settings */}
-        <section className="mt-4">
-          <h4>Account Settings</h4>
-          <p>
-            <strong>Language Preferences:</strong> English
-          </p>
-          <p>
-            <strong>Privacy Settings:</strong> Public Profile
-          </p>
-          <p>
-            <strong>Notification Preferences:</strong> Enabled
-          </p>
-          <Button variant="danger" className="me-2">
-            Logout
-          </Button>
-          <Button variant="danger">Delete Account</Button>
         </section>
       </div>
     </AdminLayout>

@@ -2,6 +2,9 @@ import React, { useState } from "react";
 import { Button, Container, Form, Alert, Row, Col } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "../../../../../layouts/dms/AdminLayout/AdminLayout";
+import axios from "axios";
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const FareSettingAdd = () => {
   const navigate = useNavigate();
@@ -12,28 +15,28 @@ export const FareSettingAdd = () => {
     per_km_fare_night: "",
     night_start_time: "",
     night_end_time: "",
-    helmet_charge: "",
+    waiting_charge_per_min: "",
     emergency_bonus: "",
     first_ride_bonus: "",
     effective_from: "",
+    isActive: "1",
   });
 
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  const userData = JSON.parse(localStorage.getItem("userData"));
+  const token = userData?.token;
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+    setFormData({ ...formData, [name]: value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Basic validation
     if (!formData.base_fare || !formData.per_km_fare) {
       setError("Base fare and per km fare are required.");
       return;
@@ -43,9 +46,22 @@ export const FareSettingAdd = () => {
       setIsLoading(true);
       setError("");
 
-      // Simulate save
-      setTimeout(() => {
-        setSuccessMessage("Fare setting saved successfully (dummy).");
+      const payload = {
+        ...formData,
+      };
+
+      const response = await axios.post(
+        `${API_BASE_URL}/createFareSetting`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data?.success) {
+        setSuccessMessage("Fare setting saved successfully!");
         setFormData({
           base_fare: "",
           per_km_fare: "",
@@ -60,11 +76,13 @@ export const FareSettingAdd = () => {
 
         setTimeout(() => {
           navigate("/dms/faresettings");
-        }, 2000);
-      }, 1000);
+        }, 1500);
+      } else {
+        setError(response.data?.message || "Failed to add fare setting.");
+      }
     } catch (err) {
       console.error("Error adding fare setting:", err);
-      setError("Failed to add fare setting.");
+      setError("Failed to add fare setting. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -106,6 +124,7 @@ export const FareSettingAdd = () => {
                   />
                 </Form.Group>
               </Col>
+
               <Col md={6}>
                 <Form.Group className="dms-form-group">
                   <Form.Label>Per Km Fare (Day)</Form.Label>
@@ -122,7 +141,7 @@ export const FareSettingAdd = () => {
             </Row>
 
             <Row>
-              <Col md={6}>
+              <Col md={4}>
                 <Form.Group className="dms-form-group">
                   <Form.Label>Per Km Fare (Night)</Form.Label>
                   <Form.Control
@@ -134,7 +153,8 @@ export const FareSettingAdd = () => {
                   />
                 </Form.Group>
               </Col>
-              <Col md={3}>
+
+              <Col md={4}>
                 <Form.Group className="dms-form-group">
                   <Form.Label>Night Start Time</Form.Label>
                   <Form.Control
@@ -145,7 +165,8 @@ export const FareSettingAdd = () => {
                   />
                 </Form.Group>
               </Col>
-              <Col md={3}>
+
+              <Col md={4}>
                 <Form.Group className="dms-form-group">
                   <Form.Label>Night End Time</Form.Label>
                   <Form.Control
@@ -161,16 +182,17 @@ export const FareSettingAdd = () => {
             <Row>
               <Col md={4}>
                 <Form.Group className="dms-form-group">
-                  <Form.Label>Helmet Charge</Form.Label>
+                  <Form.Label>Waiting Charge Per Min</Form.Label>
                   <Form.Control
                     type="number"
-                    name="helmet_charge"
-                    value={formData.helmet_charge}
+                    name="waiting_charge_per_min"
+                    value={formData.waiting_charge_per_min}
                     onChange={handleChange}
-                    placeholder="Enter helmet charge"
+                    placeholder="Enter waiting charge per min"
                   />
                 </Form.Group>
               </Col>
+
               <Col md={4}>
                 <Form.Group className="dms-form-group">
                   <Form.Label>Emergency Bonus</Form.Label>
@@ -183,6 +205,7 @@ export const FareSettingAdd = () => {
                   />
                 </Form.Group>
               </Col>
+
               <Col md={4}>
                 <Form.Group className="dms-form-group">
                   <Form.Label>First Ride Bonus</Form.Label>

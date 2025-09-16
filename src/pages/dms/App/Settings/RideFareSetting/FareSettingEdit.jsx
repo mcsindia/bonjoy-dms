@@ -2,11 +2,14 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button, Container, Form, Alert, Row, Col } from "react-bootstrap";
 import { AdminLayout } from "../../../../../layouts/dms/AdminLayout/AdminLayout";
+import axios from "axios";
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const FareSettingEdit = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { fare } = location.state || {}; // Get fare data passed from list
+  const { fare } = location.state || {};
 
   const [formData, setFormData] = useState({
     fare_id: "",
@@ -15,31 +18,35 @@ export const FareSettingEdit = () => {
     per_km_fare_night: "",
     night_start_time: "",
     night_end_time: "",
-    helmet_charge: "",
+    waiting_charge_per_min: "",
     emergency_bonus: "",
     first_ride_bonus: "",
     effective_from: "",
+    isActive: "",
   });
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
+
+  const userData = JSON.parse(localStorage.getItem("userData"));
+  const token = userData?.token;
 
   useEffect(() => {
     if (fare && !hasInitialized) {
       setFormData({
-        fare_id: fare.fare_id || "",
+        fare_id: fare.id || "",
         base_fare: fare.base_fare || "",
         per_km_fare: fare.per_km_fare || "",
         per_km_fare_night: fare.per_km_fare_night || "",
         night_start_time: fare.night_start_time || "",
         night_end_time: fare.night_end_time || "",
-        helmet_charge: fare.helmet_charge || "",
+        waiting_charge_per_min: fare.waiting_charge_per_min || "",
         emergency_bonus: fare.emergency_bonus || "",
         first_ride_bonus: fare.first_ride_bonus || "",
-        effective_from: fare.effective_from
-          ? fare.effective_from.split("T")[0]
-          : "",
+        effective_from: fare.effective_from ? fare.effective_from.split("T")[0] : "",
+        isActive: fare.isActive ? "1" : "0",
       });
       setHasInitialized(true);
     }
@@ -50,7 +57,7 @@ export const FareSettingEdit = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!formData.base_fare || !formData.per_km_fare) {
@@ -59,16 +66,44 @@ export const FareSettingEdit = () => {
     }
 
     try {
+      setIsLoading(true);
       setError("");
-      setSuccess("Fare setting updated successfully (dummy).");
+      setSuccess("");
 
-      // Simulate success and redirect
-      setTimeout(() => {
-        navigate("/dms/faresettings");
-      }, 1500);
+      const payload = {
+        base_fare: formData.base_fare,
+        per_km_fare: formData.per_km_fare,
+        per_km_fare_night: formData.per_km_fare_night,
+        night_start_time: formData.night_start_time,
+        night_end_time: formData.night_end_time,
+        waiting_charge_per_min: formData.waiting_charge_per_min,
+        emergency_bonus: formData.emergency_bonus,
+        first_ride_bonus: formData.first_ride_bonus,
+        effective_from: formData.effective_from,
+        isActive: formData.isActive,
+      };
+
+      const response = await axios.put(
+        `${API_BASE_URL}/updateFareSetting/${formData.fare_id}`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data?.success) {
+        setSuccess("Fare setting updated successfully!");
+        setTimeout(() => navigate("/dms/faresettings"), 1500);
+      } else {
+        setError(response.data?.message || "Failed to update fare setting.");
+      }
     } catch (err) {
-      console.error("Update failed:", err);
-      setError("Failed to update fare setting. Please try again later.");
+      console.error("Error updating fare setting:", err);
+      setError("Failed to update fare setting. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -158,16 +193,17 @@ export const FareSettingEdit = () => {
             <Row>
               <Col md={4}>
                 <Form.Group className="dms-form-group">
-                  <Form.Label>Helmet Charge</Form.Label>
+                  <Form.Label>Waiting Charge Per Min</Form.Label>
                   <Form.Control
                     type="number"
-                    name="helmet_charge"
-                    value={formData.helmet_charge}
+                    name="waiting_charge_per_min"
+                    value={formData.waiting_charge_per_min}
                     onChange={handleChange}
-                    placeholder="Enter helmet charge"
+                    placeholder="Enter waiting charge per min"
                   />
                 </Form.Group>
               </Col>
+
               <Col md={4}>
                 <Form.Group className="dms-form-group">
                   <Form.Label>Emergency Bonus</Form.Label>
@@ -205,8 +241,8 @@ export const FareSettingEdit = () => {
             </Form.Group>
 
             <div className="save-and-cancel-btn mt-4">
-              <Button type="submit" className="me-2">
-                Save Changes
+              <Button type="submit" className="me-2" disabled={isLoading}>
+                {isLoading ? "Saving..." : "Save Changes"}
               </Button>
               <Button
                 variant="secondary"

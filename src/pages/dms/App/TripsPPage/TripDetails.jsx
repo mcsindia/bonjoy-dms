@@ -1,16 +1,18 @@
-import React, { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-import { Button, Card, Row, Col, Image } from "react-bootstrap";
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Button, Card, Row, Col, Image, Spinner } from "react-bootstrap";
 import { FaMotorcycle, FaMapMarkerAlt, FaEdit } from "react-icons/fa";
 import { AdminLayout } from "../../../../layouts/dms/AdminLayout/AdminLayout";
+import axios from "axios";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const IMAGE_BASE_URL = import.meta.env.VITE_IMAGE_BASE_URL;
 
 export const TripDetails = () => {
-  const location = useLocation();
+  const { id } = useParams();
   const navigate = useNavigate();
-  const trip = location.state?.trip;
-  const [loading] = useState(false);
+  const [trip, setTrip] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const userData = JSON.parse(localStorage.getItem("userData"));
   let permissions = [];
@@ -37,11 +39,41 @@ export const TripDetails = () => {
     }
   };
 
+  // ✅ Fetch Trip by ID
+  useEffect(() => {
+    const fetchTrip = async () => {
+      try {
+        const token = userData?.token;
+        const response = await axios.get(`${API_BASE_URL}/getRideById/${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setTrip(response.data);
+      } catch (error) {
+        console.error("Error fetching trip:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchTrip();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="text-center py-5">
+          <Spinner animation="border" />
+        </div>
+      </AdminLayout>
+    );
+  }
+
   if (!trip) {
     return (
       <AdminLayout>
         <div className="text-center">
-          <h3>Invalid Trip</h3>
+          <h3>Trip Not Found</h3>
           <Button onClick={() => navigate("/dms/trip")} variant="primary">
             Go Back
           </Button>
@@ -50,9 +82,8 @@ export const TripDetails = () => {
     );
   }
 
-  // ✅ Correct fields from API
+  // ✅ Destructure trip from API
   const {
-    id,
     rider_name,
     rider_profile_image,
     driver_name,
@@ -74,8 +105,8 @@ export const TripDetails = () => {
     createdAt,
   } = trip;
 
-  const source = encodeURIComponent(pickup_address);
-  const destination = encodeURIComponent(drop_address);
+  const source = encodeURIComponent(pickup_address || "");
+  const destination = encodeURIComponent(drop_address || "");
 
   return (
     <AdminLayout>
@@ -94,61 +125,44 @@ export const TripDetails = () => {
           </Button>
         </div>
 
+        {/* Trip Info */}
         <Card className="p-4 mb-4 shadow-sm">
           <h4>Trip Information</h4>
           <hr />
-
-          <div className="d-flex align-items-center justify-content-around text-center mb-3">
-            <div className="d-flex flex-column align-items-center">
-              <FaMapMarkerAlt className="text-success mb-2" size={24} />
-              <span className="fw-bold">Pickup</span>
-              <span className="text-muted">{pickup_address}</span>
-            </div>
-
-            <div className="position-relative d-flex flex-column align-items-center">
-              <FaMotorcycle className="text-primary" size={30} />
-            </div>
-
-            <div className="d-flex flex-column align-items-center">
-              <FaMapMarkerAlt className="text-danger mb-2" size={24} />
-              <span className="fw-bold">Drop-off</span>
-              <span className="text-muted">{drop_address}</span>
-            </div>
-          </div>
-
-          <hr />
-
-          {/* Trip Info Grid */}
-          <Row className="mb-2">
-            <Col md={6}><p><strong>Trip ID:</strong> {id}</p></Col>
+          <Row>
             <Col md={6}><p><strong>Status:</strong> {status}</p></Col>
-          </Row>
-          <Row className="mb-2">
             <Col md={6}><p><strong>Fare:</strong> ₹{fare}</p></Col>
-            <Col md={6}><p><strong>Distance:</strong> {distance || "N/A"} km</p></Col>
           </Row>
-          <Row className="mb-2">
+          <Row>
+            <Col md={6}><p><strong>Distance:</strong> {distance} km</p></Col>
             <Col md={6}><p><strong>Ride Type:</strong> {ride_type}</p></Col>
+          </Row>
+          <Row>
             <Col md={6}><p><strong>Emergency:</strong> {emergency_ride ? "Yes" : "No"}</p></Col>
+            <Col md={6}><p><strong>Payment:</strong> {payment_status}</p></Col>
           </Row>
-          <Row className="mb-2">
-            <Col md={6}><p><strong>Payment Status:</strong> {payment_status || "N/A"}</p></Col>
-            <Col md={6}><p><strong>Scheduled Time:</strong> {scheduled_time || "N/A"}</p></Col>
+          <Row>
+            <Col md={6}><p><strong>Pickup:</strong> {pickup_address}</p></Col>
+            <Col md={6}><p><strong>Drop:</strong> {drop_address}</p></Col>
           </Row>
-          <Row className="mb-2">
-            <Col md={6}><p><strong>Pickup Time:</strong> {pickup_time || "N/A"}</p></Col>
-            <Col md={6}><p><strong>Drop Time:</strong> {drop_time || "N/A"}</p></Col>
+          <Row>
+            <Col md={6}><p><strong>Scheduled:</strong> {scheduled_time}</p></Col>
+            <Col md={6}><p><strong>Pickup Time:</strong> {pickup_time}</p></Col>
           </Row>
-          <Row className="mb-2">
-            <Col md={6}><p><strong>Completed At:</strong> {completed_at || "N/A"}</p></Col>
-            <Col md={6}><p><strong>Cancelled At:</strong> {cancelled_at || "N/A"}</p></Col>
+          <Row>
+            <Col md={6}><p><strong>Drop Time:</strong> {drop_time}</p></Col>
+            <Col md={6}><p><strong>Completed At:</strong> {completed_at}</p></Col>
           </Row>
-          <Row className="mb-2">
-            <Col md={6}><p><strong>Emergency Triggered At:</strong> {emergency_triggeredAt || "N/A"}</p></Col>
-            <Col md={6}><p><strong>Created At:</strong> {new Date(createdAt).toLocaleString()}</p></Col>
+          <Row>
+            <Col md={6}><p><strong>Cancelled At:</strong> {cancelled_at}</p></Col>
+            <Col md={6}><p><strong>Emergency Triggered:</strong> {emergency_triggeredAt}</p></Col>
+          </Row>
+          <Row>
+            <Col md={12}><p><strong>Created At:</strong> {new Date(createdAt).toLocaleString()}</p></Col>
           </Row>
         </Card>
 
+        {/* Rider Info */}
         <Row>
           <Col md={6}>
             <Card className="p-4 mb-4 shadow-sm">
@@ -201,6 +215,7 @@ export const TripDetails = () => {
           </Col>
         </Row>
 
+        {/* Trip Map */}
         <Card className="p-4 mb-4 shadow-sm border-dark">
           <h4>Trip Map</h4>
           <div className="trip-map-container">
