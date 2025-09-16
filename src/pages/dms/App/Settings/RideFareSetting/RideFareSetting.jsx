@@ -18,16 +18,26 @@ export const RideFareSetting = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedFare, setSelectedFare] = useState(null);
 
+  // 🔹 new states for filtering by date
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
   const userData = JSON.parse(localStorage.getItem("userData"));
   const token = userData?.token;
 
-  // Only admin can see fare settings
-  const fetchFareSettings = async (page = 1, searchValue = "") => {
+  // Fetch fare settings
+  const fetchFareSettings = async (page = 1, searchValue = "", start = "", end = "") => {
     setLoading(true);
     try {
       const response = await axios.get(`${API_BASE_URL}/getAllFareSetting`, {
         headers: { Authorization: `Bearer ${token}` },
-        params: { page, limit: itemsPerPage, search: searchValue || undefined },
+        params: {
+          page,
+          limit: itemsPerPage,
+          search: searchValue || undefined,
+          fromDate: start || undefined,
+          toDate: end || undefined,
+        },
       });
 
       const apiData = response.data?.data?.models || [];
@@ -45,14 +55,14 @@ export const RideFareSetting = () => {
   };
 
   useEffect(() => {
-    fetchFareSettings(currentPage, search);
-  }, [currentPage, itemsPerPage]);
+    fetchFareSettings(currentPage, search, startDate, endDate);
+  }, [currentPage, itemsPerPage, startDate, endDate]);
 
   const handleSearch = (e) => {
     const searchValue = e.target.value;
     setSearch(searchValue);
     setCurrentPage(1);
-    fetchFareSettings(1, searchValue);
+    fetchFareSettings(1, searchValue, startDate, endDate);
   };
 
   const handleDelete = (fare) => {
@@ -61,14 +71,13 @@ export const RideFareSetting = () => {
   };
 
   const confirmDelete = async () => {
-
     try {
       await axios.delete(`${API_BASE_URL}/deleteFareSetting/${selectedFare.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       alert("Fare setting deleted successfully!");
-      fetchFareSettings(currentPage, search);
+      fetchFareSettings(currentPage, search, startDate, endDate);
     } catch (error) {
       console.error("Failed to delete fare setting:", error);
       alert("Failed to delete fare setting. Please try again.");
@@ -90,7 +99,17 @@ export const RideFareSetting = () => {
         </Button>
       </div>
 
+      {/* 🔹 Filters */}
       <div className="filter-search-container">
+         <div className='filter-container'>
+        <p className='btn btn-primary'>Filter by Date -</p>
+        <Form.Group>
+          <Form.Control type="date" value={startDate} onChange={(e) => { setStartDate(e.target.value); setCurrentPage(1); }} />
+        </Form.Group>
+        <Form.Group>
+          <Form.Control type="date" value={endDate} onChange={(e) => { setEndDate(e.target.value); setCurrentPage(1); }} />
+        </Form.Group>
+        </div>
         <InputGroup className="dms-custom-width">
           <Form.Control
             placeholder="Search fare settings..."

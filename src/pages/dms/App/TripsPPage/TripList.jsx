@@ -20,13 +20,14 @@ export const TripList = () => {
     const [trips, setTrips] = useState([]);
     const [search, setSearch] = useState("");
     const [filter, setFilter] = useState("");
+    const [filterDate, setFilterDate] = useState(""); // NEW
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [loading, setLoading] = useState(false);
 
-    const fetchTrips = async (page = 1, searchValue = "", statusFilter = "") => {
+    const fetchTrips = async (page = 1, searchValue = "", statusFilter = "", dateFilter = "") => {
         setLoading(true);
         try {
             const token = JSON.parse(localStorage.getItem("userData"))?.token;
@@ -40,6 +41,7 @@ export const TripList = () => {
                     limit: itemsPerPage,
                     search: searchValue || undefined,
                     status: statusFilter || undefined,
+                    date: dateFilter || undefined, // pass filterDate
                 },
             });
 
@@ -59,14 +61,14 @@ export const TripList = () => {
     };
 
     useEffect(() => {
-        fetchTrips(currentPage, search, filter);
-    }, [currentPage, itemsPerPage, filter]);
+        fetchTrips(currentPage, search, filter, filterDate);
+    }, [currentPage, itemsPerPage, filter, filterDate]);
 
     const handleSearch = (e) => {
         const value = e.target.value;
         setSearch(value);
         setCurrentPage(1);
-        fetchTrips(1, value, filter);
+        fetchTrips(1, value, filter, filterDate);
     };
 
     const handlePageChange = (pageNumber) => {
@@ -89,11 +91,7 @@ export const TripList = () => {
                 <div className="export-import-container">
                     <DropdownButton
                         variant="primary"
-                        title={
-                            <>
-                                <FaFileExport /> Export
-                            </>
-                        }
+                        title={<><FaFileExport /> Export</>}
                         className="me-2"
                     >
                         <Dropdown.Item>
@@ -105,30 +103,44 @@ export const TripList = () => {
                     </DropdownButton>
                 </div>
             </div>
-
             <div className="filter-search-container">
-                <DropdownButton
-                    variant="primary"
-                    title="Filter Status"
-                    id="filter-dropdown"
-                >
-                    <Dropdown.Item onClick={() => setFilter("")}>All</Dropdown.Item>
-                    <Dropdown.Item onClick={() => setFilter("completed")}>
-                        Completed
-                    </Dropdown.Item>
-                    <Dropdown.Item
-                        onClick={() => setFilter("cancelled")}
-                        className="text-custom-danger"
+                <div className='filter-container'>
+                    <DropdownButton
+                        variant="primary"
+                        title="Filter Status"
+                        id="filter-dropdown"
                     >
-                        Cancelled
-                    </Dropdown.Item>
-                    <Dropdown.Item
-                        onClick={() => setFilter("emergency")}
-                        className="text-custom-warning"
-                    >
-                        Emergency
-                    </Dropdown.Item>
-                </DropdownButton>
+                        <Dropdown.Item onClick={() => setFilter("")}>All</Dropdown.Item>
+                        <Dropdown.Item onClick={() => setFilter("completed")}>
+                            Completed
+                        </Dropdown.Item>
+                        <Dropdown.Item
+                            onClick={() => setFilter("cancelled")}
+                            className="text-custom-danger"
+                        >
+                            Cancelled
+                        </Dropdown.Item>
+                        <Dropdown.Item
+                            onClick={() => setFilter("emergency")}
+                            className="text-custom-warning"
+                        >
+                            Emergency
+                        </Dropdown.Item>
+                    </DropdownButton>
+                    <p className='btn btn-primary'>Filter by date -</p>
+                    <Form.Group>
+                        <Form.Control
+                            type="date"
+                            value={filterDate}
+                            max={new Date().toISOString().split("T")[0]}
+                            onChange={(e) => {
+                                const selectedDate = e.target.value;
+                                setFilterDate(selectedDate);
+                                setCurrentPage(1);
+                            }}
+                        />
+                    </Form.Group>
+                </div>
 
                 <InputGroup className="dms-custom-width">
                     <Form.Control
