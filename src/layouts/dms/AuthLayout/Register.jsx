@@ -15,11 +15,39 @@ export const Register = () => {
     });
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+
+        // Validate name: only letters and spaces
+        if (name === "name") {
+            const lettersOnly = value.replace(/[^a-zA-Z\s]/g, "");
+            setFormData({ ...formData, name: lettersOnly });
+        }
+
+        // Validate mobile: only digits, max 10
+        else if (name === "mobile") {
+            const digitsOnly = value.replace(/\D/g, "").slice(0, 10);
+            setFormData({ ...formData, mobile: digitsOnly });
+        }
+
+        else {
+            setFormData({ ...formData, [name]: value });
+        }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // Check if mobile is exactly 10 digits
+        if (formData.mobile.length !== 10) {
+            alert("Mobile number must be exactly 10 digits.");
+            return;
+        }
+
+        // Name should not be empty
+        if (!formData.name.trim()) {
+            alert("Please enter a valid name.");
+            return;
+        }
 
         const payload = {
             fullName: formData.name,
@@ -32,9 +60,7 @@ export const Register = () => {
         try {
             const response = await fetch(`${API_BASE_URL}/register`, {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)
             });
 
@@ -79,8 +105,9 @@ export const Register = () => {
                                     name="mobile"
                                     value={formData.mobile}
                                     onChange={handleChange}
-                                    placeholder="Enter your mobile number"
+                                    placeholder="Enter 10-digit mobile number"
                                     required
+                                    maxLength={10}
                                 />
                             </Form.Group>
 
@@ -122,7 +149,7 @@ export const Register = () => {
 
                             <div className="d-flex justify-content-between mt-3">
                                 <Button type="submit">Submit</Button>
-                                <Button type="cancel" onClick={() => navigate("/dms")}>Cancel</Button>
+                                <Button variant="secondary" onClick={() => navigate("/dms")}>Cancel</Button>
                             </div>
                         </Form>
                     </Card.Body>

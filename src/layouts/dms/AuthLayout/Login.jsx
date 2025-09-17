@@ -32,6 +32,11 @@ export const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+      if (email.length !== 10) {
+    alert("Enter a valid mobile number.");
+    return;
+  }
+
     const payload = {
       email,
       password,
@@ -64,7 +69,7 @@ export const Login = () => {
       const response = await axios.post(`${API_BASE_URL}/verifyOtp`, {
         mobile: email,
         otp: fullOtp,
-        ip_address: "123.879.879.346" 
+        ip_address: "123.879.879.346"
       });
 
       const user = response?.data?.user;
@@ -136,8 +141,14 @@ export const Login = () => {
                   type="text"
                   placeholder="Enter your mobile number"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    // Remove non-digit characters
+                    const value = e.target.value.replace(/\D/g, "");
+                    // Limit to 10 digits
+                    if (value.length <= 10) setEmail(value);
+                  }}
                   required
+                  maxLength={10}
                 />
               </Form.Group>
 
