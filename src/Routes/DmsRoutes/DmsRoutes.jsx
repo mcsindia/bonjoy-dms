@@ -5,6 +5,7 @@ import { moduleComponentMap } from "../../utils/ModuleComponentMap";
 import { DriverApprovalView } from "../../pages/dms/App/Driver Management/DriverApproval/DriverApprovalView";
 import {DriverLogs} from '../../pages/dms/App/Driver Management/DriverLogs/DriverLogs'
 import {NotificationPage} from '../../pages/dms/NotificationPage/NotificationPage'
+import SessionWatcher from "../SessionWatcher/SessionWatcher";
 
 const DmsRoutes = () => {
   const userData = JSON.parse(localStorage.getItem("userData"));
@@ -40,6 +41,8 @@ const DmsRoutes = () => {
   }
 
   return (
+    <>
+    <SessionWatcher/>
     <Routes>
       <Route path="/dms" element={<Navigate to={defaultPath} />} />
       {isAdmin ? adminRoutes : generateDynamicRoutes(employeeRole)}
@@ -59,6 +62,7 @@ const DmsRoutes = () => {
         }
       />
     </Routes>
+    </>
   );
 };
 

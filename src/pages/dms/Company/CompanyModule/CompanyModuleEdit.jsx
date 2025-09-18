@@ -11,7 +11,8 @@ export const CompanyModuleEdit = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { module } = location.state || {};
-  console.log(module)
+  const token = JSON.parse(localStorage.getItem("userData"))?.token;
+  const moduleId = "company_module"; // 🔹 module_id for all API requests
 
   const [formData, setFormData] = useState({
     parent_menu_id: '',
@@ -28,15 +29,24 @@ export const CompanyModuleEdit = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const fetchSecondaryMenus = async (parentId) => {
+  const fetchSecondaryMenus = async (parentId, autoSelect = false) => {
     try {
-      const token = JSON.parse(localStorage.getItem("userData"))?.token;
       const response = await axios.get(`${API_BASE_URL}/getAllChildMenuById/${parentId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
+        params: { module_id: moduleId }, // 🔹 module_id
       });
-      setSecondaryMenus(response.data?.data || []);
+      const data = response.data?.data || [];
+      setSecondaryMenus(data);
+
+      if (autoSelect && module?.childMenuName) {
+        const selectedSecondary = data.find(menu => menu.name === module.childMenuName);
+        if (selectedSecondary) {
+          setFormData(prev => ({
+            ...prev,
+            secondary_menu_id: selectedSecondary.id.toString(),
+          }));
+        }
+      }
     } catch (err) {
       console.error('Error fetching secondary menus:', err);
       setSecondaryMenus([]);
@@ -46,11 +56,9 @@ export const CompanyModuleEdit = () => {
   useEffect(() => {
     const fetchParentMenus = async () => {
       try {
-        const token = JSON.parse(localStorage.getItem("userData"))?.token;
         const response = await axios.get(`${API_BASE_URL}/getAllParentMenu`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
+          params: { module_id: moduleId }, // 🔹 module_id
         });
         setParentMenus(response.data?.data || []);
       } catch (err) {
@@ -65,7 +73,6 @@ export const CompanyModuleEdit = () => {
   useEffect(() => {
     const initParentMenu = async () => {
       if (module && parentMenus.length > 0 && !hasInitialized) {
-
         const selectedParent = parentMenus.find(menu => menu.name === module.parentMenuName);
         const parentId = selectedParent?.id?.toString() || '';
 
@@ -77,26 +84,13 @@ export const CompanyModuleEdit = () => {
           description: module.description || '',
         }));
 
-        await fetchSecondaryMenus(parentId);
-
+        await fetchSecondaryMenus(parentId, true);
         setHasInitialized(true);
       }
     };
 
     initParentMenu();
   }, [module, parentMenus, hasInitialized]);
-
-  useEffect(() => {
-    if (hasInitialized && module.secondaryMenuName && secondaryMenus.length > 0) {
-      const selectedSecondary = secondaryMenus.find(menu => menu.name === module.secondaryMenuName);
-      const secondaryId = selectedSecondary?.id?.toString() || '';
-
-      setFormData(prev => ({
-        ...prev,
-        secondary_menu_id: secondaryId,
-      }));
-    }
-  }, [secondaryMenus, hasInitialized, module.secondaryMenuName]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -132,9 +126,11 @@ export const CompanyModuleEdit = () => {
           description: formData.description,
           menuId: formData.parent_menu_id,
           childmenuId: formData.secondary_menu_id || "0",
+          module_id: moduleId, // 🔹 include module_id
         },
         {
           headers: {
+            Authorization: `Bearer ${token}`, // 🔹 added Authorization header
             'Content-Type': 'application/json',
           },
         }
@@ -153,10 +149,6 @@ export const CompanyModuleEdit = () => {
       setIsLoading(false);
     }
   };
-
-  const filteredSecondaryMenus = secondaryMenus.filter(
-    sm => sm.parentId?.toString() === formData.parent_menu_id
-  );
 
   return (
     <AdminLayout>

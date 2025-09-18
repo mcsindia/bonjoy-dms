@@ -18,30 +18,30 @@ export const CommissionFeeList = () => {
     const [filter, setFilter] = useState('');
     const itemsPerPage = 5;
     const userData = JSON.parse(localStorage.getItem("userData"));
-  let permissions = [];
+    let permissions = [];
 
-  if (Array.isArray(userData?.employeeRole)) {
-    for (const role of userData.employeeRole) {
-      for (const child of role.childMenus || []) {
-        for (const mod of child.modules || []) {
-          if (mod.moduleUrl?.toLowerCase() === "commissionfee") {
-            permissions = mod.permission
-              ?.toLowerCase()
-              .split(',')
-              .map(p => p.trim()) || [];
-          }
+    if (Array.isArray(userData?.employeeRole)) {
+        for (const role of userData.employeeRole) {
+            for (const child of role.childMenus || []) {
+                for (const mod of child.modules || []) {
+                    if (mod.moduleUrl?.toLowerCase() === "commissionfee") {
+                        permissions = mod.permission
+                            ?.toLowerCase()
+                            .split(',')
+                            .map(p => p.trim()) || [];
+                    }
+                }
+            }
         }
-      }
     }
-  }
 
-  const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
-    if (permissions.includes(permissionType)) {
-      action();
-    } else {
-      alert(fallbackMessage || `You don't have permission to ${permissionType} this setting.`);
-    }
-  };
+    const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
+        if (permissions.includes(permissionType)) {
+            action();
+        } else {
+            alert(fallbackMessage || `You don't have permission to ${permissionType} this setting.`);
+        }
+    };
 
     const handleDelete = (commissionId) => {
         if (window.confirm(`Are you sure you want to delete commission record #${commissionId}?`)) {
@@ -73,9 +73,11 @@ export const CommissionFeeList = () => {
                         <Dropdown.Item> <FaFileExcel className="icon-green" /> Export to Excel</Dropdown.Item>
                         <Dropdown.Item> <FaFilePdf className="icon-red" /> Export to PDF</Dropdown.Item>
                     </DropdownButton>
-                    <Button variant="primary" onClick={() => handlePermissionCheck("add", () => navigate('/dms/commissionfee/add'))}>
-                        <FaPlus /> Add Commission
-                    </Button>
+                    {permissions.includes("add") && (
+                        <Button variant="primary" onClick={() => navigate('/dms/commissionfee/add')}>
+                            <FaPlus /> Add Commission
+                        </Button>
+                    )}
                 </div>
             </div>
 
@@ -112,7 +114,7 @@ export const CommissionFeeList = () => {
                         currentItems.map((commission) => (
                             <tr key={commission.S_No}>
                                 <td>{commission.S_No}</td>
-                                <td><a   href="#" role="button" className='trip-id-link' onClick={() => navigate('/dms/trip/details', { state: { trip: commission} })}>
+                                <td><a href="#" role="button" className='trip-id-link' onClick={() => navigate('/dms/trip/details', { state: { trip: commission } })}>
                                     {commission.tripid}
                                 </a></td>
                                 <td>{commission.driverName}</td>
@@ -120,8 +122,27 @@ export const CommissionFeeList = () => {
                                 <td>₹{commission.platformFee}</td>
                                 <td>{commission.paymentDate}</td>
                                 <td>
-                                    <FaEdit title="Edit" className="icon-green me-2" onClick={() => handlePermissionCheck("edit", () => navigate("/dms/commissionfee/edit", { state: { commission } }))} />
-                                    <FaTrash title="Delete" className="icon-red" onClick={() => handlePermissionCheck("delete", () => handleDelete(commission.S_No))} />
+                                    {permissions.includes("edit") || permissions.includes("delete") ? (
+                                        <>
+                                            {permissions.includes("edit") ? (
+                                                <FaEdit
+                                                    title="Edit"
+                                                    className="icon icon-green"
+                                                    onClick={() => navigate("/dms/commissionfee/edit", { state: { commission } })}
+                                                />
+                                            ) : null}
+
+                                            {permissions.includes("delete") ? (
+                                                <FaTrash
+                                                    title="Delete"
+                                                    className="icon icon-red"
+                                                    onClick={() => handleDelete(commission.S_No)}
+                                                />
+                                            ) : null}
+                                        </>
+                                    ) : (
+                                        <span>-</span>
+                                    )}
                                 </td>
                             </tr>
                         ))

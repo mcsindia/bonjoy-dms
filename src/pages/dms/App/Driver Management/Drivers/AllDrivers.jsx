@@ -25,7 +25,7 @@ export const AllDrivers = () => {
     const [totalPages, setTotalPages] = useState(1);
     const [totalRecords, setTotalRecords] = useState(0);
     const [allCities, setAllCities] = useState([]);
-     const userData = JSON.parse(localStorage.getItem("userData"));
+    const userData = JSON.parse(localStorage.getItem("userData"));
     let permissions = [];
 
     if (Array.isArray(userData?.employeeRole)) {
@@ -43,7 +43,7 @@ export const AllDrivers = () => {
         }
     }
 
-      const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
+    const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
         if (permissions.includes(permissionType)) {
             action(); // allowed, run the actual function
         } else {
@@ -70,6 +70,7 @@ export const AllDrivers = () => {
             if (status) params.append("status", status);
             if (rideStatus) params.append("rideStatus", rideStatus);
             if (rating) params.append("ratings", rating);
+            params.append("module_id", "driver"); // 🔹 add module_id
 
             const res = await axios.get(`${API_BASE_URL}/getAllDriverProfiles?${params.toString()}`);
             const result = res.data?.data;
@@ -157,9 +158,12 @@ export const AllDrivers = () => {
     const confirmDelete = async () => {
         if (!driverToDelete) return;
         try {
-            const res = await axios.delete(`${API_BASE_URL}/deleteDriverProfile/${driverToDelete.id}`);
+            const res = await axios.delete(`${API_BASE_URL}/deleteDriverProfile/${driverToDelete.id}`, {
+                params: {
+                    module_id: "driver" // 🔹 add module_id
+                }
+            });
             if (res.status === 200) {
-                // After deletion, fetch updated data from the server
                 const newPage = (driverData.length === 1 && currentPage > 1) ? currentPage - 1 : currentPage;
                 setCurrentPage(newPage); // trigger useEffect
                 await fetchDrivers(currentPage, itemsPerPage, search, filterCity, filterDriverStatus, filterRideStatus, filterRating);
@@ -284,45 +288,60 @@ export const AllDrivers = () => {
                                         <td>{driver.createdAt ? new Date(driver.createdAt).toLocaleDateString() : 'NA'}</td>
                                         <td>{driver.updatedAt ? new Date(driver.updatedAt).toLocaleDateString() : 'NA'}</td>
                                         <td className="action">
-                                            <span
-                                                className="dms-span-action"
-                                                onClick={() =>
-                                                    setShowActions(driver.id === showActions ? null : driver.id)
-                                                }
-                                            >
-                                                ⋮
-                                            </span>
-                                            {showActions === driver.id && (
-                                                <div ref={actionMenuRef} className="dms-show-actions-menu">
-                                                    <ul>
-                                                        {['Approved', 'Active', 'Inactive'].includes(driver.status) ? (
-                                                            <>
-                                                                    <li onClick={() =>  handlePermissionCheck("view", () =>  navigate(`/dms/driver/view/${driver.id}`, { state: { driver } }))}>
-                                                                        <FaEye className="dms-menu-icon" /> View
-                                                                    </li>
-                                                                    <li onClick={() =>  handlePermissionCheck("edit", () => navigate("/dms/driver/edit", { state: { driver } }))}>
-                                                                        <FaEdit className="dms-menu-icon" /> Edit
-                                                                    </li>
-
-                                                                <li onClick={() =>  handlePermissionCheck("view", () => navigate("/dms/driver/ride-history/list", { state: { driver } }))}>
-                                                                    <FaHistory className="dms-menu-icon" /> Ride History
-                                                                </li>
-                                                                <li onClick={() => alert(`Reminder sent to ${driver.fullName} to complete their profile.`)}>
-                                                                    <FaBell className="dms-menu-icon icon-orange" /> Profile Reminder
-                                                                </li>
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                    <li onClick={() =>  handlePermissionCheck("view", () => navigate(`/dms/driver-approval/view/${driver.id}`, { state: { driver } }))}>
-                                                                        <FaEye className="dms-menu-icon" /> View
-                                                                    </li>
-                                                                    <li onClick={() =>  handlePermissionCheck("view", () => navigate("/dms/drivers/login-logs", { state: { driver } }))}>
-                                                                        <FaSignInAlt className="dms-menu-icon" /> Login Logs
-                                                                    </li>
-                                                            </>
-                                                        )}
-                                                    </ul>
-                                                </div>
+                                            {permissions.length === 0 ? (
+                                                <span>-</span> // Show hyphen if no permissions at all
+                                            ) : (
+                                                <>
+                                                    <span
+                                                        className="dms-span-action"
+                                                        onClick={() =>
+                                                            setShowActions(driver.id === showActions ? null : driver.id)
+                                                        }
+                                                    >
+                                                        ⋮
+                                                    </span>
+                                                    {showActions === driver.id && (
+                                                        <div ref={actionMenuRef} className="dms-show-actions-menu">
+                                                            <ul>
+                                                                {['Approved', 'Active', 'Inactive'].includes(driver.status) ? (
+                                                                    <>
+                                                                        {permissions.includes("view") && (
+                                                                            <li onClick={() => navigate(`/dms/driver/view/${driver.id}`, { state: { driver } })}>
+                                                                                <FaEye className="dms-menu-icon" /> View
+                                                                            </li>
+                                                                        )}
+                                                                        {permissions.includes("edit") && (
+                                                                            <li onClick={() => navigate("/dms/driver/edit", { state: { driver } })}>
+                                                                                <FaEdit className="dms-menu-icon" /> Edit
+                                                                            </li>
+                                                                        )}
+                                                                        {permissions.includes("view") && (
+                                                                            <li onClick={() => navigate("/dms/driver/ride-history/list", { state: { driver } })}>
+                                                                                <FaHistory className="dms-menu-icon" /> Ride History
+                                                                            </li>
+                                                                        )}
+                                                                        <li onClick={() => alert(`Reminder sent to ${driver.fullName} to complete their profile.`)}>
+                                                                            <FaBell className="dms-menu-icon icon-orange" /> Profile Reminder
+                                                                        </li>
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        {permissions.includes("view") && (
+                                                                            <li onClick={() => navigate(`/dms/driver-approval/view/${driver.id}`, { state: { driver } })}>
+                                                                                <FaEye className="dms-menu-icon" /> View
+                                                                            </li>
+                                                                        )}
+                                                                        {permissions.includes("view") && (
+                                                                            <li onClick={() => navigate("/dms/drivers/login-logs", { state: { driver } })}>
+                                                                                <FaSignInAlt className="dms-menu-icon" /> Login Logs
+                                                                            </li>
+                                                                        )}
+                                                                    </>
+                                                                )}
+                                                            </ul>
+                                                        </div>
+                                                    )}
+                                                </>
                                             )}
                                         </td>
                                     </tr>

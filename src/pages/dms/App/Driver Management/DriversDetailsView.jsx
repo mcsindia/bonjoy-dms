@@ -53,7 +53,9 @@ export const DriversDetailsView = () => {
 
   useEffect(() => {
     if (driverId) {
-      axios.get(`${API_BASE_URL}/getDriverAllDocument/${driverId}`)
+      axios.get(`${API_BASE_URL}/getDriverAllDocument/${driverId}`, {
+        params: { module_id: "driver" } // 🔹 added module_id
+      })
         .then(res => {
           if (res.data?.data) {
             const {
@@ -144,7 +146,15 @@ export const DriversDetailsView = () => {
 
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/getDocumentLog/?driverId=${driverId}&documentType=${documentType}&documentId=${doc.id}`
+        `${API_BASE_URL}/getDocumentLog/`,
+        {
+          params: {
+            driverId,
+            documentType,
+            documentId: doc.id,
+            module_id: "driver" // 🔹 added module_id
+          }
+        }
       );
 
       if (Array.isArray(response.data) && response.data.length > 0) {
@@ -167,9 +177,8 @@ export const DriversDetailsView = () => {
       try {
         const token = JSON.parse(localStorage.getItem("userData"))?.token;
         const response = await axios.get(`${API_BASE_URL}/getAllUserContacts`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
+          params: { module_id: "driver" } // 🔹 added module_id
         });
 
         if (response.data?.success) {

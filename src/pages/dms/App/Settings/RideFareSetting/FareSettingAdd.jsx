@@ -48,6 +48,7 @@ export const FareSettingAdd = () => {
 
       const payload = {
         ...formData,
+        module_id: "fare_setting", // 🔹 Added module_id
       };
 
       const response = await axios.post(
@@ -68,10 +69,11 @@ export const FareSettingAdd = () => {
           per_km_fare_night: "",
           night_start_time: "",
           night_end_time: "",
-          helmet_charge: "",
+          waiting_charge_per_min: "",
           emergency_bonus: "",
           first_ride_bonus: "",
           effective_from: "",
+          isActive: "1",
         });
 
         setTimeout(() => {

@@ -16,25 +16,25 @@ export const EmployeePermissionView = () => {
   const [permission, setPermission] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-    const userData = JSON.parse(localStorage.getItem("userData"));
-    let permissions = [];
+  const userData = JSON.parse(localStorage.getItem("userData"));
+  let permissions = [];
 
-if (Array.isArray(userData?.employeeRole)) {
-  for (const role of userData.employeeRole) {
-    for (const child of role.childMenus || []) {
-      for (const mod of child.modules || []) {
-        if (mod.moduleUrl?.toLowerCase() === "permission") {
-          permissions = mod.permission
-            ?.toLowerCase()
-            .split(',')
-            .map(p => p.trim()) || [];
+  if (Array.isArray(userData?.employeeRole)) {
+    for (const role of userData.employeeRole) {
+      for (const child of role.childMenus || []) {
+        for (const mod of child.modules || []) {
+          if (mod.moduleUrl?.toLowerCase() === "permission") {
+            permissions = mod.permission
+              ?.toLowerCase()
+              .split(',')
+              .map(p => p.trim()) || [];
+          }
         }
       }
     }
   }
-}
 
-      const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
+  const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
     if (permissions.includes(permissionType)) {
       action(); // allowed, run the actual function
     } else {
@@ -51,7 +51,9 @@ if (Array.isArray(userData?.employeeRole)) {
     const fetchPermission = async () => {
       setLoading(true);
       try {
-        const res = await axios.get(`${API_BASE_URL}/getPermissionById/${permissionId}`);
+        const res = await axios.get(`${API_BASE_URL}/getPermissionById/${permissionId}?module_id=permission`, {
+        });
+
         if (res.data.success) {
           setPermission(res.data.data);
           setError('');
@@ -104,7 +106,7 @@ if (Array.isArray(userData?.employeeRole)) {
   // Permission name lowercase for capability check
   const permName = permission.permission_name.toLowerCase();
 
-    const stripHtmlTags = (html) => {
+  const stripHtmlTags = (html) => {
     const tmp = document.createElement('DIV');
     tmp.innerHTML = html;
     return tmp.textContent || tmp.innerText || '';
@@ -115,12 +117,14 @@ if (Array.isArray(userData?.employeeRole)) {
       <div className="dms-container">
         <div className="d-flex justify-content-between align-items-center">
           <h4>Permission Details</h4>
-          <Button
-            className="edit-button"
-            onClick={() => handlePermissionCheck("edit", () => navigate('/dms/permission/edit', { state: { permission } }))}
-          >
-            <FaEdit /> Edit
-          </Button>
+          {permissions.includes("edit") && (
+            <Button
+              className="edit-button"
+              onClick={() => navigate('/dms/permission/edit', { state: { permission } })}
+            >
+              <FaEdit /> Edit
+            </Button>
+          )}
         </div>
 
         <div className="dms-form-container">

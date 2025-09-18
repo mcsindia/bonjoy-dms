@@ -18,6 +18,7 @@ export const RefundRequestList = () => {
     const [filter, setFilter] = useState('');
     const itemsPerPage = 5;
     const requestCount = refundData.length;
+
     const userData = JSON.parse(localStorage.getItem("userData"));
     let permissions = [];
 
@@ -35,14 +36,6 @@ export const RefundRequestList = () => {
             }
         }
     }
-
-    const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
-        if (permissions.includes(permissionType)) {
-            action();
-        } else {
-            alert(fallbackMessage || `You don't have permission to ${permissionType} this setting.`);
-        }
-    };
 
     const handleDelete = (refundId) => {
         if (window.confirm(`Are you sure you want to delete refund request #${refundId}?`)) {
@@ -65,10 +58,10 @@ export const RefundRequestList = () => {
         <AdminLayout>
             <div className="dms-pages-header sticky-header">
                 <div className="live-count">
-                <h3>Refund Requests</h3>
+                    <h3>Refund Requests</h3>
                     <div className="live-count-container">
                         <Button className='green-button'>
-                            🔄Total Request: {requestCount}
+                            🔄 Total Requests: {requestCount}
                         </Button>
                     </div>
                 </div>
@@ -81,14 +74,17 @@ export const RefundRequestList = () => {
                         <Dropdown.Item> <FaFileExcel className="icon-green" /> Export to Excel</Dropdown.Item>
                         <Dropdown.Item> <FaFilePdf className="icon-red" /> Export to PDF</Dropdown.Item>
                     </DropdownButton>
-                    <Button variant="primary" onClick={() => handlePermissionCheck("add", () => navigate('/dms/refundrequest/add'))}>
-                        <FaPlus /> Add Requests
-                    </Button>
+
+                    {permissions.includes("add") && (
+                        <Button variant="primary" onClick={() => navigate('/dms/refundrequest/add')}>
+                            <FaPlus /> Add Request
+                        </Button>
+                    )}
                 </div>
             </div>
 
             <div className="filter-search-container">
-                <DropdownButton variant="primary" title="Filter Status" id="filter-dropdown">
+                <DropdownButton variant="primary" title={`Filter: ${filter || 'All'}`} id="filter-dropdown">
                     <Dropdown.Item onClick={() => setFilter('')}>All</Dropdown.Item>
                     <Dropdown.Item onClick={() => setFilter('Pending')}>Pending</Dropdown.Item>
                     <Dropdown.Item onClick={() => setFilter('Approved')}>Approved</Dropdown.Item>
@@ -111,7 +107,7 @@ export const RefundRequestList = () => {
                         <th>Trip ID</th>
                         <th>User Name</th>
                         <th>Refund Amount</th>
-                        <th>Reason for Refund</th>
+                        <th>Reason</th>
                         <th>Payment Method</th>
                         <th>Refund Status</th>
                         <th>Refund Request Date</th>
@@ -123,9 +119,15 @@ export const RefundRequestList = () => {
                         currentItems.map((refund) => (
                             <tr key={refund.S_No}>
                                 <td>{refund.S_No}</td>
-                                <td><a href="#" role="button" className='trip-id-link' onClick={() => navigate('/trip/details', { state: { trip: refund } })}>
-                                    {refund.tripId}
-                                </a></td>
+                                <td>
+                                    <a
+                                        href="#"
+                                        className='trip-id-link'
+                                        onClick={() => navigate('/trip/details', { state: { trip: refund } })}
+                                    >
+                                        {refund.tripId}
+                                    </a>
+                                </td>
                                 <td>{refund.userName}</td>
                                 <td>{refund.refundAmount}</td>
                                 <td>{refund.reason}</td>
@@ -133,8 +135,28 @@ export const RefundRequestList = () => {
                                 <td>{refund.refundStatus}</td>
                                 <td>{refund.refundRequestDate}</td>
                                 <td>
-                                    <FaEdit title="Edit" className="icon-green me-2" onClick={() => handlePermissionCheck("edit", () => navigate("/dms/refundrequest/edit", { state: { refund } }))} />
-                                    <FaTrash title="Delete" className="icon-red" onClick={() => handlePermissionCheck("delete", () => handleDelete(refund.S_No))} />
+                                    {permissions.includes("edit") || permissions.includes("delete") ? (
+                                        <>
+                                            {permissions.includes("edit") && (
+                                                <FaEdit
+                                                    title="Edit"
+                                                    className="icon-green me-2"
+                                                    style={{ cursor: 'pointer' }}
+                                                    onClick={() => navigate("/dms/refundrequest/edit", { state: { refund } })}
+                                                />
+                                            )}
+                                            {permissions.includes("delete") && (
+                                                <FaTrash
+                                                    title="Delete"
+                                                    className="icon-red"
+                                                    style={{ cursor: 'pointer' }}
+                                                    onClick={() => handleDelete(refund.S_No)}
+                                                />
+                                            )}
+                                        </>
+                                    ) : (
+                                        <span>-</span>
+                                    )}
                                 </td>
                             </tr>
                         ))

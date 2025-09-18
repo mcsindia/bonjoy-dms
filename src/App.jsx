@@ -14,21 +14,16 @@ function App() {
     return (
         <BrowserRouter>
             <Routes>
-                 <Route
+                <Route
                     path="/*"
                     element={
-                        <ProtectedRoute>
                             <DmsRoutes />
-                            </ProtectedRoute>
                     }
                 />
-                 {/* Authentication */}
+                {/* Authentication */}
                 <Route path='/dms' element={<Login />} />
-                <Route path='/otp' element={<OTP />} />
-                <Route path='/register' element={<Register />} />
-                <Route path='/forget-password' element={<ForgetPassword />} />
-                <Route path='/reset-password' element={<ResetPassword />} />
-                <Route path='/new-password' element={<NewPassword/>} />
+                <Route path='/dms/forget-password' element={<ForgetPassword />} />
+                <Route path='/dms/new-password' element={<NewPassword />} />
             </Routes>
         </BrowserRouter>
     );

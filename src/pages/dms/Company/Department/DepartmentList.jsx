@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Table, Form, InputGroup, Pagination, Modal} from 'react-bootstrap';
+import { Button, Table, Form, InputGroup, Pagination, Modal } from 'react-bootstrap';
 import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
 import { AdminLayout } from '../../../../layouts/dms/AdminLayout/AdminLayout';
 import { useNavigate } from 'react-router-dom';
@@ -8,7 +8,7 @@ import axios from 'axios';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const getAuthHeaders = () => {
-   const token = JSON.parse(localStorage.getItem("userData"))?.token;
+  const token = JSON.parse(localStorage.getItem("userData"))?.token;
   return { Authorization: `Bearer ${token}` };
 };
 
@@ -28,23 +28,23 @@ export const DepartmentList = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const navigate = useNavigate();
-   const userData = JSON.parse(localStorage.getItem("userData"));
-   let permissions = [];
+  const userData = JSON.parse(localStorage.getItem("userData"));
+  let permissions = [];
 
-if (Array.isArray(userData?.employeeRole)) {
-  for (const role of userData.employeeRole) {
-    for (const child of role.childMenus || []) {
-      for (const mod of child.modules || []) {
-        if (mod.moduleUrl?.toLowerCase() === "department") {
-          permissions = mod.permission
-            ?.toLowerCase()
-            .split(',')
-            .map(p => p.trim()) || [];
+  if (Array.isArray(userData?.employeeRole)) {
+    for (const role of userData.employeeRole) {
+      for (const child of role.childMenus || []) {
+        for (const mod of child.modules || []) {
+          if (mod.moduleUrl?.toLowerCase() === "department") {
+            permissions = mod.permission
+              ?.toLowerCase()
+              .split(',')
+              .map(p => p.trim()) || [];
+          }
         }
       }
     }
   }
-}
 
   const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
     if (permissions.includes(permissionType)) {
@@ -60,6 +60,7 @@ if (Array.isArray(userData?.employeeRole)) {
       const params = {
         page,
         limit: itemsPerPage,
+        module_id: "department",
       };
 
       if (search) params.name = search;
@@ -118,6 +119,7 @@ if (Array.isArray(userData?.employeeRole)) {
         `${API_BASE_URL}/deleteDepartment/${selectedDepartment.id}`,
         {
           headers: getAuthHeaders(),
+          data: { module_id: "department" },
         }
       );
 
@@ -135,13 +137,11 @@ if (Array.isArray(userData?.employeeRole)) {
       }
     } catch (error) {
       const backendMsg = error.response?.data?.message;
-
       if (backendMsg) {
-        alert(backendMsg); 
+        alert(backendMsg);
       } else {
         alert("Error deleting department. Please try again.");
       }
-
       console.error("Error deleting department:", error);
     } finally {
       setShowDeleteModal(false);
@@ -153,10 +153,12 @@ if (Array.isArray(userData?.employeeRole)) {
     <AdminLayout>
       <div className="dms-pages-header sticky-header">
         <h3>Department List</h3>
-       
-        <Button variant="primary" onClick={() => handlePermissionCheck("add", () => navigate('/dms/department/add'))}>
-          <FaPlus /> Add Department
-        </Button>
+
+        {permissions.includes("add") && (
+          <Button variant="primary" onClick={() => navigate('/dms/department/add')}>
+            <FaPlus /> Add Department
+          </Button>
+        )}
       </div>
 
       <div className="filter-search-container">
@@ -200,15 +202,26 @@ if (Array.isArray(userData?.employeeRole)) {
                       <td>{new Date(department.createdAt).toLocaleString()}</td>
                       <td>{new Date(department.updatedAt).toLocaleString()}</td>
                       <td className="actions">
-                        <FaEdit
-                          className="icon icon-green"
-                          title="Edit"
-                          onClick={() => handlePermissionCheck("edit", () => handleEdit(department))}
-                        /> <FaTrash
-                          className={`icon ${department.hasDesignations ? 'icon-disabled' : 'icon-red'}`}
-                          title={department.hasDesignations ? 'Cannot delete. Linked to designations.' : 'Delete'}
-                          onClick={() => handlePermissionCheck("delete", () => !department.hasDesignations && handleDelete(department))}
-                        />
+                        {permissions.includes("edit") || permissions.includes("delete") ? (
+                          <>
+                            {permissions.includes("edit") && (
+                              <FaEdit
+                                className="icon icon-green"
+                                title="Edit"
+                                onClick={() => handleEdit(department)}
+                              />
+                            )}{' '}
+                            {permissions.includes("delete") && (
+                              <FaTrash
+                                className={`icon ${department.hasDesignations ? 'icon-disabled' : 'icon-red'}`}
+                                title={department.hasDesignations ? 'Cannot delete. Linked to designations.' : 'Delete'}
+                                onClick={() => !department.hasDesignations && handleDelete(department)}
+                              />
+                            )}
+                          </>
+                        ) : (
+                          '—'
+                        )}
                       </td>
                     </tr>
                   ))

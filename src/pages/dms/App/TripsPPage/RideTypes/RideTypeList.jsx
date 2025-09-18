@@ -51,7 +51,8 @@ export const RideTypelIST = () => {
                 params: {
                     page,
                     limit: itemsPerPage,
-                    name: searchValue || undefined
+                    name: searchValue || undefined,
+                    module_id: 'ride_type' // 🔹 Added module_id
                 },
                 headers: {
                     Authorization: `Bearer ${token}`
@@ -93,13 +94,16 @@ export const RideTypelIST = () => {
         try {
             await axios.delete(`${API_BASE_URL}/deleteRideType/${selectedRideType.id}`, {
                 headers: {
-                    Authorization: `Bearer ${token}`
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                data: {
+                    module_id: 'ride_type' // 🔹 Added module_id in request body
                 }
             });
 
             // Refresh list after deletion
             fetchRideTypes(currentPage, search);
-
             alert("Ride type deleted successfully!");
         } catch (error) {
             console.error("Failed to delete ride type:", error);
@@ -120,12 +124,11 @@ export const RideTypelIST = () => {
         <AdminLayout>
             <div className="dms-pages-header sticky-header">
                 <h3>Ride Type List</h3>
-                <Button
-                    variant="primary"
-                    onClick={() => handlePermissionCheck("add", () => navigate('/dms/ridetypes/add'))}
-                >
-                    <FaPlus /> Add Ride Type
-                </Button>
+                {permissions.includes("add") && (
+                    <Button variant="primary" onClick={() => navigate('/dms/ridetypes/add')}>
+                        <FaPlus /> Add Ride Type
+                    </Button>
+                )}
             </div>
 
             <div className="filter-search-container">
@@ -167,23 +170,31 @@ export const RideTypelIST = () => {
                                         <td>{new Date(ride.createdAt).toLocaleString()}</td>
                                         <td>{new Date(ride.updatedAt).toLocaleString()}</td>
                                         <td className="actions">
-                                            <FaEdit
-                                                className="icon icon-green"
-                                                title="Edit"
-                                                onClick={() =>
-                                                    handlePermissionCheck("edit", () =>
-                                                        navigate('/dms/ridetypes/edit', { state: { rideType: ride } })
-                                                    )
-                                                }
-                                            />
-                                            <FaTrash
-                                                className="icon icon-red"
-                                                title="Delete"
-                                                onClick={() =>
-                                                    handlePermissionCheck("delete", () => handleDelete(ride))
-                                                }
-                                            />
+                                            {permissions.includes("edit") || permissions.includes("delete") ? (
+                                                <>
+                                                    {permissions.includes("edit") && (
+                                                        <FaEdit
+                                                            className="icon icon-green me-2"
+                                                            title="Edit"
+                                                            onClick={() =>
+                                                                navigate('/dms/ridetypes/edit', { state: { rideType: ride } })
+                                                            }
+                                                        />
+                                                    )}
+
+                                                    {permissions.includes("delete") && (
+                                                        <FaTrash
+                                                            className="icon icon-red"
+                                                            title="Delete"
+                                                            onClick={() => handleDelete(ride)}
+                                                        />
+                                                    )}
+                                                </>
+                                            ) : (
+                                                <span>-</span>
+                                            )}
                                         </td>
+
                                     </tr>
                                 ))
                             ) : (

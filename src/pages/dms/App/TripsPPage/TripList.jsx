@@ -20,12 +20,36 @@ export const TripList = () => {
     const [trips, setTrips] = useState([]);
     const [search, setSearch] = useState("");
     const [filter, setFilter] = useState("");
-    const [filterDate, setFilterDate] = useState(""); // NEW
+    const [filterDate, setFilterDate] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [loading, setLoading] = useState(false);
+    const userData = JSON.parse(localStorage.getItem("userData"));
+    let permissions = [];
+
+    if (Array.isArray(userData?.employeeRole)) {
+        for (const role of userData.employeeRole) {
+            for (const child of role.childMenus || []) {
+                for (const mod of child.modules || []) {
+                    if (mod.moduleUrl?.toLowerCase() === "trip") {
+                        permissions =
+                            mod.permission?.toLowerCase().split(",").map((p) => p.trim()) ||
+                            [];
+                    }
+                }
+            }
+        }
+    }
+
+    const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
+        if (permissions.includes(permissionType)) {
+            action();
+        } else {
+            alert(fallbackMessage || `You don't have permission to ${permissionType} this trip.`);
+        }
+    };
 
     const fetchTrips = async (page = 1, searchValue = "", statusFilter = "", dateFilter = "") => {
         setLoading(true);
@@ -41,7 +65,8 @@ export const TripList = () => {
                     limit: itemsPerPage,
                     search: searchValue || undefined,
                     status: statusFilter || undefined,
-                    date: dateFilter || undefined, // pass filterDate
+                    date: dateFilter || undefined,
+                    module_id: "trip" // 🔹 added module_id here
                 },
             });
 
@@ -188,20 +213,30 @@ export const TripList = () => {
                                                 : "-"}
                                         </td>
                                         <td>
-                                            <FaEye
-                                                title="View"
-                                                className="icon icon-blue"
-                                                onClick={() =>
-                                                    navigate(`/dms/trip/view/${trip.id}`, { state: { trip } })
-                                                }
-                                            />
-                                            <FaEdit
-                                                title="Edit"
-                                                className="icon icon-green"
-                                                onClick={() =>
-                                                    navigate("/dms/trip/edit", { state: { trip } })
-                                                }
-                                            />
+                                            {(!permissions.includes("edit") && !permissions.includes("view")) ? (
+                                                <span>-</span>
+                                            ) : (
+                                                <>
+                                                    {permissions.includes("view") && (
+                                                        <FaEye
+                                                            title="View"
+                                                            className="icon icon-blue"
+                                                            onClick={() =>
+                                                                navigate(`/dms/trip/view/${trip.id}`, { state: { trip } })
+                                                            }
+                                                        />
+                                                    )}
+                                                    {permissions.includes("edit") && (
+                                                        <FaEdit
+                                                            title="Edit"
+                                                            className="icon icon-green"
+                                                            onClick={() =>
+                                                                navigate("/dms/trip/edit", { state: { trip } })
+                                                            }
+                                                        />
+                                                    )}
+                                                </>
+                                            )}
                                         </td>
                                     </tr>
                                 ))

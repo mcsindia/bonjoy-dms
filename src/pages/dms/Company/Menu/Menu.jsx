@@ -17,22 +17,22 @@ export const Menu = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [menuToDelete, setMenuToDelete] = useState(null);
   const userData = JSON.parse(localStorage.getItem('userData')) || {};
-    let permissions = [];
+  let permissions = [];
 
-if (Array.isArray(userData?.employeeRole)) {
-  for (const role of userData.employeeRole) {
-    for (const child of role.childMenus || []) {
-      for (const mod of child.modules || []) {
-        if (mod.moduleUrl?.toLowerCase() === "menu") {
-          permissions = mod.permission
-            ?.toLowerCase()
-            .split(',')
-            .map(p => p.trim()) || [];
+  if (Array.isArray(userData?.employeeRole)) {
+    for (const role of userData.employeeRole) {
+      for (const child of role.childMenus || []) {
+        for (const mod of child.modules || []) {
+          if (mod.moduleUrl?.toLowerCase() === "menu") {
+            permissions = mod.permission
+              ?.toLowerCase()
+              .split(',')
+              .map(p => p.trim()) || [];
+          }
         }
       }
     }
   }
-}
 
   const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
     if (permissions.includes(permissionType)) {
@@ -50,13 +50,14 @@ if (Array.isArray(userData?.employeeRole)) {
     try {
       const token = userData?.token;
       const response = await axios.get(
-        `${API_BASE_URL}/getAllMenu?page=${currentPage}&limit=${itemsPerPage}&name=${search}`,
+        `${API_BASE_URL}/getAllMenu?page=${currentPage}&limit=${itemsPerPage}&name=${search}&module_id=menu`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
+
       const result = response.data?.data;
 
       if (Array.isArray(result.data)) {
@@ -64,7 +65,7 @@ if (Array.isArray(userData?.employeeRole)) {
         setTotalPages(result.totalPages || 1);
       }
     } catch (error) {
-      console.error('Error fetching menus:', error);
+      console.error("Error fetching menus:", error);
     }
   };
 
@@ -77,42 +78,49 @@ if (Array.isArray(userData?.employeeRole)) {
     setShowDeleteModal(true);
   };
 
-const confirmDelete = async () => {
-  try {
-    const token = userData?.token;
-    const response = await axios.delete(`${API_BASE_URL}/deleteMenu/${menuToDelete}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+  const confirmDelete = async () => {
+    try {
+      const token = userData?.token;
+      const response = await axios.delete(`${API_BASE_URL}/deleteMenu/${menuToDelete}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        data: {
+          module_id: "menu",
+        },
+      });
 
-    // Optional: check if success key exists in delete response
-    if (response?.data?.success === false) {
-      alert(response.data.message || "Failed to delete menu.");
-    } else {
-      setShowDeleteModal(false);
-      setMenuToDelete(null);
-      fetchMenus(); // refresh after delete
+      if (response?.data?.success === false) {
+        alert(response.data.message || "Failed to delete menu.");
+      } else {
+        setShowDeleteModal(false);
+        setMenuToDelete(null);
+        fetchMenus();
+      }
+    } catch (error) {
+      const errMsg = error?.response?.data?.message;
+      if (
+        errMsg === "Menu has child items linked to it. Please delete child items first."
+      ) {
+        alert(errMsg);
+      } else {
+        alert("Something went wrong while deleting. Please try again.");
+      }
+      console.error("Error deleting menu:", error);
     }
-  } catch (error) {
-    const errMsg = error?.response?.data?.message;
-    if (
-      errMsg === "Menu has child items linked to it. Please delete child items first."
-    ) {
-      alert(errMsg);
-    } else {
-      alert("Something went wrong while deleting. Please try again.");
-    }
-    console.error("Error deleting menu:", error);
-  }
-};
+  };
 
   return (
     <AdminLayout>
       <div className="company-menus-container p-3">
         <div className="dms-pages-header sticky-header">
           <h3>Menus</h3>
-            <Button variant="primary" onClick={() => handlePermissionCheck("add", () => navigate('/dms/menu/add'))}>
+          {permissions.includes("add") && (
+            <Button
+              variant="primary"
+              onClick={() => navigate('/dms/menu/add')}
+            >
               <FaPlus /> Add Menu
             </Button>
+          )}
         </div>
 
         <div className="filter-search-container mt-3">
@@ -149,14 +157,24 @@ const confirmDelete = async () => {
                   <td>{new Date(menu.createdAt).toLocaleDateString()}</td>
                   <td>{menu.updatedAt ? new Date(menu.updatedAt).toLocaleDateString() : '—'}</td>
                   <td>
-                      <FaEdit
-                        className="icon-green me-2"
-                        onClick={() => handlePermissionCheck("edit", () => navigate('/dms/menu/edit', { state: { menu } }))}
-                      />
-                      <FaTrash
-                        className="icon-red"
-                        onClick={() => handlePermissionCheck("delete", () => handleDelete(menu.id))}
-                      />
+                    {permissions.includes("edit") || permissions.includes("delete") ? (
+                      <>
+                        {permissions.includes("edit") && (
+                          <FaEdit
+                            className="icon-green me-2"
+                            onClick={() => navigate('/dms/menu/edit', { state: { menu } })}
+                          />
+                        )}
+                        {permissions.includes("delete") && (
+                          <FaTrash
+                            className="icon-red"
+                            onClick={() => handleDelete(menu.id)}
+                          />
+                        )}
+                      </>
+                    ) : (
+                      <span>-</span>
+                    )}
                   </td>
                 </tr>
               ))

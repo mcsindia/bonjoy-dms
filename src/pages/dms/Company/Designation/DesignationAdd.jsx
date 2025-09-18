@@ -25,10 +25,13 @@ export const DesignationAdd = () => {
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
-         const token = JSON.parse(localStorage.getItem("userData"))?.token;
+        const token = JSON.parse(localStorage.getItem("userData"))?.token;
         const response = await axios.get(`${API_BASE_URL}/getAllDepartments`, {
           headers: {
             Authorization: `Bearer ${token}`,
+          },
+          params: {
+            module_id: "designation",
           },
         });
 
@@ -76,10 +79,11 @@ export const DesignationAdd = () => {
       departmentId: parseInt(formData.departmentId, 10),
       designation: formData.designation,
       description: formData.description,
+      module_id: "designation",
     };
 
     try {
-       const token = JSON.parse(localStorage.getItem("userData"))?.token;
+      const token = JSON.parse(localStorage.getItem("userData"))?.token;
       const response = await axios.post(`${API_BASE_URL}/createDesignation`, data, {
         headers: {
           Authorization: `Bearer ${token}`,

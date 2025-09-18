@@ -19,30 +19,30 @@ export const BrandList = () => {
     const [loading, setLoading] = useState(false);
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const userData = JSON.parse(localStorage.getItem("userData"));
-     let permissions = [];
+    let permissions = [];
 
-if (Array.isArray(userData?.employeeRole)) {
-  for (const role of userData.employeeRole) {
-    for (const child of role.childMenus || []) {
-      for (const mod of child.modules || []) {
-        if (mod.moduleUrl?.toLowerCase() === "brand") {
-          permissions = mod.permission
-            ?.toLowerCase()
-            .split(',')
-            .map(p => p.trim()) || [];
+    if (Array.isArray(userData?.employeeRole)) {
+        for (const role of userData.employeeRole) {
+            for (const child of role.childMenus || []) {
+                for (const mod of child.modules || []) {
+                    if (mod.moduleUrl?.toLowerCase() === "brand") {
+                        permissions = mod.permission
+                            ?.toLowerCase()
+                            .split(',')
+                            .map(p => p.trim()) || [];
+                    }
+                }
+            }
         }
-      }
     }
-  }
-}
 
-      const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
-    if (permissions.includes(permissionType)) {
-      action(); // allowed, run the actual function
-    } else {
-      alert(fallbackMessage || `You don't have permission to ${permissionType} this employee.`);
-    }
-  };
+    const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
+        if (permissions.includes(permissionType)) {
+            action(); // allowed, run the actual function
+        } else {
+            alert(fallbackMessage || `You don't have permission to ${permissionType} this employee.`);
+        }
+    };
 
     // Fetch brand data from API
     const fetchBrands = async () => {
@@ -51,7 +51,8 @@ if (Array.isArray(userData?.employeeRole)) {
             const response = await axios.get(`${API_BASE_URL}/getAllBrands`, {
                 params: {
                     page: currentPage,
-                    limit: itemsPerPage
+                    limit: itemsPerPage,
+                    module_id: 'brand', // 🔹 added module_id
                 }
             });
             setBrands(response.data.data.data || []);
@@ -67,7 +68,10 @@ if (Array.isArray(userData?.employeeRole)) {
         setLoading(true);
         try {
             const response = await axios.get(`${API_BASE_URL}/searchBrands`, {
-                params: { brandName }
+                params: {
+                    brandName,
+                    module_id: 'brand', // 🔹 added module_id
+                }
             });
             if (response.data.success) {
                 setBrands(response.data.data.brands || []);
@@ -85,7 +89,10 @@ if (Array.isArray(userData?.employeeRole)) {
         setLoading(true);
         try {
             const response = await axios.get(`${API_BASE_URL}/filterBrands`, {
-                params: { status }
+                params: {
+                    status,
+                    module_id: 'brand', // 🔹 added module_id
+                }
             });
             if (response.data.success) {
                 setBrands(response.data.data.brands || []);
@@ -136,7 +143,9 @@ if (Array.isArray(userData?.employeeRole)) {
     const handleDelete = async () => {
         if (brandToDelete) {
             try {
-                await axios.delete(`${API_BASE_URL}/deleteBrand/${brandToDelete}`);
+                await axios.delete(`${API_BASE_URL}/deleteBrand/${brandToDelete}`, {
+                    params: { module_id: 'brand' } // 🔹 added module_id
+                });
                 if (search.trim()) {
                     searchBrands(search);
                 } else if (filter) {
@@ -174,9 +183,11 @@ if (Array.isArray(userData?.employeeRole)) {
         <AdminLayout>
             <div className="dms-pages-header sticky-header">
                 <h3>Brand List</h3>
-                    <Button variant="primary" onClick={() => handlePermissionCheck("add", () => navigate('/dms/brand/add'))}>
+                {permissions.includes("add") && (
+                    <Button variant="primary" onClick={() => navigate('/dms/brand/add')}>
                         <FaPlus /> Add Brand
                     </Button>
+                )}
             </div>
 
             {/* Search and Filter */}
@@ -219,16 +230,27 @@ if (Array.isArray(userData?.employeeRole)) {
                                             <td>{brand.status}</td>
                                             <td>{new Date(brand.createdAt).toLocaleString()}</td>
                                             <td>
-                                                    <FaEdit
-                                                        title="Edit"
-                                                        className="icon-green me-2"
-                                                        onClick={() => handlePermissionCheck("edit", () => navigate('/dms/brand/edit', { state: brand }))}
-                                                    />
-                                                    <FaTrash
-                                                        title="Delete"
-                                                        className="icon-red"
-                                                        onClick={() => handlePermissionCheck("delete", () => openDeleteModal(brand.id))}
-                                                    />
+                                                {permissions.includes("edit") || permissions.includes("delete") ? (
+                                                    <>
+                                                        {permissions.includes("edit") ? (
+                                                            <FaEdit
+                                                                title="Edit"
+                                                                className="icon-green me-2"
+                                                                onClick={() => navigate('/dms/brand/edit', { state: brand })}
+                                                            />
+                                                        ) : null}
+
+                                                        {permissions.includes("delete") ? (
+                                                            <FaTrash
+                                                                title="Delete"
+                                                                className="icon-red"
+                                                                onClick={() => openDeleteModal(brand.id)}
+                                                            />
+                                                        ) : null}
+                                                    </>
+                                                ) : (
+                                                    <span>-</span>
+                                                )}
                                             </td>
                                         </tr>
                                     ))

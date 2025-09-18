@@ -24,32 +24,37 @@ export const CompanyModuleAdd = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  const token = JSON.parse(localStorage.getItem("userData"))?.token;
+  const moduleId = "company_module"; // 🔹 module_id to include in all API calls
+
+  // Fetch secondary menus
   const fetchSecondaryMenus = async (parentId) => {
     try {
-      const token = JSON.parse(localStorage.getItem("userData"))?.token;
-      const response = await axios.get(`${API_BASE_URL}/getAllChildMenuById/${parentId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`
+      const response = await axios.get(
+        `${API_BASE_URL}/getAllChildMenuById/${parentId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { module_id: moduleId } // 🔹 include module_id
         }
-
-      });
+      );
       setSecondaryMenus(response.data?.data || []);
-
     } catch (err) {
       console.error('Error fetching secondary menus:', err);
       setSecondaryMenus([]);
     }
   };
 
+  // Fetch parent menus
   useEffect(() => {
     const fetchParentMenus = async () => {
       try {
-        const token = JSON.parse(localStorage.getItem("userData"))?.token;
-        const response = await axios.get(`${API_BASE_URL}/getAllParentMenu`, {
-          headers: {
-            Authorization: `Bearer ${token}`
+        const response = await axios.get(
+          `${API_BASE_URL}/getAllParentMenu`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            params: { module_id: moduleId } // 🔹 include module_id
           }
-        });
+        );
         const result = response.data?.data || [];
         setParentMenus(result);
 
@@ -86,13 +91,23 @@ export const CompanyModuleAdd = () => {
       setIsLoading(true);
       setError('');
 
-      const response = await axios.post(`${API_BASE_URL}/createModule`, {
-        moduleName: formData.module_name,
-        description: description,
-        moduleUrl: formData.module_url,
-        menuId: formData.parent_menu_id ? parseInt(formData.parent_menu_id) : 0,
-        childmenuId: formData.secondary_menu_id || null
-      });
+      const response = await axios.post(
+        `${API_BASE_URL}/createModule`,
+        {
+          moduleName: formData.module_name,
+          description: description,
+          moduleUrl: formData.module_url,
+          menuId: formData.parent_menu_id ? parseInt(formData.parent_menu_id) : 0,
+          childmenuId: formData.secondary_menu_id || null,
+          module_id: moduleId, // 🔹 include module_id
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       if (response.data.success) {
         setSuccessMessage(response.data.message || 'Module created successfully.');
@@ -113,16 +128,13 @@ export const CompanyModuleAdd = () => {
       }
     } catch (err) {
       console.error('Error adding module:', err);
-
       const errorMsg = err.response?.data?.message;
-
       if (errorMsg?.toLowerCase().includes("validation")) {
         setError("Module with this name already exists. Please use a unique name.");
       } else {
         setError(errorMsg || "Failed to add module. Please try again later.");
       }
-    }
-    finally {
+    } finally {
       setIsLoading(false);
     }
   };

@@ -17,6 +17,7 @@ export const EmployeeView = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const MODULE_ID = "employee";
   const userData = JSON.parse(localStorage.getItem("userData"));
   let permissions = [];
 
@@ -60,6 +61,9 @@ export const EmployeeView = () => {
           headers: {
             Authorization: `Bearer ${token}`,
           },
+          params: {
+            module_id: MODULE_ID,
+          }
         });
 
         setEmployee(response.data.data);
@@ -118,16 +122,16 @@ export const EmployeeView = () => {
                 </Col>
 
                 <Col xs="auto">
-                  <Button
-                    className='edit-button'
-                    onClick={() => handlePermissionCheck("edit", () => navigate(`/dms/employee/edit`, {
-                      state: { employee }
-                    }))}
-                  >
-                    <FaEdit />
-                    Edit
-                  </Button>
-
+                  {permissions.includes("edit") && (
+                    <Button
+                      className='edit-button'
+                      onClick={() =>
+                        navigate(`/dms/employee/edit`, { state: { employee } })
+                      }
+                    >
+                      <FaEdit /> Edit
+                    </Button>
+                  )}
                 </Col>
               </Row>
               <hr />

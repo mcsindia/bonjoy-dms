@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Form, Alert, Row, Col } from 'react-bootstrap';
+import { Button, Form, Alert } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from '../../../../layouts/dms/AdminLayout/AdminLayout';
 import { QuillEditor } from '../../../../components/dms/QuillEditor/QuillEditor';
@@ -26,7 +26,17 @@ export const EmployeeRoleAdd = () => {
   useEffect(() => {
     const fetchModules = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/getAllModules?page=1&limit=100`);
+        const response = await axios.get(`${API_BASE_URL}/getAllModules`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          params: {
+            page: 1,
+            limit: 100,
+            module_id: "role", 
+          },
+        });
+
         const result = response.data?.data?.result || [];
 
         const flattenedModules = result
@@ -53,46 +63,58 @@ export const EmployeeRoleAdd = () => {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  const missingFields = [];
+    const missingFields = [];
+    if (!formData.role_name.trim()) missingFields.push("Role Name");
+    if (!formData.responsibility.trim()) missingFields.push("Description");
+    if (selectedModules.length === 0) missingFields.push("Modules");
 
-  if (!formData.role_name.trim()) missingFields.push("Role Name");
-  if (!formData.responsibility.trim()) missingFields.push("Description");
-  if (selectedModules.length === 0) missingFields.push("Modules");
-
-  if (missingFields.length > 0) {
-    setError(`Please fill the following field: ${missingFields.join(', ')}`);
-    return;
-  }
-
-  try {
-    const response = await axios.post(
-      `${API_BASE_URL}/createRole`,
-      {
-        roleName: formData.role_name,
-        responsibility: formData.responsibility,
-        moduleId: selectedModules.map((mod) => mod.value),
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    if (response.data.success) {
-      setSuccess('Role added successfully!');
-      setTimeout(() => navigate('/dms/role'), 1500);
-    } else {
-      setError(response.data.message || 'Failed to add role.');
+    if (missingFields.length > 0) {
+      setError(`Please fill the following field: ${missingFields.join(', ')}`);
+      return;
     }
-  } catch (err) {
-    console.error('Error creating role:', err);
-    setError('Something went wrong. Please try again.');
-  }
-};
+
+    try {
+      const res = await axios.post(
+        `${API_BASE_URL}/createRole?module_id=role`,
+        {
+          roleName: formData.role_name,
+          responsibility: formData.responsibility,
+          moduleId: selectedModules.map(mod => mod.value),
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (res.data.success) {
+        setSuccess('Role added successfully!');
+        setTimeout(() => navigate('/dms/role'), 1500);
+      } else {
+        // Check if backend sends a duplicate error
+        if (res.data.message?.toLowerCase().includes('already exists')) {
+          setError(`Role "${formData.role_name}" already exists. Please choose a different name.`);
+        } else {
+          setError(res.data.message || 'Failed to add role.');
+        }
+      }
+    } catch (err) {
+      console.error('Error creating role:', err.response?.data || err.message);
+
+      const apiMessage = err.response?.data?.message;
+
+      if (apiMessage?.toLowerCase() === 'validation error') {
+        // Show user-friendly message
+        setError(`Role "${formData.role_name}" already exists. Please choose a different name.`);
+      } else {
+        setError(apiMessage || 'Something went wrong. Please try again.');
+      }
+    }
+  };
 
   return (
     <AdminLayout>

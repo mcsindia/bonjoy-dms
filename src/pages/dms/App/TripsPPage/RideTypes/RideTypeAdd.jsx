@@ -30,62 +30,63 @@ export const RideTypeAdd = () => {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!formData.name.trim()) {
-    setError('Ride Type Name is required.');
-    return;
-  }
-
-  if (!formData.fareMultiplier || isNaN(formData.fareMultiplier)) {
-    setError('Fare Multiplier must be a number.');
-    return;
-  }
-
-  if (!formData.description.trim()) {
-    setError('Description is required.');
-    return;
-  }
-
-  try {
-    setIsLoading(true);
-    setError('');
-
-    const token = JSON.parse(localStorage.getItem("userData"))?.token;
-
-    const response = await axios.post(
-      `${API_BASE_URL}/createRideType`,
-      {
-        name: formData.name,
-        multiplier: parseFloat(formData.fareMultiplier),
-        description: formData.description,
-        status: formData.status,
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`, 
-        },
-      }
-    );
-
-    if (response.data.success) {
-      setSuccessMessage(response.data.message || 'Ride Type created successfully.');
-      setFormData({ name: '', fareMultiplier: '', description: '', status: 'Active' });
-
-      setTimeout(() => {
-        navigate('/dms/ridetypes');
-      }, 1500);
-    } else {
-      setError(response.data.message || 'Something went wrong.');
+    if (!formData.name.trim()) {
+      setError('Ride Type Name is required.');
+      return;
     }
-  } catch (err) {
-    console.error('Error adding ride type:', err);
-    setError('Failed to add ride type. Please try again later.');
-  } finally {
-    setIsLoading(false);
-  }
-};
+
+    if (!formData.fareMultiplier || isNaN(formData.fareMultiplier)) {
+      setError('Fare Multiplier must be a number.');
+      return;
+    }
+
+    if (!formData.description.trim()) {
+      setError('Description is required.');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setError('');
+
+      const token = JSON.parse(localStorage.getItem("userData"))?.token;
+
+      const response = await axios.post(
+        `${API_BASE_URL}/createRideType`,
+        {
+          name: formData.name,
+          multiplier: parseFloat(formData.fareMultiplier),
+          description: formData.description,
+          status: formData.status,
+          module_id: 'ride_type', // 🔹 Added module_id
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.data.success) {
+        setSuccessMessage(response.data.message || 'Ride Type created successfully.');
+        setFormData({ name: '', fareMultiplier: '', description: '', status: 'Active' });
+
+        setTimeout(() => {
+          navigate('/dms/ridetypes');
+        }, 1500);
+      } else {
+        setError(response.data.message || 'Something went wrong.');
+      }
+    } catch (err) {
+      console.error('Error adding ride type:', err);
+      setError('Failed to add ride type. Please try again later.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <AdminLayout>

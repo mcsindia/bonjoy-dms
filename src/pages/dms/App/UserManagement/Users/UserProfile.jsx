@@ -45,8 +45,7 @@ export const UserProfile = () => {
     const userId = location.state?.user?.id || paramId;
     if (!user && userId) {
       setLoading(true);
-      axios
-        .get(`${API_BASE_URL}/getUserById/${userId}`)
+        axios.get(`${API_BASE_URL}/getUserById/${userId}?module_id=user`)
         .then((res) => {
           if (res.data.success) {
             setUser(res.data.data.user);
@@ -66,34 +65,34 @@ export const UserProfile = () => {
   ];
 
   const walletData = [
-  {
-    date: '2023-12-18',
-    transactionId: 'TID001',
-    rideId: 'RID123',
-    type: 'credit',
-    amount: 20,
-    description: 'Wallet top-up',
-    createdAt: '2023-12-18 10:15 AM'
-  },
-  {
-    date: '2023-12-17',
-    transactionId: 'TID002',
-    rideId: 'RID124',
-    type: 'debit',
-    amount: 15,
-    description: 'Ride payment',
-    createdAt: '2023-12-17 05:20 PM'
-  },
-  {
-    date: '2023-12-16',
-    transactionId: 'TID003',
-    rideId: null,
-    type: 'bonus',
-    amount: 50,
-    description: 'Referral bonus',
-    createdAt: '2023-12-16 09:45 AM'
-  },
-];
+    {
+      date: '2023-12-18',
+      transactionId: 'TID001',
+      rideId: 'RID123',
+      type: 'credit',
+      amount: 20,
+      description: 'Wallet top-up',
+      createdAt: '2023-12-18 10:15 AM'
+    },
+    {
+      date: '2023-12-17',
+      transactionId: 'TID002',
+      rideId: 'RID124',
+      type: 'debit',
+      amount: 15,
+      description: 'Ride payment',
+      createdAt: '2023-12-17 05:20 PM'
+    },
+    {
+      date: '2023-12-16',
+      transactionId: 'TID003',
+      rideId: null,
+      type: 'bonus',
+      amount: 50,
+      description: 'Referral bonus',
+      createdAt: '2023-12-16 09:45 AM'
+    },
+  ];
 
   // Pagination state for each section
   const [feedbackPage, setFeedbackPage] = useState(1);
@@ -198,12 +197,14 @@ export const UserProfile = () => {
             </div>
 
             {/* Back Section */}
-            <Button
-              onClick={() => handlePermissionCheck("edit", () => navigate('/dms/user/edit', { state: { user } }))}
-              className="edit-button"
-            >
-              <FaEdit /> Edit
-            </Button>
+            {permissions.includes("edit") && (
+              <Button
+                onClick={() => navigate('/dms/user/edit', { state: { user } })}
+                className="edit-button"
+              >
+                <FaEdit /> Edit
+              </Button>
+            )}
           </Card.Body>
         </Card>
 

@@ -33,20 +33,20 @@ export const EmployeeList = () => {
 
   let permissions = [];
 
-if (Array.isArray(userData?.employeeRole)) {
-  for (const role of userData.employeeRole) {
-    for (const child of role.childMenus || []) {
-      for (const mod of child.modules || []) {
-        if (mod.moduleUrl?.toLowerCase() === "employee") {
-          permissions = mod.permission
-            ?.toLowerCase()
-            .split(',')
-            .map(p => p.trim()) || [];
+  if (Array.isArray(userData?.employeeRole)) {
+    for (const role of userData.employeeRole) {
+      for (const child of role.childMenus || []) {
+        for (const mod of child.modules || []) {
+          if (mod.moduleUrl?.toLowerCase() === "employee") {
+            permissions = mod.permission
+              ?.toLowerCase()
+              .split(',')
+              .map(p => p.trim()) || [];
+          }
         }
       }
     }
   }
-}
 
   const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
     if (permissions.includes(permissionType)) {
@@ -71,6 +71,7 @@ if (Array.isArray(userData?.employeeRole)) {
           status: selectedStatus || undefined,
           designationId: filter || undefined,
           department: selectedDepartment || undefined,
+          module_id: "employee",
         }
       });
 
@@ -102,7 +103,7 @@ if (Array.isArray(userData?.employeeRole)) {
 
       const response = await axios.get(`${API_BASE_URL}/getAllDepartments`, {
         headers: { Authorization: `Bearer ${token}` },
-        params: { limit: 100 }
+        params: { limit: 100, module_id: "employee" }
       });
 
       const data = response.data?.data?.data || [];
@@ -118,7 +119,8 @@ if (Array.isArray(userData?.employeeRole)) {
       if (!token) return;
 
       const response = await axios.get(`${API_BASE_URL}/getDesignationsByDepartmentId/${departmentId}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
+        params: { module_id: "employee" }
       });
 
       const designationsArray = response.data?.data || [];
@@ -230,7 +232,10 @@ if (Array.isArray(userData?.employeeRole)) {
       if (!token) throw new Error("Token not found in localStorage");
 
       await axios.delete(`${API_BASE_URL}/deleteEmployee/${employeeToDelete}`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
+        data: {
+          module_id: "employee",
+        }
       });
 
       // Close modal
@@ -277,9 +282,11 @@ if (Array.isArray(userData?.employeeRole)) {
               <Dropdown.Item> <FaFileExcel className="icon-green" /> Export to Excel</Dropdown.Item>
               <Dropdown.Item> <FaFilePdf className="icon-red" /> Export to CSV</Dropdown.Item>
             </DropdownButton>
-            <Button variant="primary" onClick={() => handlePermissionCheck("add", () => navigate('/dms/employee/add'))}>
-              <FaPlus /> Add Employee
-            </Button>
+            {permissions.includes("add") && (
+              <Button variant="primary" onClick={() => navigate('/dms/employee/add')}>
+                <FaPlus /> Add Employee
+              </Button>
+            )}
           </div>
         </div>
 
@@ -364,39 +371,57 @@ if (Array.isArray(userData?.employeeRole)) {
                         <td>{employee.Designation?.designation || 'N/A'}</td>
                         <td>{new Date(employee.createdAt).toLocaleString()}</td>
                         <td>
-                          <Form.Check
-                            type="switch"
-                            id={`status-switch-${employee.id}`}
-                            label={employee.status?.toLowerCase() === 'active' ? 'Active' : 'Inactive'}
-                            checked={employee.status?.toLowerCase() === 'active'}
-                            onChange={() =>
-                              handlePermissionCheck("edit", () => {
-                                const updatedStatus = employee.status?.toLowerCase() === 'active' ? 'Inactive' : 'Active';
+                          {permissions.includes("edit") ? (
+                            <Form.Check
+                              type="switch"
+                              id={`status-switch-${employee.id}`}
+                              label={employee.status?.toLowerCase() === "active" ? "Active" : "Inactive"}
+                              checked={employee.status?.toLowerCase() === "active"}
+                              onChange={() => {
+                                const updatedStatus =
+                                  employee.status?.toLowerCase() === "active" ? "Inactive" : "Active";
                                 setStatusToggleEmployee(employee);
                                 setNewStatus(updatedStatus);
-                                setRemark('');
+                                setRemark("");
                                 setShowRemarkModal(true);
-                              })
-                            }
-                          />
+                              }}
+                            />
+                          ) : (
+                            employee.status?.toLowerCase() === "active" ? "Active" : "Inactive"
+                          )}
                         </td>
                         <td>
-                          <FaEye
-                            title="View"
-                            className="icon-blue me-2"
-                            onClick={() => handlePermissionCheck("view", () => handleView(employee))}
-                          />
-                          <FaEdit
-                            title="Edit"
-                            className="icon-green me-2"
-                            onClick={() => handlePermissionCheck("edit", () => navigate("/dms/employee/edit", { state: { employee } }))}
-                          />
-                          {employee.Role?.roleName?.toLowerCase() !== 'admin' && (
-                            <FaTrash
-                              title="Delete"
-                              className="icon-red"
-                              onClick={() => handlePermissionCheck("delete", () => handleDelete(employee))}
-                            />
+                          {permissions.includes("view") ||
+                            permissions.includes("edit") ||
+                            permissions.includes("delete") ? (
+                            <>
+                              {permissions.includes("view") && (
+                                <FaEye
+                                  title="View"
+                                  className="icon-blue me-2"
+                                  onClick={() => handleView(employee)}
+                                />
+                              )}
+                              {permissions.includes("edit") && (
+                                <FaEdit
+                                  title="Edit"
+                                  className="icon-green me-2"
+                                  onClick={() =>
+                                    navigate("/dms/employee/edit", { state: { employee } })
+                                  }
+                                />
+                              )}
+                              {permissions.includes("delete") &&
+                                employee.Role?.roleName?.toLowerCase() !== "admin" && (
+                                  <FaTrash
+                                    title="Delete"
+                                    className="icon-red"
+                                    onClick={() => handleDelete(employee)}
+                                  />
+                                )}
+                            </>
+                          ) : (
+                            '—'
                           )}
                         </td>
                       </tr>

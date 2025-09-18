@@ -58,6 +58,7 @@ export const UserList = () => {
       const queryParams = new URLSearchParams({
         page: currentPage,
         limit: itemsPerPage,
+        module_id: "user" // 🔹 added module_id
       });
 
       const isSearching = !!search;
@@ -79,6 +80,8 @@ export const UserList = () => {
       }
 
       const finalUrl = `${baseUrl}?${queryParams.toString()}`;
+      // Add module_id to params
+      queryParams.set("module_id", "user");
       const token = JSON.parse(localStorage.getItem("userData"))?.token;
       console.log(token)
       const res = await axios.get(finalUrl, {
@@ -130,7 +133,9 @@ export const UserList = () => {
     if (!userToDelete) return;
 
     try {
-      const res = await axios.delete(`${API_BASE_URL}/deleteUser/${userToDelete.id}`);
+      const res = await axios.delete(`${API_BASE_URL}/deleteUser/${userToDelete.id}`, {
+        params: { module_id: "user" } // 🔹 added module_id
+      });
 
       if (res.status === 200) {
         setShowDeleteModal(false);
@@ -144,7 +149,7 @@ export const UserList = () => {
 
   //Export
   const handleExport = (format) => {
-    const url = `${API_BASE_URL}/exportUsers?format=${format}`;
+    const url = `${API_BASE_URL}/exportUsers?format=${format}&module_id=user`; // 🔹 added module_id
     window.open(url, '_blank');
   };
 
@@ -164,6 +169,7 @@ export const UserList = () => {
 
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('module_id', 'user');
 
       try {
         const res = await axios.post(
@@ -275,21 +281,35 @@ export const UserList = () => {
                     <td>{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</td>
                     <td>{user.status || 'N/A'}</td>
                     <td>
-                      <FaEye
-                        className="icon-blue me-2"
-                        title="View"
-                        onClick={() => handlePermissionCheck("view", () => handleView(user))}
-                      />
-                      <FaEdit
-                        className="icon-green me-2"
-                        title="Edit"
-                        onClick={() => handlePermissionCheck("edit", () => handleEdit(user))}
-                      />
-                      <FaTrash
-                        className="icon-red"
-                        title="Delete"
-                        onClick={() => handlePermissionCheck("delete", () => handleDelete(user))}
-                      />
+                      {permissions.includes("view") ||
+                        permissions.includes("edit") ||
+                        permissions.includes("delete") ? (
+                        <>
+                          {permissions.includes("view") && (
+                            <FaEye
+                              className="icon-blue me-2"
+                              title="View"
+                              onClick={() => handleView(user)}
+                            />
+                          )}
+                          {permissions.includes("edit") && (
+                            <FaEdit
+                              className="icon-green me-2"
+                              title="Edit"
+                              onClick={() => handleEdit(user)}
+                            />
+                          )}
+                          {permissions.includes("delete") && (
+                            <FaTrash
+                              className="icon-red"
+                              title="Delete"
+                              onClick={() => handleDelete(user)}
+                            />
+                          )}
+                        </>
+                      ) : (
+                        <span>-</span>
+                      )}
                     </td>
                   </tr>
                 )) : (

@@ -28,9 +28,18 @@ export const TripEdit = () => {
         const config = { headers: { Authorization: `Bearer ${token}` } };
 
         const [rideTypesRes, driversRes, ridersRes] = await Promise.all([
-          axios.get(`${API_BASE_URL}/getAllRideType`, config),
-          axios.get(`${API_BASE_URL}/getAllDriverProfiles`, config),
-          axios.get(`${API_BASE_URL}/getAllRiderProfiles`, config)
+          axios.get(`${API_BASE_URL}/getAllRideType`, {
+            headers: { Authorization: `Bearer ${token}` },
+            params: { module_id: "ride_type" } // 🔹 add module_id
+          }),
+          axios.get(`${API_BASE_URL}/getAllDriverProfiles`, {
+            headers: { Authorization: `Bearer ${token}` },
+            params: { module_id: "driver" } // 🔹 add module_id
+          }),
+          axios.get(`${API_BASE_URL}/getAllRiderProfiles`, {
+            headers: { Authorization: `Bearer ${token}` },
+            params: { module_id: "rider" } // 🔹 add module_id
+          })
         ]);
 
         // Map ride types
@@ -68,26 +77,26 @@ export const TripEdit = () => {
 
   const formatDateTimeLocal = (timeString) => {
     if (!timeString) return "";
-    const today = new Date().toISOString().split("T")[0]; 
-    if (timeString.length === 8) return `${today}T${timeString.slice(0, 5)}`; 
+    const today = new Date().toISOString().split("T")[0];
+    if (timeString.length === 8) return `${today}T${timeString.slice(0, 5)}`;
     return timeString.replace(" ", "T").slice(0, 16);
   };
 
   const formatForAPI = (value, field) => {
-    if (!value || value === "") return "00:00:00"; 
+    if (!value || value === "") return "00:00:00";
     if (value.includes("T")) {
-      const timePart = value.split("T")[1]; 
-      return timePart.length === 5 ? timePart + ":00" : timePart; 
+      const timePart = value.split("T")[1];
+      return timePart.length === 5 ? timePart + ":00" : timePart;
     }
-    return value; 
+    return value;
   };
 
   // Initialize form values from trip
   useEffect(() => {
     if (trip && !initialized) {
       setFormValues({
-        riderId: trip.rider_user_id,       
-        driverId: trip.driver_user_id,    
+        riderId: trip.rider_user_id,
+        driverId: trip.driver_user_id,
         rideTypeId: trip.ride_type_id,
         pickup_add: trip.pickup_address,
         pickup_lat: trip.pickup_lat,
@@ -98,7 +107,7 @@ export const TripEdit = () => {
         fare: trip.fare,
         distance: trip.distance,
         emergency: trip.emergency_ride || false,
-        status: trip.status.toLowerCase(),  
+        status: trip.status.toLowerCase(),
         scheduled_time: formatDateTimeLocal(trip.scheduled_time),
         pickup_time: formatDateTimeLocal(trip.pickup_time),
         drop_time: formatDateTimeLocal(trip.drop_time),
@@ -160,7 +169,13 @@ export const TripEdit = () => {
 
       const response = await axios.put(
         `${API_BASE_URL}/updateRide/${trip.id}`,
-        payload,
+        {
+          ...payload,
+          module_id: "trip" // 🔹 add module_id here
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
       );
 
       if (response.data.success) {

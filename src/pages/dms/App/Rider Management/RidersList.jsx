@@ -47,7 +47,8 @@ export const RidersList = () => {
         }
     };
 
-    const fetchRiders = async (page = 1, searchName = '', filter = selectedFilter) => {
+ // Fetch riders
+const fetchRiders = async (page = 1, searchName = '', filter = selectedFilter) => {
     setLoading(true);
     try {
         const response = await axios.get(`${API_BASE_URL}/getAllRiderProfiles`, {
@@ -56,6 +57,7 @@ export const RidersList = () => {
                 limit: itemsPerPage,
                 name: searchName || undefined,
                 preferredPaymentMethod: filter || undefined,
+                module_id: 'rider', // 🔹 added module_id
             }
         });
 
@@ -81,18 +83,18 @@ export const RidersList = () => {
 
     // Handle Search
     const handleSearch = (e) => {
-    const searchValue = e.target.value;
-    setSearch(searchValue);
-    setCurrentPage(1);
-    fetchRiders(1, searchValue, selectedFilter);
-};
+        const searchValue = e.target.value;
+        setSearch(searchValue);
+        setCurrentPage(1);
+        fetchRiders(1, searchValue, selectedFilter);
+    };
 
     // Handle Filter
     const handleFilter = async (filter) => {
-    setSelectedFilter(filter);
-    setCurrentPage(1);
-    fetchRiders(1, search, filter);
-};
+        setSelectedFilter(filter);
+        setCurrentPage(1);
+        fetchRiders(1, search, filter);
+    };
 
     const handlePageChange = (pageNumber) => {
         setCurrentPage(pageNumber);
@@ -115,33 +117,34 @@ export const RidersList = () => {
     };
 
     const handleRemarkSubmit = async () => {
-        try {
-            const response = await axios.put(`${API_BASE_URL}/updateRiderProfile/${selectedRiderId}`, {
-                status: intendedStatus,
-                remark: remark
-            });
+    try {
+        const response = await axios.put(`${API_BASE_URL}/updateRiderProfile/${selectedRiderId}`, {
+            status: intendedStatus,
+            remark: remark,
+            module_id: 'rider' // 🔹 added module_id
+        });
 
-            if (response.data.success) {
-                const updatedRiders = riders.map(rider =>
-                    (rider.id === selectedRiderId || rider.rider_id === selectedRiderId)
-                        ? { ...rider, status: intendedStatus, remark: remark }
-                        : rider
-                );
-                setRiders(updatedRiders);
-            }
-        } catch (error) {
-            console.error("Failed to update rider status with remark:", error);
+        if (response.data.success) {
+            const updatedRiders = riders.map(rider =>
+                (rider.id === selectedRiderId || rider.rider_id === selectedRiderId)
+                    ? { ...rider, status: intendedStatus, remark: remark }
+                    : rider
+            );
+            setRiders(updatedRiders);
         }
+    } catch (error) {
+        console.error("Failed to update rider status with remark:", error);
+    }
 
-        setShowRemarkModal(false);
-        setRemark('');
-        setSelectedRiderId(null);
-        setIntendedStatus('');
-    };
+    setShowRemarkModal(false);
+    setRemark('');
+    setSelectedRiderId(null);
+    setIntendedStatus('');
+};
 
     useEffect(() => {
-    fetchRiders(currentPage, search, selectedFilter);
-}, [currentPage, itemsPerPage]);
+        fetchRiders(currentPage, search, selectedFilter);
+    }, [currentPage, itemsPerPage]);
 
     return (
         <AdminLayout>
@@ -226,8 +229,26 @@ export const RidersList = () => {
                                                 />
                                             </td>
                                             <td className="actions">
-                                                <FaEye className='icon icon-blue' title="View" onClick={() => handlePermissionCheck("view", () => navigate(`/dms/rider/view/${rider.id}`, { state: { rider } }))} />
-                                                 <FaHistory className='icon-black' title='Ride history' onClick={() => handlePermissionCheck("view", () => navigate('/dms/ride-history/list'))} />
+                                                {(!permissions.includes("view") && !permissions.includes("rideHistory")) ? (
+                                                    <span>-</span>
+                                                ) : (
+                                                    <>
+                                                        {permissions.includes("view") && (
+                                                            <FaEye
+                                                                className='icon icon-blue me-2'
+                                                                title="View"
+                                                                onClick={() => navigate(`/dms/rider/view/${rider.id}`, { state: { rider } })}
+                                                            />
+                                                        )}
+                                                        {permissions.includes("rideHistory") && (
+                                                            <FaHistory
+                                                                className='icon-black'
+                                                                title='Ride history'
+                                                                onClick={() => navigate('/dms/ride-history/list')}
+                                                            />
+                                                        )}
+                                                    </>
+                                                )}
                                             </td>
                                         </tr>
                                     ))

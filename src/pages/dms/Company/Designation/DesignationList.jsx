@@ -60,15 +60,11 @@ export const DesignationList = () => {
     const params = {
       page: currentPage,
       limit: itemsPerPage,
+      module_id: "designation",
     };
 
-    if (search) {
-      params.name = search;
-    }
-
-    if (selectedDepartmentId) {
-      params.departmentId = selectedDepartmentId;
-    }
+    if (search) params.name = search;
+    if (selectedDepartmentId) params.departmentId = selectedDepartmentId;
 
     return {
       url: `${API_BASE_URL}/getAllDesignations`,
@@ -78,7 +74,10 @@ export const DesignationList = () => {
 
   const fetchFilterOptions = useCallback(async () => {
     try {
-      const { data } = await axios.get(`${API_BASE_URL}/getAllDesignations`, { headers: getAuthHeaders() });
+      const { data } = await axios.get(`${API_BASE_URL}/getAllDesignations`, {
+        headers: getAuthHeaders(),
+        params: { module_id: "designation" }
+      });
       const allDesignations = data?.data?.data || [];
       setFilterOptions([...new Set(allDesignations.map(d => d.designation))]);
     } catch (err) {
@@ -132,7 +131,10 @@ export const DesignationList = () => {
 
   const fetchDepartments = useCallback(async () => {
     try {
-      const { data } = await axios.get(`${API_BASE_URL}/getAllDepartments`, { headers: getAuthHeaders() });
+      const { data } = await axios.get(`${API_BASE_URL}/getAllDepartments`, {
+        headers: getAuthHeaders(),
+        params: { module_id: "designation" }
+      });
       const allDepartments = data?.data?.data || [];
       setDepartmentOptions(allDepartments);
     } catch (err) {
@@ -158,46 +160,21 @@ export const DesignationList = () => {
       const response = await axios.delete(
         `${API_BASE_URL}/deleteDesiganation/${designationToDelete}`,
         {
-          headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'application/json'
-          }
+          headers: getAuthHeaders(),
+          data: { module_id: "designation" }
         }
       );
 
       if (response.data.success) {
         setShowModal(false);
         setDesignationToDelete(null);
-
-        if (designations.length === 1 && currentPage > 1) {
-          setCurrentPage(currentPage - 1);
-        } else {
-          fetchDesignations();
-        }
+        fetchDesignations();
       } else {
-        setShowModal(false);
-        setDesignationToDelete(null);
         alert(response.data.message || 'Failed to delete designation.');
       }
-
-    } catch (error) {
-      const backendMsg = error.response?.data?.message?.toLowerCase?.() || '';
-
-      if (
-        backendMsg.includes("link with employee") ||
-        backendMsg.includes("foreign key") ||
-        backendMsg.includes("constraint")
-      ) {
-        alert("Cannot delete this designation because it is assigned to one or more employees. Please unlink or remove those employees first.");
-      } else if (error.response?.status === 500) {
-        alert("Server error occurred while deleting the designation. Please try again later.");
-      } else if (!error.response) {
-        alert("No response from server. Please check your internet connection.");
-      } else {
-        alert(backendMsg || "Unexpected error occurred. Please try again.");
-      }
-
-      console.error('Error deleting designation:', error);
+    } catch (err) {
+      console.error('Error deleting designation:', err);
+      alert(err.response?.data?.message || 'Error deleting designation.');
     } finally {
       setLoading(false);
       setShowModal(false);
@@ -216,9 +193,11 @@ export const DesignationList = () => {
     <AdminLayout>
       <div className="dms-pages-header sticky-header">
         <h3>Designation List</h3>
-        <Button variant="primary" onClick={() => handlePermissionCheck("add", () => navigate('/dms/designation/add'))}>
-          <FaPlus /> Add Designation
-        </Button>
+        {permissions.includes("add") && (
+          <Button variant="primary" onClick={() => navigate('/dms/designation/add')}>
+            <FaPlus /> Add Designation
+          </Button>
+        )}
       </div>
 
       <div className="filter-search-container">
@@ -273,16 +252,26 @@ export const DesignationList = () => {
                       <td>{new Date(designation.createdAt).toLocaleString()}</td>
                       <td>{new Date(designation.updatedAt).toLocaleString()}</td>
                       <td className="actions">
-                        <FaEdit
-                          className="icon icon-green"
-                          title="Edit"
-                          onClick={() => handlePermissionCheck("edit", () => handleEdit(designation))}
-                        />
-                        <FaTrash
-                          className="icon icon-red"
-                          title="Delete"
-                          onClick={() => handlePermissionCheck("delete", () => confirmDelete(designation.id))}
-                        />
+                        {permissions.includes("edit") || permissions.includes("delete") ? (
+                          <>
+                            {permissions.includes("edit") && (
+                              <FaEdit
+                                className="icon icon-green"
+                                title="Edit"
+                                onClick={() => handleEdit(designation)}
+                              />
+                            )}
+                            {permissions.includes("delete") && (
+                              <FaTrash
+                                className="icon icon-red"
+                                title="Delete"
+                                onClick={() => confirmDelete(designation.id)}
+                              />
+                            )}
+                          </>
+                        ) : (
+                          '—'
+                        )}
                       </td>
                     </tr>
                   ))

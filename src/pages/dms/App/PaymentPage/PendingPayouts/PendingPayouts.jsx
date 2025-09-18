@@ -17,7 +17,7 @@ export const PendingPayouts = () => {
     const [filter, setFilter] = useState('');
     const [search, setSearch] = useState('');
     const itemsPerPage = 5;
-    const payoutCount = payoutData.length
+    const payoutCount = payoutData.length;
     const userData = JSON.parse(localStorage.getItem("userData"));
     let permissions = [];
 
@@ -36,24 +36,16 @@ export const PendingPayouts = () => {
         }
     }
 
-    const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
-        if (permissions.includes(permissionType)) {
-            action();
-        } else {
-            alert(fallbackMessage || `You don't have permission to ${permissionType} this setting.`);
-        }
-    };
-
     const handleDelete = (payoutId) => {
-        if (window.confirm(`Are you sure you want to delete payout record #₹{payoutId}?`)) {
+        if (window.confirm(`Are you sure you want to delete payout record #${payoutId}?`)) {
             setPayoutData(payoutData.filter((payout) => payout.S_No !== payoutId));
         }
     };
 
     const filteredData = payoutData.filter(payout =>
         (filter ? payout.status === filter : true) &&
-        (search ? payout.riderName.toLowerCase().includes(search.toLowerCase()) ||
-            payout.driverName.toLowerCase().includes(search.toLowerCase()) : true)
+        (search ? payout.name.toLowerCase().includes(search.toLowerCase()) ||
+            payout.profileId.toLowerCase().includes(search.toLowerCase()) : true)
     );
 
     const indexOfLastItem = currentPage * itemsPerPage;
@@ -68,7 +60,7 @@ export const PendingPayouts = () => {
                     <h3>Pending Payouts</h3>
                     <div className="live-count-container">
                         <Button className='green-button'>
-                            🔄Pendings: {payoutCount}
+                            🔄 Pendings: {payoutCount}
                         </Button>
                     </div>
                 </div>
@@ -81,14 +73,17 @@ export const PendingPayouts = () => {
                         <Dropdown.Item> <FaFileExcel className="icon-green" /> Import from Excel</Dropdown.Item>
                         <Dropdown.Item> <FaFilePdf className="icon-red" /> Import from PDF</Dropdown.Item>
                     </DropdownButton>
-                    <Button variant="primary" onClick={() => handlePermissionCheck("add", () => navigate('/dms/pendingpayments/add'))}>
-                        <FaPlus /> Add payment
-                    </Button>
+
+                    {permissions.includes("add") && (
+                        <Button variant="primary" onClick={() => navigate('/dms/pendingpayments/add')}>
+                            <FaPlus /> Add Payment
+                        </Button>
+                    )}
                 </div>
             </div>
 
             <div className="filter-search-container">
-                <DropdownButton variant="primary" title="Filter Status" id="filter-dropdown">
+                <DropdownButton variant="primary" title={`Filter: ${filter || 'All'}`} id="filter-dropdown">
                     <Dropdown.Item onClick={() => setFilter('')}>All</Dropdown.Item>
                     <Dropdown.Item onClick={() => setFilter('Payment Pending')}>Payment Pending</Dropdown.Item>
                     <Dropdown.Item onClick={() => setFilter('Failed Transaction')}>Failed Transaction</Dropdown.Item>
@@ -122,10 +117,13 @@ export const PendingPayouts = () => {
                                 <td>{payout.S_No}</td>
                                 <td>{payout.pendingFor}</td>
                                 <td>
-                                    <a href={payout.pendingFor === "Rider"
-                                        ? `/rider/profile`
-                                        : `/drivers/details/view`}
-                                        target="_blank" rel="noopener noreferrer" className="rider-id-link"
+                                    <a
+                                        href={payout.pendingFor === "Rider"
+                                            ? `/rider/profile`
+                                            : `/drivers/details/view`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="rider-id-link"
                                     >
                                         {payout.profileId}
                                     </a>
@@ -134,10 +132,28 @@ export const PendingPayouts = () => {
                                 <td>{payout.status}</td>
                                 <td>{payout.dateTime}</td>
                                 <td>
-                                    <FaEdit title="Edit" className="icon-green me-2"
-                                        onClick={() => handlePermissionCheck("edit", () => navigate("/dms/pendingpayments/edit", { state: { payout } }))} />
-                                    <FaTrash title="Delete" className="icon-red"
-                                        onClick={() => handlePermissionCheck("delete", () => handleDelete(payout.S_No))} />
+                                    {permissions.includes("edit") || permissions.includes("delete") ? (
+                                        <>
+                                            {permissions.includes("edit") && (
+                                                <FaEdit
+                                                    title="Edit"
+                                                    className="icon-green me-2"
+                                                    style={{ cursor: "pointer" }}
+                                                    onClick={() => navigate("/dms/pendingpayments/edit", { state: { payout } })}
+                                                />
+                                            )}
+                                            {permissions.includes("delete") && (
+                                                <FaTrash
+                                                    title="Delete"
+                                                    className="icon-red"
+                                                    style={{ cursor: "pointer" }}
+                                                    onClick={() => handleDelete(payout.S_No)}
+                                                />
+                                            )}
+                                        </>
+                                    ) : (
+                                        <span>-</span>
+                                    )}
                                 </td>
                             </tr>
                         ))
@@ -148,7 +164,6 @@ export const PendingPayouts = () => {
                     )}
                 </tbody>
             </Table>
-
 
             {/* Pagination */}
             <Pagination className="justify-content-center">

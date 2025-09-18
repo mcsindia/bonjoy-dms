@@ -140,11 +140,11 @@ export const FeedbackToDriverList = () => {
     };
 
     const handleDriverClick = (driverId) => {
-        navigate(`/dms/drivers/details/view`); // Navigating to driver's details page
+        navigate(`/dms/drivers/details/view`);
     };
 
     const handleRiderClick = (riderId) => {
-        navigate(`/dms/rider/profile`); // Navigating to riders details page
+        navigate(`/dms/rider/profile`);
     };
 
     return (
@@ -224,13 +224,15 @@ export const FeedbackToDriverList = () => {
                             <td>{renderStars(feedback.rating)}</td>
                             <td>{feedback.remark}</td>
                             <td>
-                                <FaEye
-                                    className="icon icon-blue"
-                                    title="View"
-                                    onClick={() =>
-                                        handlePermissionCheck("view", () => handleViewFeedback(feedback))
-                                    }
-                                />
+                                {permissions.includes("view") ? (
+                                    <FaEye
+                                        className="icon icon-blue"
+                                        title="View"
+                                        onClick={() => handleViewFeedback(feedback)}
+                                    />
+                                ) : (
+                                    <span>-</span>
+                                )}
                             </td>
                         </tr>
                     ))}

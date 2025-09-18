@@ -10,7 +10,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 export const RideTypeEdit = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { rideType } = location.state || {}; 
+  const { rideType } = location.state || {};
   const token = JSON.parse(localStorage.getItem("userData"))?.token;
 
   const [formData, setFormData] = useState({
@@ -72,6 +72,7 @@ export const RideTypeEdit = () => {
           multiplier: parseFloat(formData.fareMultiplier),
           description: formData.description,
           status: formData.status,
+          module_id: 'ride_type', // 🔹 Added module_id
         },
         {
           headers: {

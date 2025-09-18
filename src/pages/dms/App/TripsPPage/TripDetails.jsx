@@ -39,7 +39,6 @@ export const TripDetails = () => {
     }
   };
 
-  // ✅ Fetch Trip by ID
   useEffect(() => {
     const fetchTrip = async () => {
       try {
@@ -48,6 +47,9 @@ export const TripDetails = () => {
           headers: {
             Authorization: `Bearer ${token}`,
           },
+          params: {
+            module_id: "trip" // 🔹 add module_id
+          }
         });
         setTrip(response.data);
       } catch (error) {
@@ -82,7 +84,6 @@ export const TripDetails = () => {
     );
   }
 
-  // ✅ Destructure trip from API
   const {
     rider_name,
     rider_profile_image,
@@ -113,16 +114,20 @@ export const TripDetails = () => {
       <div className="trip-details-page container mt-4">
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h4>Trip Details</h4>
-          <Button
-            className="edit-button"
-            onClick={() =>
-              handlePermissionCheck("edit", () =>
-                navigate("/dms/trip/edit", { state: { trip } })
-              )
-            }
-          >
-            <FaEdit /> Edit
-          </Button>
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h4>Trip Details</h4>
+
+            {permissions.includes("edit") && (
+              <Button
+                className="edit-button"
+                onClick={() =>
+                  navigate("/dms/trip/edit", { state: { trip } })
+                }
+              >
+                <FaEdit /> Edit
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Trip Info */}

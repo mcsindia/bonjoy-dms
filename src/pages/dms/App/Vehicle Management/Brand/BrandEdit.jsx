@@ -25,7 +25,9 @@ export const BrandEdit = () => {
   useEffect(() => {
     const fetchModels = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/getAllModels`);
+        const response = await axios.get(`${API_BASE_URL}/getAllModels`, {
+          params: { module_id: 'model' } 
+        });
         setModels(response.data.data.models);
       } catch (error) {
         console.error('Error fetching models:', error);
@@ -48,6 +50,7 @@ export const BrandEdit = () => {
           modelId,
           brandName,
           status,
+          module_id: 'brand', // 🔹 Added module_id
         },
         {
           headers: { 'Content-Type': 'application/json' },
@@ -110,7 +113,7 @@ export const BrandEdit = () => {
               <Button type="submit" disabled={loading}>
                 {loading ? 'Saving...' : 'Save Changes'}
               </Button>
-              <Button type="cancel" className="ms-2" onClick={() => navigate("/dms/brand")}>
+              <Button type="button" className="ms-2" onClick={() => navigate("/dms/brand")}>
                 Cancel
               </Button>
             </div>

@@ -81,6 +81,7 @@ export const FareSettingEdit = () => {
         first_ride_bonus: formData.first_ride_bonus,
         effective_from: formData.effective_from,
         isActive: formData.isActive,
+        module_id: "fare_setting", // 🔹 Added module_id
       };
 
       const response = await axios.put(

@@ -39,7 +39,7 @@ export const MenuEdit = () => {
 
   const fetchParentMenus = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/getAllParentMenu`, {
+      const response = await axios.get(`${API_BASE_URL}/getAllParentMenu?module_id=menu`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -59,33 +59,42 @@ export const MenuEdit = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!formData.name.trim()) return setError('Menu Name is required.');
+  if (!formData.name.trim()) return setError('Menu Name is required.');
 
-    setIsLoading(true);
-    setError('');
+  setIsLoading(true);
+  setError('');
 
-    try {
-      const res = await axios.put(`${API_BASE_URL}/updateMenu/${menu.id}`, formData, {
+  try {
+    const payload = {
+      ...formData,
+      module_id: "menu"
+    };
+
+    const res = await axios.put(
+      `${API_BASE_URL}/updateMenu/${menu.id}`,
+      payload,
+      {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      });
-
-      if (res.data?.success) {
-        setSuccessMessage('Menu updated successfully!');
-        setTimeout(() => navigate('/dms/menu'), 1500);
-      } else {
-        setError(res.data?.message || 'Failed to update menu.');
       }
-    } catch (err) {
-      console.error('Update menu error:', err);
-      setError(err?.response?.data?.message || 'Something went wrong.');
-    } finally {
-      setIsLoading(false);
+    );
+
+    if (res.data?.success) {
+      setSuccessMessage('Menu updated successfully!');
+      setTimeout(() => navigate('/dms/menu'), 1500);
+    } else {
+      setError(res.data?.message || 'Failed to update menu.');
     }
-  };
+  } catch (err) {
+    console.error('Update menu error:', err);
+    setError(err?.response?.data?.message || 'Something went wrong.');
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <AdminLayout>

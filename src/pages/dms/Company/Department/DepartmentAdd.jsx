@@ -43,7 +43,7 @@ export const DepartmentAdd = () => {
     try {
       setIsLoading(true);
       setError('');
-      
+
       const token = JSON.parse(localStorage.getItem("userData"))?.token;
 
       const response = await axios.post(
@@ -51,6 +51,7 @@ export const DepartmentAdd = () => {
         {
           departmentName: formData.departmentName,
           description: formData.description,
+          module_id: "department", // 🔹 Add module_id here
         },
         {
           headers: {

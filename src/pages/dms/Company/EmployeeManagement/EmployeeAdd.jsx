@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AdminLayout } from '../../../../layouts/dms/AdminLayout/AdminLayout';
-import { Tabs, Tab, Form, Button, Row, Col, Table, Alert } from 'react-bootstrap';
+import { Tabs, Tab, Form, Button, Row, Col, Table } from 'react-bootstrap';
 import profile_img from '../../../../assets/images/profile.png';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -16,6 +16,7 @@ export const EmployeeAdd = () => {
   const [tabKey, setTabKey] = useState('profile');
   const [roles, setRoles] = useState([]);
   const [allModules, setAllModules] = useState([]);
+  const MODULE_ID = 'employee';
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -65,6 +66,7 @@ export const EmployeeAdd = () => {
       const token = JSON.parse(localStorage.getItem("userData"))?.token;
       const res = await axios.get(`${API_BASE_URL}/getDesignationsByDepartmentId/${departmentId}`, {
         headers: { Authorization: `Bearer ${token}` },
+        params: { module_id: MODULE_ID }
       });
       setDesignations(res.data.data || []);
 
@@ -80,6 +82,7 @@ export const EmployeeAdd = () => {
         const token = JSON.parse(localStorage.getItem("userData"))?.token;
         const res = await axios.get(`${API_BASE_URL}/getAllDepartments`, {
           headers: { Authorization: `Bearer ${token}` },
+          params: { module_id: MODULE_ID }
         });
         setDepartments(res.data.data?.data || []);
 
@@ -93,7 +96,9 @@ export const EmployeeAdd = () => {
 
   const fetchRoles = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/getAllRoles`);
+      const response = await axios.get(`${API_BASE_URL}/getAllRoles`, {
+        params: { module_id: MODULE_ID }
+      });
       setRoles(response.data.data.rows || [])
     } catch (error) {
       console.error("Error fetching roles:", error);
@@ -110,6 +115,7 @@ export const EmployeeAdd = () => {
       const token = JSON.parse(localStorage.getItem("userData"))?.token;
       const res = await axios.get(`${API_BASE_URL}/getAllModuleByRole?roleId=${roleId}`, {
         headers: { Authorization: `Bearer ${token}` },
+        params: { roleId: roleId, module_id: MODULE_ID }
       });
 
       const roleData = res.data?.data?.[0];
@@ -140,25 +146,26 @@ export const EmployeeAdd = () => {
     }
   };
 
- useEffect(() => {
-  const fetchAllModules = async () => {
-    try {
-      const res = await axios.get(`${API_BASE_URL}/getAllModules?page=1&limit=1000`);
-      const allFetchedModules = (res.data?.data?.result || []).filter(mod => mod?.moduleName && mod.is_active);
+  useEffect(() => {
+    const fetchAllModules = async () => {
+      try {
+        const res = await axios.get(`${API_BASE_URL}/getAllModules`, {
+          params: { page: 1, limit: 1000, module_id: MODULE_ID }
+        });
+        const allFetchedModules = (res.data?.data?.result || []).filter(mod => mod?.moduleName && mod.is_active);
 
-      // Filter out modules that are already included in dynamicPermissions
-      const filteredModules = allFetchedModules.filter(module =>
-        !dynamicPermissions.some(perm => perm.moduleName === module.moduleName)
-      );
+        const filteredModules = allFetchedModules.filter(module =>
+          !dynamicPermissions.some(perm => perm.moduleName === module.moduleName)
+        );
 
-      setAllModules(filteredModules);
-    } catch (error) {
-      console.error("Failed to fetch all modules:", error);
-    }
-  };
+        setAllModules(filteredModules);
+      } catch (error) {
+        console.error("Failed to fetch all modules:", error);
+      }
+    };
 
-  fetchAllModules();
-}, [dynamicPermissions]);
+    fetchAllModules();
+  }, [dynamicPermissions]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -218,6 +225,9 @@ export const EmployeeAdd = () => {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',
         },
+        params: {
+          module_id: 'employee',
+        },
       });
 
       setSuccessMessage("Employee added successfully!");
@@ -225,15 +235,15 @@ export const EmployeeAdd = () => {
         navigate("/dms/employee");
       }, 2000);
     } catch (err) {
-  console.error("Request failed:", err);
-  const errorMsg = err.response?.data?.message;
+      console.error("Request failed:", err);
+      const errorMsg = err.response?.data?.message;
 
-  if (errorMsg?.toLowerCase().includes("email already exists")) {
-    alert("Email already exists. Please use a different email.");
-  } else {
-    alert("Error: " + (errorMsg || "Something went wrong!"));
-  }
-}
+      if (errorMsg?.toLowerCase().includes("email already exists")) {
+        alert("Email already exists. Please use a different email.");
+      } else {
+        alert("Error: " + (errorMsg || "Something went wrong!"));
+      }
+    }
   };
 
   const handleNext = () => {

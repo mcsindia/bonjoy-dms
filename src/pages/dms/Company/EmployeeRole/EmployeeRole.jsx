@@ -18,23 +18,23 @@ export const EmployeeRole = () => {
   const [roleToDelete, setRoleToDelete] = useState(null);
   const [loading, setLoading] = useState(false);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-   const userData = JSON.parse(localStorage.getItem("userData"));
-    let permissions = [];
+  const userData = JSON.parse(localStorage.getItem("userData"));
+  let permissions = [];
 
-if (Array.isArray(userData?.employeeRole)) {
-  for (const role of userData.employeeRole) {
-    for (const child of role.childMenus || []) {
-      for (const mod of child.modules || []) {
-        if (mod.moduleUrl?.toLowerCase() === "role") {
-          permissions = mod.permission
-            ?.toLowerCase()
-            .split(',')
-            .map(p => p.trim()) || [];
+  if (Array.isArray(userData?.employeeRole)) {
+    for (const role of userData.employeeRole) {
+      for (const child of role.childMenus || []) {
+        for (const mod of child.modules || []) {
+          if (mod.moduleUrl?.toLowerCase() === "role") {
+            permissions = mod.permission
+              ?.toLowerCase()
+              .split(',')
+              .map(p => p.trim()) || [];
+          }
         }
       }
     }
   }
-}
 
   const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
     if (permissions.includes(permissionType)) {
@@ -59,7 +59,8 @@ if (Array.isArray(userData?.employeeRole)) {
           page: currentPage,
           limit: itemsPerPage,
           name: search || undefined,
-          status: filter || undefined
+          status: filter || undefined,
+          module_id: "role",
         }
       });
 
@@ -106,43 +107,53 @@ if (Array.isArray(userData?.employeeRole)) {
   };
 
   const confirmDelete = async () => {
-  try {
-    const response = await axios.delete(`${API_BASE_URL}/deleteRole/${roleToDelete}`);
+    try {
+      const response = await axios.delete(
+        `${API_BASE_URL}/deleteRole/${roleToDelete}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+          data: {
+            module_id: "role",
+          }
+        }
+      );
 
-    if (response.data.success) {
-      const updatedRoles = roles.filter((role) => role.id !== roleToDelete);
-      setRoles(updatedRoles);
+      if (response.data.success) {
+        const updatedRoles = roles.filter((role) => role.id !== roleToDelete);
+        setRoles(updatedRoles);
 
-      if (updatedRoles.length === 0 && currentPage > 1) {
-        setCurrentPage(currentPage - 1);
+        if (updatedRoles.length === 0 && currentPage > 1) {
+          setCurrentPage(currentPage - 1);
+        } else {
+          fetchRoles(); // Refresh list
+        }
       } else {
-        fetchRoles(); // Refresh list
+        alert(response.data.message || "Failed to delete role.");
       }
-    } else {
-      alert(response.data.message || "Failed to delete role.");
-    }
-  } catch (error) {
-    const backendMsg = error.response?.data?.message?.toLowerCase?.() || '';
+    } catch (error) {
+      const backendMsg = error.response?.data?.message?.toLowerCase?.() || '';
 
-    if (
-      backendMsg.includes("link with employee") ||
-      backendMsg.includes("foreign key") ||
-      backendMsg.includes("constraint")
-    ) {
-      alert("Cannot delete this role because it is assigned to one or more employees. Please unlink or remove those employees first.");
-    } else if (error.response?.status === 500) {
-      alert("Server error occurred while deleting the role. Please try again later.");
-    } else if (!error.response) {
-      alert("No response from server. Please check your internet connection.");
-    } else {
-      alert(backendMsg || "Unexpected error occurred. Please try again.");
+      if (
+        backendMsg.includes("link with employee") ||
+        backendMsg.includes("foreign key") ||
+        backendMsg.includes("constraint")
+      ) {
+        alert("Cannot delete this role because it is assigned to one or more employees. Please unlink or remove those employees first.");
+      } else if (error.response?.status === 500) {
+        alert("Server error occurred while deleting the role. Please try again later.");
+      } else if (!error.response) {
+        alert("No response from server. Please check your internet connection.");
+      } else {
+        alert(backendMsg || "Unexpected error occurred. Please try again.");
+      }
+      console.error("Error deleting role:", error);
+    } finally {
+      setShowDeleteModal(false);
+      setRoleToDelete(null);
     }
-    console.error("Error deleting role:", error);
-  } finally {
-    setShowDeleteModal(false);
-    setRoleToDelete(null);
-  }
-};
+  };
 
   useEffect(() => {
     if (roles.length === 0 && currentPage > 1) {
@@ -168,9 +179,9 @@ if (Array.isArray(userData?.employeeRole)) {
           <h3>Role</h3>
           <div className="export-import-container">
             {permissions.includes("add") && (
-            <Button variant="primary" onClick={() => handlePermissionCheck("add", () => navigate('/dms/role/add'))}>
-              <FaPlus /> Add Role
-            </Button>
+              <Button variant="primary" onClick={() => navigate('/dms/role/add')}>
+                <FaPlus /> Add Role
+              </Button>
             )}
           </div>
         </div>
@@ -214,10 +225,40 @@ if (Array.isArray(userData?.employeeRole)) {
                         <td>{new Date(role.createdAt).toLocaleString()}</td>
                         <td>{new Date(role.updatedAt).toLocaleString()}</td>
                         <td>
-                         <FaEye title='View' className='icon-blue me-2' onClick={() => handlePermissionCheck("view", () => navigate(`/dms/role/view/${role.id}`, { state: { role } }))} />
-                         <FaEdit title="Edit" className="icon-green me-2" onClick={() => handlePermissionCheck("edit", () => navigate("/dms/role/edit", { state: { role } }))} />
-                         <FaTrash title="Delete" className="icon-red" onClick={() => handlePermissionCheck("delete", () => handleDelete(role.id))} /> 
-                         </td>
+                          {permissions.includes("view") ||
+                            permissions.includes("edit") ||
+                            permissions.includes("delete") ? (
+                            <>
+                              {permissions.includes("view") && (
+                                <FaEye
+                                  title="View"
+                                  className="icon-blue me-2"
+                                  onClick={() =>
+                                    navigate(`/dms/role/view/${role.id}`, { state: { role } })
+                                  }
+                                />
+                              )}
+                              {permissions.includes("edit") && (
+                                <FaEdit
+                                  title="Edit"
+                                  className="icon-green me-2"
+                                  onClick={() =>
+                                    navigate("/dms/role/edit", { state: { role } })
+                                  }
+                                />
+                              )}
+                              {permissions.includes("delete") && (
+                                <FaTrash
+                                  title="Delete"
+                                  className="icon-red"
+                                  onClick={() => handleDelete(role.id)}
+                                />
+                              )}
+                            </>
+                          ) : (
+                            <span>-</span>
+                          )}
+                        </td>
                       </tr>
                     ))
                   ) : (

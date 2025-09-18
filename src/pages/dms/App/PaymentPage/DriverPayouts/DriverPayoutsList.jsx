@@ -35,14 +35,6 @@ export const DriverPayoutsList = () => {
         }
     }
 
-    const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
-        if (permissions.includes(permissionType)) {
-            action();
-        } else {
-            alert(fallbackMessage || `You don't have permission to ${permissionType} this setting.`);
-        }
-    };
-
     const handleDelete = (payoutId) => {
         if (window.confirm(`Are you sure you want to delete payout record #${payoutId}?`)) {
             setPayoutData(payoutData.filter((payout) => payout.S_No !== payoutId));
@@ -73,14 +65,17 @@ export const DriverPayoutsList = () => {
                         <Dropdown.Item> <FaFileExcel className="icon-green" /> Export to Excel</Dropdown.Item>
                         <Dropdown.Item> <FaFilePdf className="icon-red" /> Export to PDF</Dropdown.Item>
                     </DropdownButton>
-                    <Button variant="primary" onClick={() => handlePermissionCheck("add", () => navigate('/dms/driverpayout/add'))}>
-                        <FaPlus /> Add Payout
-                    </Button>
+
+                    {permissions.includes("add") && (
+                        <Button variant="primary" onClick={() => navigate('/dms/driverpayout/add')}>
+                            <FaPlus /> Add Payout
+                        </Button>
+                    )}
                 </div>
             </div>
 
             <div className="filter-search-container">
-                <DropdownButton variant="primary" title="Filter Status" id="filter-dropdown">
+                <DropdownButton variant="primary" title={`Filter: ${filter || 'All'}`} id="filter-dropdown">
                     <Dropdown.Item onClick={() => setFilter('')}>All</Dropdown.Item>
                     <Dropdown.Item onClick={() => setFilter('Pending')}>Pending</Dropdown.Item>
                     <Dropdown.Item onClick={() => setFilter('Processed')}>Processed</Dropdown.Item>
@@ -126,8 +121,29 @@ export const DriverPayoutsList = () => {
                                 <td>{payout.payoutDate}</td>
                                 <td>{payout.payoutStatus}</td>
                                 <td>
-                                    <FaEdit title="Edit" className="icon-green me-2" onClick={() => handlePermissionCheck("edit", () => navigate("/dms/driverpayout/edit", { state: { payout } }))} />
-                                    <FaTrash title="Delete" className="icon-red" onClick={() => handlePermissionCheck("delete", () => handleDelete(payout.S_No))} />
+                                    {permissions.includes("edit") || permissions.includes("delete") ? (
+                                        <>
+                                            {permissions.includes("edit") ? (
+                                                <FaEdit
+                                                    title="Edit"
+                                                    className="icon-green me-2"
+                                                    style={{ cursor: "pointer" }}
+                                                    onClick={() => navigate("/dms/driverpayout/edit", { state: { payout } })}
+                                                />
+                                            ) : null}
+
+                                            {permissions.includes("delete") ? (
+                                                <FaTrash
+                                                    title="Delete"
+                                                    className="icon-red"
+                                                    style={{ cursor: "pointer" }}
+                                                    onClick={() => handleDelete(payout.S_No)}
+                                                />
+                                            ) : null}
+                                        </>
+                                    ) : (
+                                        <span>-</span>
+                                    )}
                                 </td>
                             </tr>
                         ))

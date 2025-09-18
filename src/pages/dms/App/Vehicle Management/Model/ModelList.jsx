@@ -20,50 +20,52 @@ export const ModelList = () => {
     const [loading, setLoading] = useState(false);
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const userData = JSON.parse(localStorage.getItem("userData"));
- 
-      let permissions = [];
 
-if (Array.isArray(userData?.employeeRole)) {
-  for (const role of userData.employeeRole) {
-    for (const child of role.childMenus || []) {
-      for (const mod of child.modules || []) {
-        if (mod.moduleUrl?.toLowerCase() === "model") {
-          permissions = mod.permission
-            ?.toLowerCase()
-            .split(',')
-            .map(p => p.trim()) || [];
+    let permissions = [];
+    if (Array.isArray(userData?.employeeRole)) {
+        for (const role of userData.employeeRole) {
+            for (const child of role.childMenus || []) {
+                for (const mod of child.modules || []) {
+                    if (mod.moduleUrl?.toLowerCase() === "model") {
+                        permissions = mod.permission
+                            ?.toLowerCase()
+                            .split(',')
+                            .map(p => p.trim()) || [];
+                    }
+                }
+            }
         }
-      }
     }
-  }
-}
 
-       const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
-    if (permissions.includes(permissionType)) {
-      action(); // allowed, run the actual function
-    } else {
-      alert(fallbackMessage || `You don't have permission to ${permissionType} this employee.`);
-    }
-  };
+    const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
+        if (permissions.includes(permissionType)) {
+            action();
+        } else {
+            alert(fallbackMessage || `You don't have permission to ${permissionType} this employee.`);
+        }
+    };
 
     const brandIdToName = {};
     brands.forEach((brand) => {
         brandIdToName[brand.id] = brand.brandName;
     });
 
+    // Fetch brands with module_id
     useEffect(() => {
         const fetchBrands = async () => {
             try {
-                const response = await axios.get(`${API_BASE_URL}/getAllBrands`);
+                const response = await axios.get(`${API_BASE_URL}/getAllBrands`, {
+                    params: { module_id: 'model' } // 🔹 Added module_id
+                });
                 setBrands(response.data.data.data || []);
             } catch (error) {
                 console.error('Error fetching brands:', error);
             }
         };
-
         fetchBrands();
     }, []);
 
+    // Fetch models with module_id
     useEffect(() => {
         const fetchModels = async () => {
             setLoading(true);
@@ -72,6 +74,7 @@ if (Array.isArray(userData?.employeeRole)) {
                 const params = {
                     page: currentPage,
                     limit: itemsPerPage,
+                    module_id: 'model', // 🔹 Added module_id
                 };
 
                 if (search) {
@@ -101,7 +104,6 @@ if (Array.isArray(userData?.employeeRole)) {
         fetchModels();
     }, [currentPage, search, filter, itemsPerPage]);
 
-    // Handle search input change
     const handleSearch = (e) => {
         setSearch(e.target.value);
         setCurrentPage(1);
@@ -112,16 +114,17 @@ if (Array.isArray(userData?.employeeRole)) {
         setCurrentPage(1);
     };
 
-    // Pagination logic
     const handlePageChange = (pageNumber) => {
         setCurrentPage(pageNumber);
     };
 
-    // Handle deletion of a model
+    // Delete model API with module_id
     const handleDelete = async () => {
         if (modelToDelete) {
             try {
-                await axios.delete(`${API_BASE_URL}/deleteModel/${modelToDelete}`);
+                await axios.delete(`${API_BASE_URL}/deleteModel/${modelToDelete}`, {
+                    params: { module_id: 'model' } // 🔹 Added module_id
+                });
                 setModels(models.filter((model) => model.id !== modelToDelete));
                 setShowModal(false);
                 setModelToDelete(null);
@@ -131,13 +134,11 @@ if (Array.isArray(userData?.employeeRole)) {
         }
     };
 
-    // Open modal for deletion confirmation
     const openDeleteModal = (modelId) => {
         setModelToDelete(modelId);
         setShowModal(true);
     };
 
-    // Close modal
     const closeDeleteModal = () => {
         setShowModal(false);
         setModelToDelete(null);
@@ -147,9 +148,11 @@ if (Array.isArray(userData?.employeeRole)) {
         <AdminLayout>
             <div className="dms-pages-header sticky-header">
                 <h3>Model List</h3>
-                    <Button variant="primary" onClick={() => handlePermissionCheck("add", () => navigate('/dms/model/add'))}>
+                {permissions.includes("add") && (
+                    <Button variant="primary" onClick={() => navigate('/dms/model/add')}>
                         <FaPlus /> Add Model
                     </Button>
+                )}
             </div>
 
             {/* Search and Filter */}
@@ -170,12 +173,9 @@ if (Array.isArray(userData?.employeeRole)) {
 
             <div className="dms-table-container">
                 {loading ? (
-                    <div className="text-center mt-5">
-                        <h4>Loading model list...</h4>
-                    </div>
+                    <div className="text-center mt-5"><h4>Loading model list...</h4></div>
                 ) : (
                     <>
-                        {/* Table */}
                         <Table striped bordered hover responsive>
                             <thead>
                                 <tr>
@@ -197,55 +197,49 @@ if (Array.isArray(userData?.employeeRole)) {
                                             <td>{model.status}</td>
                                             <td>{new Date(model.createdAt).toLocaleString()}</td>
                                             <td>
-                                                    <FaEdit
-                                                        title="Edit"
-                                                        className="icon-green me-2"
-                                                        onClick={() => handlePermissionCheck("edit", () => navigate('/dms/model/edit', { state: model }))}
-                                                    />
-                                                    <FaTrash
-                                                        title="Delete"
-                                                        className="icon-red"
-                                                        onClick={() => handlePermissionCheck("delete", () => openDeleteModal(model.id))}
-                                                    />
+                                                {permissions.includes("edit") || permissions.includes("delete") ? (
+                                                    <>
+                                                        {permissions.includes("edit") && (
+                                                            <FaEdit
+                                                                title="Edit"
+                                                                className="icon-green me-2"
+                                                                onClick={() => navigate('/dms/model/edit', { state: model })}
+                                                            />
+                                                        )}
+                                                        {permissions.includes("delete") && (
+                                                            <FaTrash
+                                                                title="Delete"
+                                                                className="icon-red"
+                                                                onClick={() => openDeleteModal(model.id)}
+                                                            />
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <span>-</span>
+                                                )}
                                             </td>
                                         </tr>
                                     ))
                                 ) : (
-                                    <tr>
-                                        <td colSpan="6" className="text-center">No models found.</td>
-                                    </tr>
+                                    <tr><td colSpan="6" className="text-center">No models found.</td></tr>
                                 )}
                             </tbody>
                         </Table>
 
-                        {/* Pagination */}
                         <div className="pagination-container">
                             <Pagination className="mb-0">
-                                <Pagination.Prev
-                                    onClick={() => handlePageChange(currentPage - 1)}
-                                    disabled={currentPage === 1}
-                                />
+                                <Pagination.Prev onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} />
                                 {[...Array(totalPages)].map((_, index) => (
-                                    <Pagination.Item
-                                        key={index + 1}
-                                        active={index + 1 === currentPage}
-                                        onClick={() => handlePageChange(index + 1)}
-                                    >
+                                    <Pagination.Item key={index + 1} active={index + 1 === currentPage} onClick={() => handlePageChange(index + 1)}>
                                         {index + 1}
                                     </Pagination.Item>
                                 ))}
-                                <Pagination.Next
-                                    onClick={() => handlePageChange(currentPage + 1)}
-                                    disabled={currentPage === totalPages}
-                                />
+                                <Pagination.Next onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} />
                             </Pagination>
 
                             <Form.Select
                                 value={itemsPerPage}
-                                onChange={(e) => {
-                                    setItemsPerPage(Number(e.target.value));
-                                    setCurrentPage(1);
-                                }}
+                                onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
                                 className='pagination-option w-auto'
                             >
                                 <option value="5">Show 5</option>
@@ -259,21 +253,12 @@ if (Array.isArray(userData?.employeeRole)) {
                 )}
             </div>
 
-            {/* Deletion Confirmation Modal */}
             <Modal show={showModal} onHide={closeDeleteModal}>
-                <Modal.Header closeButton>
-                    <Modal.Title>Confirm Deletion</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    Are you sure you want to delete this model?
-                </Modal.Body>
+                <Modal.Header closeButton><Modal.Title>Confirm Deletion</Modal.Title></Modal.Header>
+                <Modal.Body>Are you sure you want to delete this model?</Modal.Body>
                 <Modal.Footer>
-                    <Button type='cancel' onClick={closeDeleteModal}>
-                        Cancel
-                    </Button>
-                    <Button type='submit' onClick={handleDelete}>
-                        Delete
-                    </Button>
+                    <Button type='cancel' onClick={closeDeleteModal}>Cancel</Button>
+                    <Button type='submit' onClick={handleDelete}>Delete</Button>
                 </Modal.Footer>
             </Modal>
         </AdminLayout>

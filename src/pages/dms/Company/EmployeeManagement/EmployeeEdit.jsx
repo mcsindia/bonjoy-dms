@@ -28,14 +28,18 @@ export const EmployeeEdit = () => {
   const [roles, setRoles] = useState([]);
   const [roleModules, setRoleModules] = useState([]);
   const [allModules, setAllModules] = useState([]);
+  const MODULE_ID = 'employee';
 
   const token = JSON.parse(localStorage.getItem("userData"))?.token;
   const axiosInstance = axios.create({
-    baseURL: API_BASE_URL,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  baseURL: API_BASE_URL,
+  headers: {
+    Authorization: `Bearer ${token}`,
+  },
+  params: {
+    module_id: MODULE_ID
+  }
+});
 
   useEffect(() => {
     const fetchRoles = async () => {
@@ -112,7 +116,7 @@ export const EmployeeEdit = () => {
     const fetchAllModules = async () => {
       try {
         const token = JSON.parse(localStorage.getItem("userData"))?.token;
-        const res = await axios.get(`${API_BASE_URL}/getAllModules?page=1&limit=1000`, {
+        const res = await axiosInstance.get(`${API_BASE_URL}/getAllModules?page=1&limit=1000`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 

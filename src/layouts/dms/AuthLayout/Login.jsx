@@ -58,65 +58,70 @@ export const Login = () => {
     }
   };
 
-  const handleVerifyOTP = async () => {
-    const fullOtp = otp.join("");
-    if (fullOtp.length < 4) {
-      alert("Please enter the complete OTP.");
-      return;
-    }
+ const handleVerifyOTP = async () => {
+  const fullOtp = otp.join("");
+  if (fullOtp.length < 4) {
+    alert("Please enter the complete OTP.");
+    return;
+  }
 
-    try {
-      const response = await axios.post(`${API_BASE_URL}/verifyOtp`, {
-        mobile: email,
-        otp: fullOtp,
-        ip_address: "123.879.879.346"
-      });
+  try {
+    const response = await axios.post(`${API_BASE_URL}/verifyOtp`, {
+      mobile: email,
+      otp: fullOtp,
+      ip_address: "123.879.879.346"
+    });
 
-      const user = response?.data?.user;
-      if (user && user.token) {
-        localStorage.setItem("userData", JSON.stringify(user));
+    const user = response?.data?.user;
+    if (user && user.token) {
+      const userData = {
+        ...user,
+         expiryTime: Date.now() + 5 * 60 * 60 * 1000,
+      };
 
-        const userType = user?.userType;
-        const employeeRole = Array.isArray(user?.employeeRole)
-          ? user.employeeRole
-          : [user.employeeRole];
+      localStorage.setItem("userData", JSON.stringify(userData));
 
-        if (userType === "Admin") {
+      const userType = user?.userType;
+      const employeeRole = Array.isArray(user?.employeeRole)
+        ? user.employeeRole
+        : [user.employeeRole];
+
+      if (userType === "Admin") {
+        navigate("/dms/dashboard");
+      } else {
+        const allModules = employeeRole.flatMap(role =>
+          role?.childMenus?.flatMap(child => child.modules || []) || []
+        );
+
+        const hasDashboardAccess = allModules.some(mod =>
+          mod?.moduleUrl?.toLowerCase() === "dashboard" &&
+          mod?.permission?.toLowerCase().split(",").map(p => p.trim()).includes("view")
+        );
+
+        if (hasDashboardAccess) {
           navigate("/dms/dashboard");
         } else {
-          const allModules = employeeRole.flatMap(role =>
-            role?.childMenus?.flatMap(child => child.modules || []) || []
-          );
-
-          const hasDashboardAccess = allModules.some(mod =>
-            mod?.moduleUrl?.toLowerCase() === "dashboard" &&
+          const firstAccessible = allModules.find(mod =>
+            mod?.moduleUrl &&
             mod?.permission?.toLowerCase().split(",").map(p => p.trim()).includes("view")
           );
-
-          if (hasDashboardAccess) {
-            navigate("/dms/dashboard");
+          if (firstAccessible) {
+            navigate(`/dms/${firstAccessible.moduleUrl.toLowerCase()}`);
           } else {
-            const firstAccessible = allModules.find(mod =>
-              mod?.moduleUrl &&
-              mod?.permission?.toLowerCase().split(",").map(p => p.trim()).includes("view")
-            );
-            if (firstAccessible) {
-              navigate(`/dms/${firstAccessible.moduleUrl.toLowerCase()}`);
-            } else {
-              navigate("/unauthorized");
-            }
+            navigate("/unauthorized");
           }
         }
-
-        setShowOTPModal(false);
-      } else {
-        alert("Invalid response. User not found.");
       }
-    } catch (error) {
-      console.error("OTP verification failed:", error);
-      alert(error.response?.data?.message || "Failed to verify OTP.");
+
+      setShowOTPModal(false);
+    } else {
+      alert("Invalid response. User not found.");
     }
-  };
+  } catch (error) {
+    console.error("OTP verification failed:", error);
+    alert(error.response?.data?.message || "Failed to verify OTP.");
+  }
+};
 
   return (
     <div className="dms-auth-wrapper">
@@ -173,7 +178,7 @@ export const Login = () => {
                 <Button
                   variant="link"
                   className="p-0 text-decoration-none text-primary"
-                  onClick={() => navigate("/otp")}
+                  onClick={() => navigate("/dms/forget-password")}
                 >
                   Forgot Password?
                 </Button>
@@ -182,17 +187,6 @@ export const Login = () => {
               <Button type="submit" className="w-100">
                 Log In
               </Button>
-
-              <div className="text-center mt-3">
-                <span>Don't have an account? </span>
-                <Button
-                  variant="link"
-                  className="p-0 text-decoration-none text-primary mb-1"
-                  onClick={() => navigate("/register")}
-                >
-                  Sign up
-                </Button>
-              </div>
             </Form>
           </Card.Body>
         </Card>

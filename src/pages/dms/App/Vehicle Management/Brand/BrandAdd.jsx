@@ -24,6 +24,7 @@ export const BrandAdd = () => {
     try {
       const response = await axios.post(`${API_BASE_URL}/createBrand`, {
         brandName,
+        module_id: 'brand', // 🔹 Added module_id
       });
 
       if (response.data.success) {

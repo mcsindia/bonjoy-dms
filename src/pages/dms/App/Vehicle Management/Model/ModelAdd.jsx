@@ -17,7 +17,11 @@ export const ModelAdd = () => {
   useEffect(() => {
     const fetchBrands = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/getAllBrands`);
+        const response = await axios.get(`${API_BASE_URL}/getAllBrands`, {
+          params: {
+            module_id: 'model', // 🔹 Added module_id
+          },
+        });
         if (Array.isArray(response.data.data.data)) {
           setBrandList(response.data.data.data);
         } else {
@@ -40,6 +44,7 @@ export const ModelAdd = () => {
       const response = await axios.post(`${API_BASE_URL}/createModel`, {
         brandId,
         modelName,
+        module_id: 'model', // 🔹 Added module_id
       });
 
       if (response.data.success) {
@@ -61,13 +66,11 @@ export const ModelAdd = () => {
       <div className='dms-container'>
         <h3>Add Model</h3>
         <div className='dms-form-container'>
-
           {successMessage && (
             <Alert variant="success" onClose={() => setSuccessMessage('')} dismissible>
               {successMessage}
             </Alert>
           )}
-
           {errorMessage && (
             <Alert variant="danger" onClose={() => setErrorMessage('')} dismissible>
               {errorMessage}
@@ -75,7 +78,6 @@ export const ModelAdd = () => {
           )}
 
           <Form onSubmit={handleSubmit}>
-
             {/* Brand Dropdown */}
             <Form.Group controlId="brandId" className="dms-form-group">
               <Form.Label>Brand</Form.Label>

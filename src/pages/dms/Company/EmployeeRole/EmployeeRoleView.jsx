@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button, Card, Alert, Table } from 'react-bootstrap';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaEdit } from 'react-icons/fa';
+import { FaEdit } from 'react-icons/fa';
 import { AdminLayout } from '../../../../layouts/dms/AdminLayout/AdminLayout';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -15,8 +15,12 @@ export const EmployeeRoleView = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const userData = JSON.parse(localStorage.getItem("userData"));
-  let permissions = [];
+  const token = userData?.token;
 
+  // 🔹 Constant module_id for backend validation
+  const MODULE_ID = "role"; // can be string or numeric depending on backend
+
+  let permissions = [];
   if (Array.isArray(userData?.employeeRole)) {
     for (const role of userData.employeeRole) {
       for (const child of role.childMenus || []) {
@@ -34,13 +38,11 @@ export const EmployeeRoleView = () => {
 
   const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
     if (permissions.includes(permissionType)) {
-      action(); // allowed, run the actual function
+      action();
     } else {
-      alert(fallbackMessage || `You don't have permission to ${permissionType} this employee.`);
+      alert(fallbackMessage || `You don't have permission to ${permissionType} this role.`);
     }
   };
-
-  const token = JSON.parse(localStorage.getItem("userData"))?.token;
 
   useEffect(() => {
     const fetchRoleById = async () => {
@@ -51,11 +53,14 @@ export const EmployeeRoleView = () => {
       }
 
       try {
-        const res = await fetch(`${API_BASE_URL}/getRoleById/${roleId}`, {
+        const res = await fetch(`${API_BASE_URL}/getRoleById/${roleId}?module_id=${MODULE_ID}`, {
+          method: "GET",
           headers: {
             'Authorization': `Bearer ${token}`,
-          },
+            'Content-Type': 'application/json',
+          }
         });
+
         const data = await res.json();
 
         if (data.success) {
@@ -90,7 +95,13 @@ export const EmployeeRoleView = () => {
         <div className="d-flex justify-content-between mb-2">
           <h4>Role Details</h4>
           {permissions.includes("edit") && (
-            <Button className="edit-button" onClick={() => handlePermissionCheck("edit", () => navigate('/dms/role/edit', { state: { role } }))}>
+            <Button
+              className="edit-button"
+              onClick={() =>
+                  navigate('/dms/role/edit', { state: { role } }
+                )
+              }
+            >
               <FaEdit /> Edit
             </Button>
           )}

@@ -28,9 +28,11 @@ export const MenuAdd = () => {
 
     const fetchParentMenus = async () => {
         try {
-            const res = await axios.get(`${API_BASE_URL}/getAllParentMenu`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await axios.get(
+                `${API_BASE_URL}/getAllParentMenu?module_id=menu`, 
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
             if (res.data.success && Array.isArray(res.data.data)) {
                 setParentMenus(res.data.data);
             }
@@ -54,14 +56,19 @@ export const MenuAdd = () => {
         setIsLoading(true);
 
         try {
-            const res = await axios.post(`${API_BASE_URL}/createMenu`, {
-                name: formData.name.trim(),
-                parent_id: formData.parent_id
-            }, {
-                headers: {
-                    Authorization: `Bearer ${token}`
+            const res = await axios.post(
+                `${API_BASE_URL}/createMenu`,
+                {
+                    name: formData.name.trim(),
+                    parent_id: formData.parent_id,
+                    module_id: "menu", 
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
                 }
-            });
+            );
 
             if (res.data?.success) {
                 setSuccessMessage('Menu created successfully!');

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button, Form, Alert } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
@@ -31,7 +31,12 @@ export const ModelEdit = () => {
   useEffect(() => {
     const fetchBrands = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/getAllBrands`);
+        const response = await axios.get(`${API_BASE_URL}/getAllBrands`, {
+          params: {
+            module_id: 'model', // 🔹 Added module_id
+          },
+        });
+
         if (Array.isArray(response.data.data.data)) {
           setBrandList(response.data.data.data);
         } else {
@@ -49,11 +54,15 @@ export const ModelEdit = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.put(`${API_BASE_URL}/updateModel/${modelData.id}`, {
-        brandId,
-        modelName,
-        status,
-      });
+      const response = await axios.put(
+        `${API_BASE_URL}/updateModel/${modelData.id}`,
+        {
+          brandId,
+          modelName,
+          status,
+          module_id: 'model', // 🔹 Added module_id
+        }
+      );
 
       if (response.data.success) {
         setVariant('success');

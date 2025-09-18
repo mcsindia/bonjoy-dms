@@ -18,12 +18,35 @@ export const RideFareSetting = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedFare, setSelectedFare] = useState(null);
 
-  // 🔹 new states for filtering by date
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
   const userData = JSON.parse(localStorage.getItem("userData"));
   const token = userData?.token;
+  let permissions = [];
+
+  if (Array.isArray(userData?.employeeRole)) {
+    for (const role of userData.employeeRole) {
+      for (const child of role.childMenus || []) {
+        for (const mod of child.modules || []) {
+          if (mod.moduleUrl?.toLowerCase() === "menu") {
+            permissions = mod.permission
+              ?.toLowerCase()
+              .split(',')
+              .map(p => p.trim()) || [];
+          }
+        }
+      }
+    }
+  }
+
+  const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
+    if (permissions.includes(permissionType)) {
+      action(); // allowed, run the actual function
+    } else {
+      alert(fallbackMessage || `You don't have permission to ${permissionType} this employee.`);
+    }
+  };
 
   // Fetch fare settings
   const fetchFareSettings = async (page = 1, searchValue = "", start = "", end = "") => {
@@ -37,6 +60,7 @@ export const RideFareSetting = () => {
           search: searchValue || undefined,
           fromDate: start || undefined,
           toDate: end || undefined,
+          module_id: "fare_setting", // 🔹 Added module_id
         },
       });
 
@@ -74,6 +98,9 @@ export const RideFareSetting = () => {
     try {
       await axios.delete(`${API_BASE_URL}/deleteFareSetting/${selectedFare.id}`, {
         headers: { Authorization: `Bearer ${token}` },
+        data: {
+          module_id: "fare_setting", // 🔹 Added module_id
+        },
       });
 
       alert("Fare setting deleted successfully!");
@@ -91,24 +118,26 @@ export const RideFareSetting = () => {
     <AdminLayout>
       <div className="dms-pages-header sticky-header">
         <h3>Ride Fare Setting</h3>
-        <Button
-          variant="primary"
-          onClick={() => navigate("/dms/faresettings/add")}
-        >
-          <FaPlus /> Add Fare Setting
-        </Button>
+        {permissions.includes("add") && (
+          <Button
+            variant="primary"
+            onClick={() => navigate("/dms/faresettings/add")}
+          >
+            <FaPlus /> Add Fare Setting
+          </Button>
+        )}
       </div>
 
-      {/* 🔹 Filters */}
+      {/*  Filters */}
       <div className="filter-search-container">
-         <div className='filter-container'>
-        <p className='btn btn-primary'>Filter by Date -</p>
-        <Form.Group>
-          <Form.Control type="date" value={startDate} onChange={(e) => { setStartDate(e.target.value); setCurrentPage(1); }} />
-        </Form.Group>
-        <Form.Group>
-          <Form.Control type="date" value={endDate} onChange={(e) => { setEndDate(e.target.value); setCurrentPage(1); }} />
-        </Form.Group>
+        <div className='filter-container'>
+          <p className='btn btn-primary'>Filter by Date -</p>
+          <Form.Group>
+            <Form.Control type="date" value={startDate} onChange={(e) => { setStartDate(e.target.value); setCurrentPage(1); }} />
+          </Form.Group>
+          <Form.Group>
+            <Form.Control type="date" value={endDate} onChange={(e) => { setEndDate(e.target.value); setCurrentPage(1); }} />
+          </Form.Group>
         </div>
         <InputGroup className="dms-custom-width">
           <Form.Control
@@ -156,16 +185,26 @@ export const RideFareSetting = () => {
                     <td>{new Date(fare.createdAt).toLocaleString()}</td>
                     <td>{new Date(fare.updatedAt).toLocaleString()}</td>
                     <td>
-                      <FaEdit
-                        className="icon icon-green"
-                        title="Edit"
-                        onClick={() => navigate("/dms/faresettings/edit", { state: { fare } })}
-                      />
-                      <FaTrash
-                        className="icon icon-red"
-                        title="Delete"
-                        onClick={() => handleDelete(fare)}
-                      />
+                      {(!permissions.includes("edit") && !permissions.includes("delete")) ? (
+                        <span>-</span>
+                      ) : (
+                        <>
+                          {permissions.includes("edit") && (
+                            <FaEdit
+                              className="icon icon-green me-2"
+                              title="Edit"
+                              onClick={() => navigate("/dms/faresettings/edit", { state: { fare } })}
+                            />
+                          )}
+                          {permissions.includes("delete") && (
+                            <FaTrash
+                              className="icon icon-red"
+                              title="Delete"
+                              onClick={() => handleDelete(fare)}
+                            />
+                          )}
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))

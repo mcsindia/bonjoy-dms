@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Table, InputGroup, Form, Pagination, Modal, Alert, Dropdown, DropdownButton } from 'react-bootstrap';
+import { Button, Table, InputGroup, Form, Pagination, Modal, Alert } from 'react-bootstrap';
 import { FaEdit, FaTrash, FaEye, FaPlus } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from '../../../../layouts/dms/AdminLayout/AdminLayout';
@@ -20,42 +20,46 @@ export const EmployeePermission = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [permissionToDelete, setPermissionToDelete] = useState(null);
   const userData = JSON.parse(localStorage.getItem("userData"));
- 
+
   let allowedPermissions = [];
 
-if (Array.isArray(userData?.employeeRole)) {
-  for (const role of userData.employeeRole) {
-    for (const child of role.childMenus || []) {
-      for (const mod of child.modules || []) {
-        if (mod.moduleUrl?.toLowerCase() === "permission") {
-          allowedPermissions = mod.permission
-            ?.toLowerCase()
-            .split(',')
-            .map(p => p.trim()) || [];
+  if (Array.isArray(userData?.employeeRole)) {
+    for (const role of userData.employeeRole) {
+      for (const child of role.childMenus || []) {
+        for (const mod of child.modules || []) {
+          if (mod.moduleUrl?.toLowerCase() === "permission") {
+            allowedPermissions = mod.permission
+              ?.toLowerCase()
+              .split(',')
+              .map(p => p.trim()) || [];
+          }
         }
       }
     }
   }
-}
 
   const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
-   if (allowedPermissions.includes(permissionType)) {
+    if (allowedPermissions.includes(permissionType)) {
       action(); // allowed, run the actual function
     } else {
       alert(fallbackMessage || `You don't have permission to ${permissionType} this employee.`);
     }
   };
 
+  const MODULE_ID = "permission";
+
   const fetchPermissions = async (page, limit, searchTerm, status) => {
     setLoading(true);
     setError('');
+
     try {
       const response = await axios.get(`${API_BASE_URL}/getAllPermissions`, {
         params: {
           page,
           limit,
           name: searchTerm || undefined,
-          status: status || undefined
+          status: status || undefined,
+          module_id: MODULE_ID,  // 👈 include module_id as query param
         },
       });
 
@@ -76,8 +80,8 @@ if (Array.isArray(userData?.employeeRole)) {
   };
 
   useEffect(() => {
-  fetchPermissions(currentPage, itemsPerPage, search, filterStatus);
-}, [currentPage, itemsPerPage, search, filterStatus]);
+    fetchPermissions(currentPage, itemsPerPage, search, filterStatus);
+  }, [currentPage, itemsPerPage, search, filterStatus]);
 
   const handleDelete = (id) => {
     setPermissionToDelete(id);
@@ -85,18 +89,24 @@ if (Array.isArray(userData?.employeeRole)) {
   };
 
   const confirmDelete = async () => {
-  try {
-    const response = await axios.delete(`${API_BASE_URL}/deletePermission/${permissionToDelete}`);
-    setShowDeleteModal(false);
-    setPermissionToDelete(null);
-    fetchPermissions(currentPage, itemsPerPage, search);
-  } catch (err) {
-    console.error('Delete error:', err.response?.data || err.message); 
-    setError('Failed to delete permission.');
-    setShowDeleteModal(false);
-    setPermissionToDelete(null);
-  }
-};
+    try {
+      const response = await axios.delete(
+        `${API_BASE_URL}/deletePermission/${permissionToDelete}`,
+        {
+          data: { module_id: MODULE_ID }
+        }
+      );
+
+      setShowDeleteModal(false);
+      setPermissionToDelete(null);
+      fetchPermissions(currentPage, itemsPerPage, search, filterStatus);
+    } catch (err) {
+      console.error('Delete error:', err.response?.data || err.message);
+      setError('Failed to delete permission.');
+      setShowDeleteModal(false);
+      setPermissionToDelete(null);
+    }
+  };
 
   const cancelDelete = () => {
     setShowDeleteModal(false);
@@ -119,9 +129,11 @@ if (Array.isArray(userData?.employeeRole)) {
         <div className="dms-pages-header sticky-header">
           <h3> Permissions</h3>
           <div className="export-import-container">
-            <Button variant="primary" onClick={() => handlePermissionCheck("add", () => navigate('/dms/permission/add'))}>
-              <FaPlus /> Add Permission
-            </Button>
+            {allowedPermissions.includes("add") && (
+              <Button variant="primary" onClick={() => navigate('/dms/permission/add')}>
+                <FaPlus /> Add Permission
+              </Button>
+            )}
           </div>
         </div>
 
@@ -176,21 +188,34 @@ if (Array.isArray(userData?.employeeRole)) {
                   <td>{new Date(permission.createdAt).toLocaleString()}</td>
                   <td>{new Date(permission.updatedAt).toLocaleString()}</td>
                   <td>
-                    <FaEye
-                      title="View"
-                      className="icon-blue me-2"
-                      onClick={() => handlePermissionCheck("view", () => navigate(`/dms/permission/view/${permission.id}`, { state: { permission } }))}
-                    />
-                    <FaEdit
-                      title="Edit"
-                      className="icon-green me-2"
-                      onClick={() => handlePermissionCheck("edit", () => navigate("/dms/permission/edit", { state: { permission } }))}
-                    />
-                    <FaTrash
-                      title="Delete"
-                      className="icon-red"
-                      onClick={() => handlePermissionCheck("delete", () => handleDelete(permission.id))}
-                    />
+                    {allowedPermissions.includes("view") && (
+                      <FaEye
+                        title="View"
+                        className="icon-blue me-2"
+                        onClick={() => navigate(`/dms/permission/view/${permission.id}`, { state: { permission } })}
+                      />
+                    )}
+                    {allowedPermissions.includes("edit") && (
+                      <FaEdit
+                        title="Edit"
+                        className="icon-green me-2"
+                        onClick={() => navigate("/dms/permission/edit", { state: { permission } })}
+                      />
+                    )}
+                    {allowedPermissions.includes("delete") && (
+                      <FaTrash
+                        title="Delete"
+                        className="icon-red"
+                        onClick={() => handleDelete(permission.id)}
+                      />
+                    )}
+
+                    {/* If no actions allowed → show hyphen */}
+                    {!allowedPermissions.includes("view") &&
+                      !allowedPermissions.includes("edit") &&
+                      !allowedPermissions.includes("delete") && (
+                        <span>-</span>
+                      )}
                   </td>
                 </tr>
               ))

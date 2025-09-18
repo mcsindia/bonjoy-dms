@@ -13,7 +13,6 @@ export const RiderProfile = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const rider = location.state?.rider || {};
-  console.log(rider)
 
   const rideHistoryData = [
     { tripId: 'TRIP001', driverId: 'DRV001', date: '2023-12-18', time: '5:45 PM', pickup: 'Main Street', drop: 'Park Avenue', fare: 15, paymentMode: 'Cash' },
@@ -113,24 +112,36 @@ export const RiderProfile = () => {
     }; */
 
   useEffect(() => {
-    const riderId = rider?.id;
-    if (!riderId) return;
+  const riderId = rider?.id;
+  if (!riderId) return;
 
-    const fetchRiderProfile = async () => {
-      try {
-        const response = await axios.get(`${API_BASE_URL}/getRiderProfileById/${riderId}`);
-        if (response.data.success && Array.isArray(response.data.data)) {
-          setRiderProfile(response.data.data[0]);
-        }
-      } catch (error) {
-        console.error("Error fetching rider profile:", error);
+  const token = JSON.parse(localStorage.getItem("userData"))?.token;
+
+  const fetchRiderProfile = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/getRiderProfileById/${riderId}`, {
+        params: {
+          module_id: 'rider', // 🔹 added module_id
+        },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.data.success && Array.isArray(response.data.data)) {
+        setRiderProfile(response.data.data[0]);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching rider profile:", error);
+    }
+  };
 
-    const token = JSON.parse(localStorage.getItem("userData"))?.token;
-     const fetchRiderContacts = async () => {
+  const fetchRiderContacts = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/getAllUserContacts`, {
+        params: {
+          module_id: 'rider', // 🔹 added module_id
+        },
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -148,7 +159,7 @@ export const RiderProfile = () => {
 
   fetchRiderProfile();
   fetchRiderContacts();
-  }, [rider?.id]);
+}, [rider?.id]);
 
   return (
     <AdminLayout>

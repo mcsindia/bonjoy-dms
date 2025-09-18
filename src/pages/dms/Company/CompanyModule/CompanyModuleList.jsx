@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Table, InputGroup, Form, Pagination, Modal, Dropdown, DropdownButton } from 'react-bootstrap';
+import { Button, Table, InputGroup, Form, Pagination, Modal } from 'react-bootstrap';
 import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -24,25 +24,30 @@ export const CompanyModuleList = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [moduleToDelete, setModuleToDelete] = useState(null);
   const [filter, setFilter] = useState('');
-  const userData = JSON.parse(localStorage.getItem("userData"));
-    let permissions = [];
+  const moduleId = "company_module";
 
-if (Array.isArray(userData?.employeeRole)) {
-  for (const role of userData.employeeRole) {
-    for (const child of role.childMenus || []) {
-      for (const mod of child.modules || []) {
-        if (mod.moduleUrl?.toLowerCase() === "module") {
-          permissions = mod.permission
-            ?.toLowerCase()
-            .split(',')
-            .map(p => p.trim()) || [];
+  const userData = JSON.parse(localStorage.getItem("userData"));
+  let permissions = [];
+
+  if (Array.isArray(userData?.employeeRole)) {
+    for (const role of userData.employeeRole) {
+      for (const child of role.childMenus || []) {
+        for (const mod of child.modules || []) {
+          if (mod.moduleUrl?.toLowerCase() === "module") {
+            permissions = mod.permission
+              ?.toLowerCase()
+              .split(',')
+              .map(p => p.trim()) || [];
+          }
         }
       }
     }
   }
-}
 
-    const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
+    const token = JSON.parse(localStorage.getItem("userData"))?.token;
+    console.log(token)
+
+  const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
     if (permissions.includes(permissionType)) {
       action(); // allowed, run the actual function
     } else {
@@ -59,6 +64,7 @@ if (Array.isArray(userData?.employeeRole)) {
           page: currentPage,
           limit: itemsPerPage,
           name: search.trim() || undefined,
+          module_id: moduleId, // 🔹 added module_id
         },
       });
 
@@ -91,10 +97,14 @@ if (Array.isArray(userData?.employeeRole)) {
 
   const confirmDelete = async () => {
     try {
-      const response = await axios.delete(`${API_BASE_URL}/deleteModule/${moduleToDelete}`);
+      const response = await axios.delete(`${API_BASE_URL}/deleteModule/${moduleToDelete}`, {
+        params: {
+          module_id: moduleId,
+        },
+      });
 
       if (response.data.success) {
-        fetchModules(); // Refresh the list
+        fetchModules();
       } else {
         alert(response.data.message || 'Failed to delete the module.');
       }
@@ -137,9 +147,11 @@ if (Array.isArray(userData?.employeeRole)) {
         <div className="dms-pages-header sticky-header">
           <h3>Modules</h3>
           <div className="export-import-container">
-              <Button variant="primary" onClick={() => handlePermissionCheck("add", () => navigate('/dms/module/add'))}>
+            {permissions.includes("add") && (
+              <Button variant="primary" onClick={() => navigate('/dms/module/add')}>
                 <FaPlus /> Add Module
               </Button>
+            )}
           </div>
         </div>
 
@@ -184,8 +196,26 @@ if (Array.isArray(userData?.employeeRole)) {
                         <td>{stripHtmlTags(module.description) || 'NA'}</td>
                         <td>{module.moduleUrl || '—'}</td>
                         <td>
-                            <FaEdit title="Edit" className="icon-green me-2" onClick={() => handlePermissionCheck("edit", () => navigate("/dms/module/edit", { state: { module } }))} />
-                            <FaTrash title="Delete" className="icon-red" onClick={() => handlePermissionCheck("delete", () => handleDelete(module.id))} />                        
+                          {permissions.includes("edit") || permissions.includes("delete") ? (
+                            <>
+                              {permissions.includes("edit") && (
+                                <FaEdit
+                                  title="Edit"
+                                  className="icon-green me-2"
+                                  onClick={() => navigate("/dms/module/edit", { state: { module } })}
+                                />
+                              )}
+                              {permissions.includes("delete") && (
+                                <FaTrash
+                                  title="Delete"
+                                  className="icon-red"
+                                  onClick={() => handleDelete(module.id)}
+                                />
+                              )}
+                            </>
+                          ) : (
+                            '—'
+                          )}
                         </td>
                       </tr>
                     ))

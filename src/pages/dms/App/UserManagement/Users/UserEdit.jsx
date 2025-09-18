@@ -24,32 +24,36 @@ export const UserEdit = () => {
   const [success, setSuccess] = useState('');
 
   // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+ const handleSubmit = async (e) => {
+  e.preventDefault();
 
-    const updatedUser = {
-      fullName,
-      mobile,
-      email,
-      userType,
-      status, 
-      profileFile,
-    };
+  const formData = new FormData();
+  formData.append('fullName', fullName);
+  formData.append('mobile', mobile);
+  formData.append('email', email);
+  formData.append('userType', userType);
+  formData.append('status', status);
+  if (profileFile) formData.append('profileFile', profileFile);
+  formData.append('module_id', 'user'); // 🔹 Added module_id
 
-    try {
-      const res = await axios.put(`${API_BASE_URL}/updateUser/${user.id}`, updatedUser);
+  try {
+    const res = await axios.put(
+      `${API_BASE_URL}/updateUser/${user.id}`,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } }
+    );
 
-      if (res.status === 200) {
-        setSuccess('User updated successfully!');
-        setTimeout(() => navigate('/dms/user'), 1000);
-      } else {
-        setError('Failed to update the user.');
-      }
-    } catch (err) {
-      console.error("Error updating user:", err);
-      setError('There was an error updating the user.');
+    if (res.status === 200) {
+      setSuccess('User updated successfully!');
+      setTimeout(() => navigate('/dms/user'), 1000);
+    } else {
+      setError('Failed to update the user.');
     }
-  };
+  } catch (err) {
+    console.error("Error updating user:", err);
+    setError('There was an error updating the user.');
+  }
+};
 
   return (
     <AdminLayout>
