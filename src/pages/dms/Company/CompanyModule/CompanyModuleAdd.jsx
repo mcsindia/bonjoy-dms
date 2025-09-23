@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from '../../../../layouts/dms/AdminLayout/AdminLayout';
 import axios from 'axios';
 import { QuillEditor } from '../../../../components/dms/QuillEditor/QuillEditor';
+import { getModuleId, getToken } from '../../../../utils/authhelper';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -24,19 +25,16 @@ export const CompanyModuleAdd = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const token = JSON.parse(localStorage.getItem("userData"))?.token;
-  const moduleId = "company_module"; // 🔹 module_id to include in all API calls
+  const token = getToken();  
+  const moduleId = getModuleId("module"); 
 
   // Fetch secondary menus
   const fetchSecondaryMenus = async (parentId) => {
     try {
-      const response = await axios.get(
-        `${API_BASE_URL}/getAllChildMenuById/${parentId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          params: { module_id: moduleId } // 🔹 include module_id
-        }
-      );
+      const response = await axios.get(`${API_BASE_URL}/getAllChildMenuById/${parentId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { module_id: moduleId }
+      });
       setSecondaryMenus(response.data?.data || []);
     } catch (err) {
       console.error('Error fetching secondary menus:', err);
@@ -48,13 +46,10 @@ export const CompanyModuleAdd = () => {
   useEffect(() => {
     const fetchParentMenus = async () => {
       try {
-        const response = await axios.get(
-          `${API_BASE_URL}/getAllParentMenu`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-            params: { module_id: moduleId } // 🔹 include module_id
-          }
-        );
+        const response = await axios.get(`${API_BASE_URL}/getAllParentMenu`, {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { module_id: moduleId }
+        });
         const result = response.data?.data || [];
         setParentMenus(result);
 
@@ -91,49 +86,33 @@ export const CompanyModuleAdd = () => {
       setIsLoading(true);
       setError('');
 
-      const response = await axios.post(
-        `${API_BASE_URL}/createModule`,
-        {
-          moduleName: formData.module_name,
-          description: description,
-          moduleUrl: formData.module_url,
-          menuId: formData.parent_menu_id ? parseInt(formData.parent_menu_id) : 0,
-          childmenuId: formData.secondary_menu_id || null,
-          module_id: moduleId, // 🔹 include module_id
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
+      const payload = {
+        moduleName: formData.module_name.trim(),
+        moduleUrl: formData.module_url.trim(),
+        description: description.trim(),
+        menuId: formData.parent_menu_id ? parseInt(formData.parent_menu_id) : 0,
+        childmenuId: formData.secondary_menu_id ? parseInt(formData.secondary_menu_id) : 0,
+        module_id: moduleId 
+      };
+
+      const response = await axios.post(`${API_BASE_URL}/createModule`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
-      );
+      });
 
       if (response.data.success) {
         setSuccessMessage(response.data.message || 'Module created successfully.');
-        setFormData({
-          parent_menu_id: '',
-          secondary_menu_id: '',
-          module_name: '',
-          module_url: ''
-        });
+        setFormData({ parent_menu_id: '', secondary_menu_id: '', module_name: '', module_url: '' });
         setDescription('');
         setTimeout(() => navigate('/dms/module'), 2000);
       } else {
-        if (response.data.message === 'Validation error') {
-          setError('Module with this name already exists. Please use a unique name.');
-        } else {
-          setError(response.data.message || 'Something went wrong.');
-        }
+        setError(response.data.message || 'Something went wrong.');
       }
     } catch (err) {
       console.error('Error adding module:', err);
-      const errorMsg = err.response?.data?.message;
-      if (errorMsg?.toLowerCase().includes("validation")) {
-        setError("Module with this name already exists. Please use a unique name.");
-      } else {
-        setError(errorMsg || "Failed to add module. Please try again later.");
-      }
+      setError(err.response?.data?.message || 'Failed to add module. Please try again later.');
     } finally {
       setIsLoading(false);
     }

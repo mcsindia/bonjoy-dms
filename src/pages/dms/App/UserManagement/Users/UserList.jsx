@@ -1,4 +1,4 @@
-import React, { useEffect, useState, } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Button, Table, InputGroup, Form, Dropdown, DropdownButton, Pagination, Modal
 } from 'react-bootstrap';
@@ -6,6 +6,7 @@ import { FaEdit, FaTrash, FaFileExport, FaFileExcel, FaFilePdf, FaEye } from 're
 import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from '../../../../../layouts/dms/AdminLayout/AdminLayout';
 import axios from "axios";
+import { getModuleId, getToken } from '../../../../../utils/authhelper';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -25,6 +26,7 @@ export const UserList = () => {
   const [totalRiders, setTotalRiders] = useState(0);
   const [totalDrivers, setTotalDrivers] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+
   const userData = JSON.parse(localStorage.getItem("userData"));
   let permissions = [];
 
@@ -43,14 +45,6 @@ export const UserList = () => {
     }
   }
 
-  const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
-    if (permissions.includes(permissionType)) {
-      action(); // allowed, run the actual function
-    } else {
-      alert(fallbackMessage || `You don't have permission to ${permissionType} this employee.`);
-    }
-  };
-
   const fetchUsers = async () => {
     setLoading(true);
     try {
@@ -58,7 +52,7 @@ export const UserList = () => {
       const queryParams = new URLSearchParams({
         page: currentPage,
         limit: itemsPerPage,
-        module_id: "user" // 🔹 added module_id
+        module_id: getModuleId("user")   // ✅ dynamic module_id
       });
 
       const isSearching = !!search;
@@ -80,18 +74,16 @@ export const UserList = () => {
       }
 
       const finalUrl = `${baseUrl}?${queryParams.toString()}`;
-      // Add module_id to params
-      queryParams.set("module_id", "user");
-      const token = JSON.parse(localStorage.getItem("userData"))?.token;
-      console.log(token)
+      const token = getToken();
+
       const res = await axios.get(finalUrl, {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+        headers: { Authorization: `Bearer ${token}` }
       });
+
       const fetchedUsers = Array.isArray(res.data?.data?.results) ? res.data.data.results : [];
       fetchedUsers.sort((a, b) => Number(a.id) - Number(b.id));
       const filteredUsers = fetchedUsers.filter(user => user.userType === "Driver" || user.userType === "Rider");
+
       setUsers(filteredUsers);
       setTotalRiders(res.data?.data?.totalRiders || 0);
       setTotalDrivers(res.data?.data?.totalDrivers || 0);
@@ -112,18 +104,14 @@ export const UserList = () => {
   }, [search, startDate, endDate, currentPage, itemsPerPage, userTypeFilter, statusFilter]);
 
   const handlePageChange = (pageNumber) => {
-    if (pageNumber >= 1 && pageNumber <= totalPages) {
-      setCurrentPage(pageNumber);
-    }
+    if (pageNumber >= 1 && pageNumber <= totalPages) setCurrentPage(pageNumber);
   };
 
   const handleEdit = (user) => navigate('/dms/user/edit', { state: { user } });
 
-  const handleView = (user) => {
-    navigate(`/dms/user/view/${user.id}`, { state: { user } });
-  };
+  const handleView = (user) => navigate(`/dms/user/view/${user.id}`, { state: { user } });
 
-  // Api for deleting the user 
+  // Delete user
   const handleDelete = (user) => {
     setUserToDelete(user);
     setShowDeleteModal(true);
@@ -131,10 +119,11 @@ export const UserList = () => {
 
   const confirmDelete = async () => {
     if (!userToDelete) return;
-
     try {
+      const token = getToken();
       const res = await axios.delete(`${API_BASE_URL}/deleteUser/${userToDelete.id}`, {
-        params: { module_id: "user" } // 🔹 added module_id
+        headers: { Authorization: `Bearer ${token}` },
+        params: { module_id: getModuleId("user") } // ✅ dynamic
       });
 
       if (res.status === 200) {
@@ -147,14 +136,14 @@ export const UserList = () => {
     }
   };
 
-  //Export
+  // Export
   const handleExport = (format) => {
-    const url = `${API_BASE_URL}/exportUsers?format=${format}&module_id=user`; // 🔹 added module_id
+    const url = `${API_BASE_URL}/exportUsers?format=${format}&module_id=${getModuleId("user")}`;
     window.open(url, '_blank');
   };
 
-  // Handle import from dropdown 
-  const handleImport = async (format) => {
+  // Import
+  const handleImport = async () => {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = '.csv, .xlsx';
@@ -162,24 +151,24 @@ export const UserList = () => {
 
     fileInput.onchange = async (e) => {
       const file = e.target.files[0];
-      if (!file) {
-        alert("No file selected.");
-        return;
-      }
+      if (!file) return alert("No file selected.");
 
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('module_id', 'user');
+      formData.append('module_id', getModuleId("user")); // ✅ dynamic
 
       try {
-        const res = await axios.post(
-          `${API_BASE_URL}/importUsers`,
-          formData,
-          { headers: { 'Content-Type': 'multipart/form-data' } }
-        );
+        const token = getToken();
+        const res = await axios.post(`${API_BASE_URL}/importUsers`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${token}`
+          }
+        });
 
         if (res.status === 200) {
           alert("Users imported successfully!");
+          fetchUsers();
         }
       } catch (err) {
         console.error("Error importing users:", err);
@@ -187,8 +176,7 @@ export const UserList = () => {
       }
     };
   };
-
-
+  
   return (
     <AdminLayout>
       <div className="dms-pages-header sticky-header">

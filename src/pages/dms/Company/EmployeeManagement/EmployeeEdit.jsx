@@ -4,6 +4,7 @@ import { Form, Button, Row, Col, Container, Tabs, Tab, Table, Alert } from 'reac
 import { useNavigate, useLocation } from 'react-router-dom';
 import profile_img from '../../../../assets/images/profile.png';
 import axios from 'axios';
+import { getModuleId } from '../../../../utils/authhelper';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -28,23 +29,23 @@ export const EmployeeEdit = () => {
   const [roles, setRoles] = useState([]);
   const [roleModules, setRoleModules] = useState([]);
   const [allModules, setAllModules] = useState([]);
-  const MODULE_ID = 'employee';
+  const MODULE_ID = getModuleId('employee');
 
   const token = JSON.parse(localStorage.getItem("userData"))?.token;
   const axiosInstance = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    Authorization: `Bearer ${token}`,
-  },
-  params: {
-    module_id: MODULE_ID
-  }
-});
+    baseURL: API_BASE_URL,
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
   useEffect(() => {
     const fetchRoles = async () => {
       try {
-        const res = await axiosInstance.get('/getAllRoles');
+        const res = await axiosInstance.get('/getAllRoles', {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { module_id: MODULE_ID }
+        });
         setRoles(res.data.data.rows || []);
       } catch (error) {
         console.error('Error fetching roles:', error);
@@ -58,8 +59,12 @@ export const EmployeeEdit = () => {
     const fetchInitialData = async () => {
       try {
         const [deptRes, desigRes] = await Promise.all([
-          axiosInstance.get('/getAllDepartments'),
-          axiosInstance.get('/getAllDesignations'),
+          axiosInstance.get('/getAllDepartments', {
+            params: { module_id: MODULE_ID }
+          }),
+          axiosInstance.get('/getAllDesignations', {
+            params: { module_id: MODULE_ID }
+          })
         ]);
 
         setDepartments(deptRes.data?.data?.data || []);
@@ -76,7 +81,9 @@ export const EmployeeEdit = () => {
     if (formData.department) {
       const fetchDesignations = async () => {
         try {
-          const res = await axiosInstance.get(`/getDesignationsByDepartmentId/${formData.department}`);
+          const res = axiosInstance.get(`/getDesignationsByDepartmentId/${formData.department}`, {
+            params: { module_id: MODULE_ID }
+          })
           setDesignations(res.data?.data || []);
         } catch (error) {
           console.error('Failed to fetch designations by department:', error);
@@ -118,6 +125,7 @@ export const EmployeeEdit = () => {
         const token = JSON.parse(localStorage.getItem("userData"))?.token;
         const res = await axiosInstance.get(`${API_BASE_URL}/getAllModules?page=1&limit=1000`, {
           headers: { Authorization: `Bearer ${token}` },
+          params: { module_id: MODULE_ID }
         });
 
         const flattenModules = (data) => {
@@ -171,83 +179,84 @@ export const EmployeeEdit = () => {
 
   const handleClearAll = () => setSelectedPermissions({});
 
- const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  try {
-    const formPayload = new FormData();
-    const selectedRole = roles.find(r => r.id.toString() === formData.role?.toString());
+    try {
+      const formPayload = new FormData();
+      const selectedRole = roles.find(r => r.id.toString() === formData.role?.toString());
 
-    // Append module & permission data
-    const moduleKeys = Object.keys(selectedPermissions);
-    let index = 0;
-    moduleKeys.forEach((moduleName) => {
-      const modulePermissions = selectedPermissions[moduleName];
-      const enabledPermissions = Object.entries(modulePermissions)
-        .filter(([_, isEnabled]) => isEnabled)
-        .map(([perm]) => perm);
+      // Append module & permission data
+      const moduleKeys = Object.keys(selectedPermissions);
+      let index = 0;
+      moduleKeys.forEach((moduleName) => {
+        const modulePermissions = selectedPermissions[moduleName];
+        const enabledPermissions = Object.entries(modulePermissions)
+          .filter(([_, isEnabled]) => isEnabled)
+          .map(([perm]) => perm);
 
-      if (enabledPermissions.length === 0) return;
+        if (enabledPermissions.length === 0) return;
 
-      const moduleId =
-        roleModules.find((m) => m.moduleName === moduleName)?.id ||
-        allModules.find((m) => m.moduleName === moduleName)?.id;
+        const moduleId =
+          roleModules.find((m) => m.moduleName === moduleName)?.id ||
+          allModules.find((m) => m.moduleName === moduleName)?.id;
 
-      if (moduleId) {
-        formPayload.append(`module[${index}]`, moduleId);
-        formPayload.append(`permission[${index}]`, enabledPermissions.join(','));
-        index++;
+        if (moduleId) {
+          formPayload.append(`module[${index}]`, moduleId);
+          formPayload.append(`permission[${index}]`, enabledPermissions.join(','));
+          index++;
+        }
+      });
+
+      // If role is Admin → skip employee profile fields
+      if (selectedRole?.roleName === 'Admin') {
+        formPayload.append('role', formData.role); // only this is required
+      } else {
+        // Full employee info for other roles
+        const {
+          Department,
+          Designation,
+          employeeRole,
+          createdAt,
+          updatedAt,
+          userProfile,
+          ...cleanedData
+        } = formData;
+
+        formPayload.append('fullName', cleanedData.fullName);
+        formPayload.append('mobile', cleanedData.mobile);
+        formPayload.append('gender', cleanedData.gender || '');
+        formPayload.append('dob', cleanedData.dob || '');
+        formPayload.append('contractStartDate', cleanedData.contractStartDate || '');
+        formPayload.append('contractLastDate', cleanedData.contractLastDate || '');
+        formPayload.append('departmentId', cleanedData.department);
+        formPayload.append('designationId', cleanedData.designation);
+        formPayload.append('role', cleanedData.role);
+        formPayload.append('isActive', cleanedData.isActive ? '1' : '0');
+        formPayload.append('status', status);
+
+        if (typeof formData.userProfile !== 'string') {
+          formPayload.append('userProfile', formData.userProfile);
+        }
       }
-    });
+      formPayload.append('module_id', MODULE_ID);
 
-    // If role is Admin → skip employee profile fields
-    if (selectedRole?.roleName === 'Admin') {
-      formPayload.append('role', formData.role); // only this is required
-    } else {
-      // Full employee info for other roles
-      const {
-        Department,
-        Designation,
-        employeeRole,
-        createdAt,
-        updatedAt,
-        userProfile,
-        ...cleanedData
-      } = formData;
+      await axiosInstance.put(
+        `/updateEmployee/${employee.id}`,
+        formPayload,
+        {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        }
+      );
 
-      formPayload.append('fullName', cleanedData.fullName);
-      formPayload.append('mobile', cleanedData.mobile);
-      formPayload.append('gender', cleanedData.gender || '');
-      formPayload.append('dob', cleanedData.dob || '');
-      formPayload.append('contractStartDate', cleanedData.contractStartDate || '');
-      formPayload.append('contractLastDate', cleanedData.contractLastDate || '');
-      formPayload.append('departmentId', cleanedData.department);
-      formPayload.append('designationId', cleanedData.designation);
-      formPayload.append('role', cleanedData.role);
-      formPayload.append('isActive', cleanedData.isActive ? '1' : '0');
-      formPayload.append('status', status);
+      setSuccessMessage('Employee updated successfully!');
+      navigate('/dms/employee', { state: { reload: true } });
 
-      if (typeof formData.userProfile !== 'string') {
-        formPayload.append('userProfile', formData.userProfile);
-      }
+    } catch (error) {
+      console.error('Update failed:', error.response?.data?.message || error.message);
+      alert('Failed to update employee.');
     }
-
-    await axiosInstance.put(
-      `/updateEmployee/${employee.id}`,
-      formPayload,
-      {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      }
-    );
-
-    setSuccessMessage('Employee updated successfully!');
-    navigate('/dms/employee', { state: { reload: true } });
-
-  } catch (error) {
-    console.error('Update failed:', error.response?.data?.message || error.message);
-    alert('Failed to update employee.');
-  }
-};
+  };
 
   return (
     <AdminLayout>

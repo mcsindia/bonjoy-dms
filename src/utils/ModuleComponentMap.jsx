@@ -85,11 +85,11 @@ import {RideFareSetting} from '../pages/dms/App/Settings/RideFareSetting/RideFar
 import { FareSettingAdd } from '../pages/dms/App/Settings/RideFareSetting/FareSettingAdd';
 import { FareSettingEdit } from '../pages/dms/App/Settings/RideFareSetting/FareSettingEdit';
 /* Ride Type */
+import { RideTypeList } from '../pages/dms/App/TripsPPage/RideTypes/RideTypeList';
 import { RideTypeAdd } from '../pages/dms/App/TripsPPage/RideTypes/RideTypeAdd';
 import { RideTypeEdit } from '../pages/dms/App/TripsPPage/RideTypes/RideTypeEdit';
 /* Icon */
 import { FaChartLine, } from "react-icons/fa";
-import { RideTypelIST } from '../pages/dms/App/TripsPPage/RideTypes/RideTypelIST.JSX';
 
 export const moduleComponentMap = {
   dashboard: {
@@ -159,7 +159,7 @@ export const moduleComponentMap = {
     viewDetails: TripDetails
   },
   ridetypes:{
-   view: RideTypelIST,
+   view: RideTypeList,
    add: RideTypeAdd,
    edit: RideTypeEdit
   },

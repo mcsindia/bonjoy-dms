@@ -3,6 +3,7 @@ import { Button, Container, Form, Alert, Row, Col } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "../../../../../layouts/dms/AdminLayout/AdminLayout";
 import axios from "axios";
+import { getModuleId, getToken } from "../../../../../utils/authhelper";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -26,12 +27,12 @@ export const FareSettingAdd = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const userData = JSON.parse(localStorage.getItem("userData"));
-  const token = userData?.token;
+  const token = getToken();
+  const moduleId = getModuleId("faresettings"); 
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -48,18 +49,14 @@ export const FareSettingAdd = () => {
 
       const payload = {
         ...formData,
-        module_id: "fare_setting", // 🔹 Added module_id
+        module_id: moduleId, // ✅ dynamic module_id
       };
 
-      const response = await axios.post(
-        `${API_BASE_URL}/createFareSetting`,
-        payload,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await axios.post(`${API_BASE_URL}/createFareSetting`, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (response.data?.success) {
         setSuccessMessage("Fare setting saved successfully!");
@@ -76,9 +73,7 @@ export const FareSettingAdd = () => {
           isActive: "1",
         });
 
-        setTimeout(() => {
-          navigate("/dms/faresettings");
-        }, 1500);
+        setTimeout(() => navigate("/dms/faresettings"), 1500);
       } else {
         setError(response.data?.message || "Failed to add fare setting.");
       }
@@ -102,11 +97,7 @@ export const FareSettingAdd = () => {
           )}
 
           {successMessage && (
-            <Alert
-              variant="success"
-              onClose={() => setSuccessMessage("")}
-              dismissible
-            >
+            <Alert variant="success" onClose={() => setSuccessMessage("")} dismissible>
               {successMessage}
             </Alert>
           )}
@@ -236,10 +227,7 @@ export const FareSettingAdd = () => {
               <Button type="submit" className="me-2" disabled={isLoading}>
                 {isLoading ? "Saving..." : "Save changes"}
               </Button>
-              <Button
-                variant="secondary"
-                onClick={() => navigate("/dms/faresettings")}
-              >
+              <Button variant="secondary" onClick={() => navigate("/dms/faresettings")}>
                 Cancel
               </Button>
             </div>

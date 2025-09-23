@@ -5,6 +5,7 @@ import axios from 'axios';
 import { AdminLayout } from '../../../../layouts/dms/AdminLayout/AdminLayout';
 import { QuillEditor } from '../../../../components/dms/QuillEditor/QuillEditor';
 import Select from 'react-select';
+import { getModuleId, getToken } from '../../../../utils/authhelper';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -12,7 +13,9 @@ export const EmployeePermissionEdit = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { permission } = location.state || {};
-  const MODULE_ID = "permission"; // fixed string for backend
+
+  const token = getToken();
+  const moduleId = getModuleId('permission'); // dynamic module_id
 
   const [modules, setModules] = useState([]);
   const [selectedModule, setSelectedModule] = useState(null);
@@ -29,7 +32,11 @@ export const EmployeePermissionEdit = () => {
   useEffect(() => {
     const fetchModules = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/getAllModules?page=1&limit=1000`);
+        const res = await axios.get(`${API_BASE_URL}/getAllModules?page=1&limit=1000`, {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { module_id: moduleId }, // pass module_id dynamically
+        });
+
         if (res.data.success) {
           const flatData = res.data.data.result || [];
           const formattedModules = flatData
@@ -57,7 +64,7 @@ export const EmployeePermissionEdit = () => {
     };
 
     fetchModules();
-  }, [permission]);
+  }, [permission, token, moduleId]);
 
   // Initialize permissions and description
   useEffect(() => {
@@ -102,8 +109,8 @@ export const EmployeePermissionEdit = () => {
     }
 
     const payload = {
-      moduleId: selectedModule.value, // numeric ID
-      module_id: MODULE_ID,           // string identifier
+      moduleId: selectedModule.value, // numeric module ID
+      module_id: moduleId,            // dynamic string module_id
       permission_name: selectedPermissions.join(','),
       description: formData.description || 'No description provided',
     };
@@ -111,7 +118,8 @@ export const EmployeePermissionEdit = () => {
     try {
       const response = await axios.put(
         `${API_BASE_URL}/updatePermission/${permission.id}`,
-        payload
+        payload,
+        { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
       );
 
       if (response.data.success) {

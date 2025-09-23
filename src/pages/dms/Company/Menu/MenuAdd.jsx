@@ -3,6 +3,7 @@ import { Button, Container, Form, Alert } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from '../../../../layouts/dms/AdminLayout/AdminLayout';
 import axios from 'axios';
+import { getModuleId, getToken } from '../../../../utils/authhelper';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -19,8 +20,8 @@ export const MenuAdd = () => {
     const [successMessage, setSuccessMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    const userData = JSON.parse(localStorage.getItem('userData')) || {};
-    const token = userData?.token;
+    const token = getToken();
+    const moduleId = getModuleId('menu'); // dynamic module ID
 
     useEffect(() => {
         fetchParentMenus();
@@ -28,10 +29,10 @@ export const MenuAdd = () => {
 
     const fetchParentMenus = async () => {
         try {
-            const res = await axios.get(
-                `${API_BASE_URL}/getAllParentMenu?module_id=menu`, 
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
+            const res = await axios.get(`${API_BASE_URL}/getAllParentMenu`, {
+                headers: { Authorization: `Bearer ${token}` },
+                params: { module_id: moduleId } // dynamic module_id
+            });
 
             if (res.data.success && Array.isArray(res.data.data)) {
                 setParentMenus(res.data.data);
@@ -49,7 +50,6 @@ export const MenuAdd = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Validation
         if (!formData.name.trim()) return setError('Menu Name is required.');
 
         setError('');
@@ -61,12 +61,10 @@ export const MenuAdd = () => {
                 {
                     name: formData.name.trim(),
                     parent_id: formData.parent_id,
-                    module_id: "menu", 
+                    module_id: moduleId, // include dynamic module_id
                 },
                 {
-                    headers: {
-                        Authorization: `Bearer ${token}`
-                    }
+                    headers: { Authorization: `Bearer ${token}` }
                 }
             );
 
@@ -74,9 +72,7 @@ export const MenuAdd = () => {
                 setSuccessMessage('Menu created successfully!');
                 setFormData({ name: '', parent_id: '0' });
 
-                setTimeout(() => {
-                    navigate('/dms/menu');
-                }, 1500);
+                setTimeout(() => navigate('/dms/menu'), 1500);
             } else {
                 setError(res.data?.message || 'Failed to create menu.');
             }

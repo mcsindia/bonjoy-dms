@@ -32,10 +32,10 @@ export const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-      if (email.length !== 10) {
-    alert("Enter a valid mobile number.");
-    return;
-  }
+    if (email.length !== 10) {
+      alert("Enter a valid mobile number.");
+      return;
+    }
 
     const payload = {
       email,
@@ -58,70 +58,79 @@ export const Login = () => {
     }
   };
 
- const handleVerifyOTP = async () => {
-  const fullOtp = otp.join("");
-  if (fullOtp.length < 4) {
-    alert("Please enter the complete OTP.");
-    return;
-  }
+  const handleVerifyOTP = async () => {
+    const fullOtp = otp.join("");
+    if (fullOtp.length < 4) {
+      alert("Please enter the complete OTP.");
+      return;
+    }
 
-  try {
-    const response = await axios.post(`${API_BASE_URL}/verifyOtp`, {
-      mobile: email,
-      otp: fullOtp,
-      ip_address: "123.879.879.346"
-    });
+    try {
+      const response = await axios.post(`${API_BASE_URL}/verifyOtp`, {
+        mobile: email,
+        otp: fullOtp,
+        ip_address: "123.879.879.346"
+      });
 
-    const user = response?.data?.user;
-    if (user && user.token) {
-      const userData = {
-        ...user,
-         expiryTime: Date.now() + 5 * 60 * 60 * 1000,
-      };
-
-      localStorage.setItem("userData", JSON.stringify(userData));
-
-      const userType = user?.userType;
-      const employeeRole = Array.isArray(user?.employeeRole)
-        ? user.employeeRole
-        : [user.employeeRole];
-
-      if (userType === "Admin") {
-        navigate("/dms/dashboard");
-      } else {
-        const allModules = employeeRole.flatMap(role =>
-          role?.childMenus?.flatMap(child => child.modules || []) || []
+      const user = response?.data?.user;
+      if (user && user.token) {
+        // Flatten all module IDs
+        // 🔑 saare modules ko ek flat array bana lo
+        const allModules = user.employeeRole.flatMap(role =>
+          role.childMenus.flatMap(child => child.modules)
         );
 
-        const hasDashboardAccess = allModules.some(mod =>
-          mod?.moduleUrl?.toLowerCase() === "dashboard" &&
-          mod?.permission?.toLowerCase().split(",").map(p => p.trim()).includes("view")
-        );
+        const userData = {
+          ...user,
+          token: user.token,
+          modules: allModules,   // ✅ ab id, url, permission sab save ho jayega
+          expiryTime: Date.now() + 5 * 60 * 60 * 1000,
+        };
 
-        if (hasDashboardAccess) {
+        localStorage.setItem("userData", JSON.stringify(userData));
+
+        // navigation logic
+        const userType = user?.userType;
+        const employeeRole = Array.isArray(user?.employeeRole)
+          ? user.employeeRole
+          : [user.employeeRole];
+
+        if (userType === "Admin") {
           navigate("/dms/dashboard");
         } else {
-          const firstAccessible = allModules.find(mod =>
-            mod?.moduleUrl &&
+          const allModules = employeeRole.flatMap(role =>
+            role?.childMenus?.flatMap(child => child.modules || []) || []
+          );
+
+          const hasDashboardAccess = allModules.some(mod =>
+            mod?.moduleUrl?.toLowerCase() === "dashboard" &&
             mod?.permission?.toLowerCase().split(",").map(p => p.trim()).includes("view")
           );
-          if (firstAccessible) {
-            navigate(`/dms/${firstAccessible.moduleUrl.toLowerCase()}`);
+
+          if (hasDashboardAccess) {
+            navigate("/dms/dashboard");
           } else {
-            navigate("/unauthorized");
+            const firstAccessible = allModules.find(mod =>
+              mod?.moduleUrl &&
+              mod?.permission?.toLowerCase().split(",").map(p => p.trim()).includes("view")
+            );
+            if (firstAccessible) {
+              navigate(`/dms/${firstAccessible.moduleUrl.toLowerCase()}`);
+            } else {
+              navigate("/unauthorized");
+            }
           }
         }
-      }
 
-      setShowOTPModal(false);
-    } else {
-      alert("Invalid response. User not found.");
+        setShowOTPModal(false);
+      } else {
+        alert("Invalid response. User not found.");
+      }
+    } catch (error) {
+      console.error("OTP verification failed:", error);
+      alert(error.response?.data?.message || "Failed to verify OTP.");
     }
-  } catch (error) {
-    console.error("OTP verification failed:", error);
-    alert(error.response?.data?.message || "Failed to verify OTP.");
-  }
-};
+  };
 
   return (
     <div className="dms-auth-wrapper">

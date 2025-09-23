@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { AdminLayout } from '../../../../layouts/dms/AdminLayout/AdminLayout';
 import axios from 'axios';
 import { QuillEditor } from '../../../../components/dms/QuillEditor/QuillEditor';
+import { getModuleId, getToken } from '../../../../utils/authhelper';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -11,8 +12,9 @@ export const CompanyModuleEdit = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { module } = location.state || {};
-  const token = JSON.parse(localStorage.getItem("userData"))?.token;
-  const moduleId = "company_module"; // 🔹 module_id for all API requests
+
+  const token = getToken(); 
+  const moduleId = getModuleId('module'); 
 
   const [formData, setFormData] = useState({
     parent_menu_id: '',
@@ -33,7 +35,7 @@ export const CompanyModuleEdit = () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/getAllChildMenuById/${parentId}`, {
         headers: { Authorization: `Bearer ${token}` },
-        params: { module_id: moduleId }, // 🔹 module_id
+        params: { module_id: moduleId }, 
       });
       const data = response.data?.data || [];
       setSecondaryMenus(data);
@@ -41,10 +43,7 @@ export const CompanyModuleEdit = () => {
       if (autoSelect && module?.childMenuName) {
         const selectedSecondary = data.find(menu => menu.name === module.childMenuName);
         if (selectedSecondary) {
-          setFormData(prev => ({
-            ...prev,
-            secondary_menu_id: selectedSecondary.id.toString(),
-          }));
+          setFormData(prev => ({ ...prev, secondary_menu_id: selectedSecondary.id.toString() }));
         }
       }
     } catch (err) {
@@ -58,7 +57,7 @@ export const CompanyModuleEdit = () => {
       try {
         const response = await axios.get(`${API_BASE_URL}/getAllParentMenu`, {
           headers: { Authorization: `Bearer ${token}` },
-          params: { module_id: moduleId }, // 🔹 module_id
+          params: { module_id: moduleId },
         });
         setParentMenus(response.data?.data || []);
       } catch (err) {
@@ -66,7 +65,6 @@ export const CompanyModuleEdit = () => {
         setParentMenus([]);
       }
     };
-
     fetchParentMenus();
   }, []);
 
@@ -88,19 +86,13 @@ export const CompanyModuleEdit = () => {
         setHasInitialized(true);
       }
     };
-
     initParentMenu();
   }, [module, parentMenus, hasInitialized]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
     if (name === 'parent_menu_id') {
-      setFormData(prev => ({
-        ...prev,
-        parent_menu_id: value,
-        secondary_menu_id: '',
-      }));
+      setFormData(prev => ({ ...prev, parent_menu_id: value, secondary_menu_id: '' }));
       fetchSecondaryMenus(value);
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
@@ -126,14 +118,9 @@ export const CompanyModuleEdit = () => {
           description: formData.description,
           menuId: formData.parent_menu_id,
           childmenuId: formData.secondary_menu_id || "0",
-          module_id: moduleId, // 🔹 include module_id
+          module_id: moduleId, 
         },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`, // 🔹 added Authorization header
-            'Content-Type': 'application/json',
-          },
-        }
+        { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } }
       );
 
       if (response.data.success) {

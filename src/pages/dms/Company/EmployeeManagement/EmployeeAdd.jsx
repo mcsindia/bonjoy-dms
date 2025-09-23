@@ -4,6 +4,7 @@ import { Tabs, Tab, Form, Button, Row, Col, Table } from 'react-bootstrap';
 import profile_img from '../../../../assets/images/profile.png';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { getModuleId } from '../../../../utils/authhelper';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 export const EmployeeAdd = () => {
@@ -16,7 +17,7 @@ export const EmployeeAdd = () => {
   const [tabKey, setTabKey] = useState('profile');
   const [roles, setRoles] = useState([]);
   const [allModules, setAllModules] = useState([]);
-  const MODULE_ID = 'employee';
+  const MODULE_ID = getModuleId('employee');
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -62,14 +63,12 @@ export const EmployeeAdd = () => {
 
   const fetchDesignationsByDepartmentId = async (departmentId) => {
     try {
-
       const token = JSON.parse(localStorage.getItem("userData"))?.token;
       const res = await axios.get(`${API_BASE_URL}/getDesignationsByDepartmentId/${departmentId}`, {
         headers: { Authorization: `Bearer ${token}` },
         params: { module_id: MODULE_ID }
       });
       setDesignations(res.data.data || []);
-
     } catch (error) {
       console.error('Failed to fetch designations by department', error);
     }
@@ -78,28 +77,27 @@ export const EmployeeAdd = () => {
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
-
         const token = JSON.parse(localStorage.getItem("userData"))?.token;
         const res = await axios.get(`${API_BASE_URL}/getAllDepartments`, {
           headers: { Authorization: `Bearer ${token}` },
           params: { module_id: MODULE_ID }
         });
         setDepartments(res.data.data?.data || []);
-
       } catch (error) {
         console.error('Failed to fetch departments', error);
       }
     };
-
     fetchDepartments();
   }, []);
 
   const fetchRoles = async () => {
     try {
+      const token = JSON.parse(localStorage.getItem("userData"))?.token;
       const response = await axios.get(`${API_BASE_URL}/getAllRoles`, {
+        headers: { Authorization: `Bearer ${token}` },
         params: { module_id: MODULE_ID }
       });
-      setRoles(response.data.data.rows || [])
+      setRoles(response.data.data.rows || []);
     } catch (error) {
       console.error("Error fetching roles:", error);
     }
@@ -149,37 +147,30 @@ export const EmployeeAdd = () => {
   useEffect(() => {
     const fetchAllModules = async () => {
       try {
+        const token = JSON.parse(localStorage.getItem("userData"))?.token;
         const res = await axios.get(`${API_BASE_URL}/getAllModules`, {
+          headers: { Authorization: `Bearer ${token}` },
           params: { page: 1, limit: 1000, module_id: MODULE_ID }
         });
         const allFetchedModules = (res.data?.data?.result || []).filter(mod => mod?.moduleName && mod.is_active);
-
         const filteredModules = allFetchedModules.filter(module =>
           !dynamicPermissions.some(perm => perm.moduleName === module.moduleName)
         );
-
         setAllModules(filteredModules);
       } catch (error) {
         console.error("Failed to fetch all modules:", error);
       }
     };
-
     fetchAllModules();
   }, [dynamicPermissions]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const requiredPermissionFields = ['department', 'designation'];
-    for (const field of requiredPermissionFields) {
-      if (!formData[field]) {
-        console.log("please fill data");
-        return;
-      }
-    }
     const token = JSON.parse(localStorage.getItem("userData"))?.token;
     const form = new FormData();
 
+    // Basic employee fields
     form.append('fullName', formData.fullName || '');
     form.append('userProfile', formData.userProfile);
     form.append('dob', formData.dob || '');
@@ -194,8 +185,9 @@ export const EmployeeAdd = () => {
     form.append('departmentId', formData.department || '');
     form.append('designationId', formData.designation || '');
     form.append('status', formData.status || 'Active');
-    form.append('role', formData.role || '');
+    form.append('role', formData.role || '');  
 
+    // Dynamic permissions
     const modulesArray = [];
     const permissionsArray = [];
 
@@ -204,7 +196,7 @@ export const EmployeeAdd = () => {
       if (!moduleObj) continue;
 
       const selected = Object.entries(perms)
-        .filter(([permName, isSelected]) => isSelected)
+        .filter(([_, isSelected]) => isSelected)
         .map(([permName]) => permName)
         .join(',');
 
@@ -218,31 +210,26 @@ export const EmployeeAdd = () => {
       form.append(`module[${index}]`, moduleId);
       form.append(`permission[${index}]`, permissionsArray[index]);
     });
+    form.append('module_id', MODULE_ID);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/createEmployee`, form, {
+      const res = await axios.post(`${API_BASE_URL}/createEmployee`, form, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data',
         },
-        params: {
-          module_id: 'employee',
-        },
       });
 
-      setSuccessMessage("Employee added successfully!");
-      setTimeout(() => {
-        navigate("/dms/employee");
-      }, 2000);
+      if (res.data?.success) {
+        setSuccessMessage("Employee added successfully!");
+        setTimeout(() => navigate("/dms/employee"), 2000);
+      } else {
+        alert(res.data?.message || "Failed to create employee");
+      }
     } catch (err) {
       console.error("Request failed:", err);
       const errorMsg = err.response?.data?.message;
-
-      if (errorMsg?.toLowerCase().includes("email already exists")) {
-        alert("Email already exists. Please use a different email.");
-      } else {
-        alert("Error: " + (errorMsg || "Something went wrong!"));
-      }
+      alert(errorMsg || "Something went wrong!");
     }
   };
 

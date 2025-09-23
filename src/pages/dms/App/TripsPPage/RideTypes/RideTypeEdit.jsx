@@ -4,6 +4,7 @@ import { Button, Container, Form, Alert } from 'react-bootstrap';
 import axios from 'axios';
 import { AdminLayout } from '../../../../../layouts/dms/AdminLayout/AdminLayout';
 import { QuillEditor } from '../../../../../components/dms/QuillEditor/QuillEditor';
+import { getModuleId, getToken } from '../../../../../utils/authhelper';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -11,7 +12,6 @@ export const RideTypeEdit = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { rideType } = location.state || {};
-  const token = JSON.parse(localStorage.getItem("userData"))?.token;
 
   const [formData, setFormData] = useState({
     id: '',
@@ -63,7 +63,9 @@ export const RideTypeEdit = () => {
 
     try {
       setError('');
-      const token = JSON.parse(localStorage.getItem("userData"))?.token;
+
+      const token = getToken(); // dynamically get token
+      const moduleId = getModuleId('ridetypes'); // dynamically get module id
 
       const response = await axios.put(
         `${API_BASE_URL}/updateRideType/${formData.id}`,
@@ -72,7 +74,7 @@ export const RideTypeEdit = () => {
           multiplier: parseFloat(formData.fareMultiplier),
           description: formData.description,
           status: formData.status,
-          module_id: 'ride_type', // 🔹 Added module_id
+          module_id: moduleId, // dynamic module id
         },
         {
           headers: {

@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Button, Container, Form, Alert, Row, Col } from "react-bootstrap";
 import { AdminLayout } from "../../../../../layouts/dms/AdminLayout/AdminLayout";
 import axios from "axios";
+import { getModuleId, getToken } from "../../../../../utils/authhelper";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -30,8 +31,8 @@ export const FareSettingEdit = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
 
-  const userData = JSON.parse(localStorage.getItem("userData"));
-  const token = userData?.token;
+  const token = getToken();                        
+  const moduleId = getModuleId("faresettings");   
 
   useEffect(() => {
     if (fare && !hasInitialized) {
@@ -81,7 +82,7 @@ export const FareSettingEdit = () => {
         first_ride_bonus: formData.first_ride_bonus,
         effective_from: formData.effective_from,
         isActive: formData.isActive,
-        module_id: "fare_setting", // 🔹 Added module_id
+        module_id: moduleId, // ✅ include dynamic module_id
       };
 
       const response = await axios.put(

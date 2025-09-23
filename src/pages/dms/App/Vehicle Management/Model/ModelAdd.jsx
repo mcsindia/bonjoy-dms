@@ -3,6 +3,7 @@ import { Button, Form, Alert } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { AdminLayout } from '../../../../../layouts/dms/AdminLayout/AdminLayout';
+import { getModuleId, getToken } from '../../../../../utils/authhelper';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -11,69 +12,76 @@ export const ModelAdd = () => {
   const [brandList, setBrandList] = useState([]);
   const [brandId, setBrandId] = useState('');
   const [modelName, setModelName] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
+  const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState('');
 
+  const token = getToken();
+  const moduleId = getModuleId('model'); // 🔹 Dynamic module ID
+
+  // Fetch brands
   useEffect(() => {
     const fetchBrands = async () => {
       try {
         const response = await axios.get(`${API_BASE_URL}/getAllBrands`, {
-          params: {
-            module_id: 'model', // 🔹 Added module_id
-          },
+          headers: { Authorization: `Bearer ${token}` },
+          params: { module_id: moduleId },
         });
-        if (Array.isArray(response.data.data.data)) {
-          setBrandList(response.data.data.data);
-        } else {
-          setBrandList([]);
-        }
+        setBrandList(response.data?.data?.data || []);
       } catch (error) {
+        console.error('Error fetching brands:', error);
         setBrandList([]);
       }
     };
-
     fetchBrands();
-  }, []);
+  }, [moduleId, token]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSuccessMessage('');
-    setErrorMessage('');
+    setMessage('');
+    setMessageType('');
+
+    if (!brandId || !modelName.trim()) {
+      setMessage('All fields are required!');
+      setMessageType('error');
+      return;
+    }
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/createModel`, {
-        brandId,
-        modelName,
-        module_id: 'model', // 🔹 Added module_id
-      });
+      const response = await axios.post(
+        `${API_BASE_URL}/createModel`,
+        { brandId, modelName: modelName.trim(), module_id: moduleId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
       if (response.data.success) {
-        setSuccessMessage('Model added successfully!');
-        setTimeout(() => {
-          navigate('/dms/model');
-        }, 1500);
+        setMessage('Model added successfully!');
+        setMessageType('success');
+        setTimeout(() => navigate('/dms/model'), 1500);
       } else {
-        setErrorMessage('Failed to add model. Please try again.');
+        setMessage(response.data.message || 'Failed to add model!');
+        setMessageType('error');
       }
     } catch (error) {
-      console.error('Error creating model:', error);
-      setErrorMessage('Something went wrong while creating the model.');
+      console.error('Error adding model:', error);
+      setMessage(
+        error.response?.data?.message || 'Something went wrong while adding the model.'
+      );
+      setMessageType('error');
     }
   };
 
   return (
     <AdminLayout>
-      <div className='dms-container'>
+      <div className="dms-container">
         <h3>Add Model</h3>
-        <div className='dms-form-container'>
-          {successMessage && (
-            <Alert variant="success" onClose={() => setSuccessMessage('')} dismissible>
-              {successMessage}
-            </Alert>
-          )}
-          {errorMessage && (
-            <Alert variant="danger" onClose={() => setErrorMessage('')} dismissible>
-              {errorMessage}
+        <div className="dms-form-container">
+          {message && (
+            <Alert
+              variant={messageType === 'success' ? 'success' : 'danger'}
+              onClose={() => setMessage('')}
+              dismissible
+            >
+              {message}
             </Alert>
           )}
 
@@ -107,10 +115,17 @@ export const ModelAdd = () => {
               />
             </Form.Group>
 
-            <Button type="submit">Add Model</Button>
-            <Button className="ms-2" onClick={() => navigate("/dms/model")}>
-              Cancel
-            </Button>
+            <div className="save-and-cancel-btn">
+              <Button type="submit">Add Model</Button>
+              <Button
+                type="button"
+                variant="secondary"
+                className="ms-2"
+                onClick={() => navigate('/dms/model')}
+              >
+                Cancel
+              </Button>
+            </div>
           </Form>
         </div>
       </div>

@@ -3,6 +3,7 @@ import { Button, Table, InputGroup, Form, Pagination, Modal } from 'react-bootst
 import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from '../../../../layouts/dms/AdminLayout/AdminLayout';
+import { getModuleId, getToken, getModulePermissions } from '../../../../utils/authhelper';
 import axios from 'axios';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -17,30 +18,10 @@ export const Menu = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [menuToDelete, setMenuToDelete] = useState(null);
   const userData = JSON.parse(localStorage.getItem('userData')) || {};
-  let permissions = [];
 
-  if (Array.isArray(userData?.employeeRole)) {
-    for (const role of userData.employeeRole) {
-      for (const child of role.childMenus || []) {
-        for (const mod of child.modules || []) {
-          if (mod.moduleUrl?.toLowerCase() === "menu") {
-            permissions = mod.permission
-              ?.toLowerCase()
-              .split(',')
-              .map(p => p.trim()) || [];
-          }
-        }
-      }
-    }
-  }
-
-  const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
-    if (permissions.includes(permissionType)) {
-      action(); // allowed, run the actual function
-    } else {
-      alert(fallbackMessage || `You don't have permission to ${permissionType} this employee.`);
-    }
-  };
+  const permissions = getModulePermissions("menu");
+  const moduleId = getModuleId("menu");
+  const token = getToken();
 
   useEffect(() => {
     fetchMenus();
@@ -48,15 +29,18 @@ export const Menu = () => {
 
   const fetchMenus = async () => {
     try {
-      const token = userData?.token;
-      const response = await axios.get(
-        `${API_BASE_URL}/getAllMenu?page=${currentPage}&limit=${itemsPerPage}&name=${search}&module_id=menu`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await axios.get(`${API_BASE_URL}/getAllMenu`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        params: {
+          page: currentPage,
+          limit: itemsPerPage,
+          name: search,
+          module_id: moduleId,
+        },
+      });
 
       const result = response.data?.data;
 
@@ -80,13 +64,13 @@ export const Menu = () => {
 
   const confirmDelete = async () => {
     try {
-      const token = userData?.token;
-      const response = await axios.delete(`${API_BASE_URL}/deleteMenu/${menuToDelete}`, {
-        headers: { Authorization: `Bearer ${token}` },
-        data: {
-          module_id: "menu",
-        },
-      });
+      const response = await axios.delete(
+        `${API_BASE_URL}/deleteMenu/${menuToDelete}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { module_id: moduleId },
+        }
+      );
 
       if (response?.data?.success === false) {
         alert(response.data.message || "Failed to delete menu.");

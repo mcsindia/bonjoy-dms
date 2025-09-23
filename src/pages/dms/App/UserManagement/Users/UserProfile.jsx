@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Button, Table, Pagination, Card, Badge } from "react-bootstrap";
-import { FaEdit, FaPlus, FaStar, } from "react-icons/fa";
+import { FaEdit, FaStar } from "react-icons/fa";
 import defaultProfileImg from "../../../../../assets/images/profile.png";
 import { AdminLayout } from "../../../../../layouts/dms/AdminLayout/AdminLayout";
 import axios from "axios";
+import { getModuleId, getToken } from '../../../../../utils/authhelper';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const IMAGE_BASE_URL = import.meta.env.VITE_IMAGE_BASE_URL;
@@ -15,7 +16,10 @@ export const UserProfile = () => {
   const { id: paramId } = useParams();
   const [user, setUser] = useState(location.state?.user || null);
   const [loading, setLoading] = useState(!user);
+  const [error, setError] = useState(null);
+
   const userData = JSON.parse(localStorage.getItem("userData"));
+  const token = getToken();
   let permissions = [];
 
   if (Array.isArray(userData?.employeeRole)) {
@@ -23,92 +27,41 @@ export const UserProfile = () => {
       for (const child of role.childMenus || []) {
         for (const mod of child.modules || []) {
           if (mod.moduleUrl?.toLowerCase() === "user") {
-            permissions = mod.permission
-              ?.toLowerCase()
-              .split(',')
-              .map(p => p.trim()) || [];
+            permissions =
+              mod.permission?.toLowerCase().split(",").map((p) => p.trim()) ||
+              [];
           }
         }
       }
     }
   }
 
-  const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
-    if (permissions.includes(permissionType)) {
-      action(); // allowed, run the actual function
-    } else {
-      alert(fallbackMessage || `You don't have permission to ${permissionType} this employee.`);
-    }
-  };
-
+  // ✅ Single API fetch with module_id
   useEffect(() => {
     const userId = location.state?.user?.id || paramId;
     if (!user && userId) {
       setLoading(true);
-        axios.get(`${API_BASE_URL}/getUserById/${userId}?module_id=user`)
+      const moduleId = getModuleId("user");
+      axios
+        .get(`${API_BASE_URL}/getUserById/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { module_id: moduleId },
+        })
         .then((res) => {
           if (res.data.success) {
             setUser(res.data.data.user);
+            setError(null);
           } else {
-            console.error("User not found");
+            setError(res.data.message || "User not found");
           }
         })
-        .catch((err) => console.error("Error fetching user:", err))
+        .catch((err) => {
+          console.error("Error fetching user:", err.response || err.message);
+          setError("Error fetching user.");
+        })
         .finally(() => setLoading(false));
     }
-  }, [location.state, paramId, user]);
-
-  const feedbackData = [
-    { tripId: 'TRIP001', driverId: 'DRV001', rating: 4, remark: 'Great ride!' },
-    { tripId: 'TRIP002', driverId: 'DRV002', rating: 5, remark: 'Excellent service!' },
-    { tripId: 'TRIP003', driverId: 'DRV003', rating: 3, remark: 'Could be better.' },
-  ];
-
-  const walletData = [
-    {
-      date: '2023-12-18',
-      transactionId: 'TID001',
-      rideId: 'RID123',
-      type: 'credit',
-      amount: 20,
-      description: 'Wallet top-up',
-      createdAt: '2023-12-18 10:15 AM'
-    },
-    {
-      date: '2023-12-17',
-      transactionId: 'TID002',
-      rideId: 'RID124',
-      type: 'debit',
-      amount: 15,
-      description: 'Ride payment',
-      createdAt: '2023-12-17 05:20 PM'
-    },
-    {
-      date: '2023-12-16',
-      transactionId: 'TID003',
-      rideId: null,
-      type: 'bonus',
-      amount: 50,
-      description: 'Referral bonus',
-      createdAt: '2023-12-16 09:45 AM'
-    },
-  ];
-
-  // Pagination state for each section
-  const [feedbackPage, setFeedbackPage] = useState(1);
-  const [walletPage, setWalletPage] = useState(1);
-
-  const itemsPerPage = 3;
-
-  // Helper function to paginate data
-  const paginate = (data, currentPage) => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return data.slice(startIndex, endIndex);
-  };
-
-  const feedbackPages = Math.ceil(feedbackData.length / itemsPerPage);
-  const walletPages = Math.ceil(walletData.length / itemsPerPage);
+  }, [location.state, paramId, user, token]);
 
   if (loading) {
     return (
@@ -120,11 +73,11 @@ export const UserProfile = () => {
     );
   }
 
-  if (!user) {
+  if (error || !user) {
     return (
       <AdminLayout>
         <div className="text-center mt-5">
-          <h3>User not found</h3>
+          <h3>{error || "User not found"}</h3>
           <Button onClick={() => navigate("/dms/users")}>Go Back</Button>
         </div>
       </AdminLayout>
@@ -137,31 +90,74 @@ export const UserProfile = () => {
     email,
     mobile = "N/A",
     status,
-    userProfile,
     createdAt,
-    userType
+    userType,
+    profileImage,
   } = user;
 
   const is_active = status === "Active";
-  const profile_img = user.profileImage && user.profileImage.trim() !== ''
-    ? `${IMAGE_BASE_URL}${user.profileImage}`
-    : defaultProfileImg;
+  const profile_img =
+    profileImage && profileImage.trim() !== ""
+      ? `${IMAGE_BASE_URL}${profileImage}`
+      : defaultProfileImg;
   const username = fullName;
   const account_creation_date = createdAt?.split("T")[0];
 
-  // Render stars for rating
+  // ✅ Dummy Feedback Data
+  const feedbackData = [
+    { tripId: "TRIP001", driverId: "DRV001", rating: 4, remark: "Great ride!" },
+    { tripId: "TRIP002", driverId: "DRV002", rating: 5, remark: "Excellent service!" },
+    { tripId: "TRIP003", driverId: "DRV003", rating: 3, remark: "Could be better." },
+  ];
+
+  // ✅ Dummy Wallet Data
+  const walletData = [
+    {
+      date: "2023-12-18",
+      transactionId: "TID001",
+      rideId: "RID123",
+      type: "credit",
+      amount: 20,
+      description: "Wallet top-up",
+      createdAt: "2023-12-18 10:15 AM",
+    },
+    {
+      date: "2023-12-17",
+      transactionId: "TID002",
+      rideId: "RID124",
+      type: "debit",
+      amount: 15,
+      description: "Ride payment",
+      createdAt: "2023-12-17 05:20 PM",
+    },
+    {
+      date: "2023-12-16",
+      transactionId: "TID003",
+      rideId: null,
+      type: "bonus",
+      amount: 50,
+      description: "Referral bonus",
+      createdAt: "2023-12-16 09:45 AM",
+    },
+  ];
+
+  // Pagination state
+  const [feedbackPage, setFeedbackPage] = useState(1);
+  const [walletPage, setWalletPage] = useState(1);
+  const itemsPerPage = 3;
+
+  const paginate = (data, currentPage) => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return data.slice(startIndex, startIndex + itemsPerPage);
+  };
+
+  const feedbackPages = Math.ceil(feedbackData.length / itemsPerPage);
+  const walletPages = Math.ceil(walletData.length / itemsPerPage);
+
   const renderStars = (rating) => {
-    const stars = [];
-    for (let i = 1; i <= 5; i++) {
-      stars.push(
-        i <= rating ? (
-          <FaStar key={i} style={{ color: "gold" }} />
-        ) : (
-          <FaStar key={i} style={{ color: "silver" }} />
-        )
-      );
-    }
-    return stars;
+    return [...Array(5)].map((_, i) => (
+      <FaStar key={i} style={{ color: i < rating ? "gold" : "silver" }} />
+    ));
   };
 
   return (
@@ -196,10 +192,9 @@ export const UserProfile = () => {
               </div>
             </div>
 
-            {/* Back Section */}
             {permissions.includes("edit") && (
               <Button
-                onClick={() => navigate('/dms/user/edit', { state: { user } })}
+                onClick={() => navigate("/dms/user/edit", { state: { user } })}
                 className="edit-button"
               >
                 <FaEdit /> Edit
@@ -207,7 +202,6 @@ export const UserProfile = () => {
             )}
           </Card.Body>
         </Card>
-
 
         {/* Basic Information */}
         <section className="mt-4">
@@ -234,7 +228,7 @@ export const UserProfile = () => {
 
         <hr className="table-hr" />
 
-        {/* Activity Summary */}
+        {/* Activity Summary (Dummy) */}
         <section className="mt-4">
           <h4>Activity Summary</h4>
           <Table striped bordered hover>
@@ -256,19 +250,12 @@ export const UserProfile = () => {
             </tbody>
           </Table>
         </section>
+
         <hr className="table-hr" />
 
         {/* Ratings & Feedback */}
         <section className="mt-4">
-          <div className="dms-pages-header ">
-            <h4>Ratings & Feedback</h4>
-            <div className="d-flex">
-              <Button variant="primary" onClick={() => navigate('/')}>
-                View All
-              </Button>
-            </div>
-          </div>
-
+          <h4>Ratings & Feedback</h4>
           <Table striped bordered hover>
             <thead>
               <tr>
@@ -279,20 +266,12 @@ export const UserProfile = () => {
               </tr>
             </thead>
             <tbody>
-              {paginate(feedbackData, feedbackPage).map((feedback, index) => (
-                <tr key={index}>
-                  <td>
-                    <a role="button" className='trip-id-link' onClick={() => navigate('/trip/details', { state: { trip: feedback } })}>
-                      {feedback.tripId}
-                    </a>
-                  </td>
-                  <td>
-                    <a role="button" className='driver-id-link' onClick={() => navigate('/drivers/details/view', { state: { driver: feedback } })}>
-                      {feedback.driverId}
-                    </a>
-                  </td>
-                  <td>{renderStars(feedback.rating)}</td>
-                  <td>{feedback.remark}</td>
+              {paginate(feedbackData, feedbackPage).map((fb, i) => (
+                <tr key={i}>
+                  <td>{fb.tripId}</td>
+                  <td>{fb.driverId}</td>
+                  <td>{renderStars(fb.rating)}</td>
+                  <td>{fb.remark}</td>
                 </tr>
               ))}
             </tbody>
@@ -317,15 +296,12 @@ export const UserProfile = () => {
             />
           </Pagination>
         </section>
+
         <hr className="table-hr" />
 
         {/* Wallet & Payments */}
         <section className="mt-4">
-          <div className="dms-pages-header">
-            <h4>Wallet Transaction List</h4>
-          </div>
-
-          {/* Wallet Summary */}
+          <h4>Wallet Transaction List</h4>
           <Card className="mb-3">
             <Card.Body className="d-flex justify-content-between">
               <div>
@@ -337,9 +313,6 @@ export const UserProfile = () => {
               </div>
             </Card.Body>
           </Card>
-
-          {/* Transactions Table */}
-          {/* Transactions Table */}
           <Table striped bordered hover>
             <thead>
               <tr>
@@ -353,37 +326,33 @@ export const UserProfile = () => {
               </tr>
             </thead>
             <tbody>
-              {paginate(walletData, walletPage).map((transaction, index) => (
-                <tr key={index}>
-                  <td>{transaction.date}</td>
-                  <td>{transaction.transactionId}</td>
-                  <td>{transaction.rideId || "—"}</td>
+              {paginate(walletData, walletPage).map((tx, i) => (
+                <tr key={i}>
+                  <td>{tx.date}</td>
+                  <td>{tx.transactionId}</td>
+                  <td>{tx.rideId || "—"}</td>
                   <td>
                     <Badge
                       bg={
-                        transaction.type === "credit"
+                        tx.type === "credit"
                           ? "success"
-                          : transaction.type === "debit"
-                            ? "danger"
-                            : transaction.type === "refund"
-                              ? "info"
-                              : transaction.type === "bonus"
-                                ? "primary"
-                                : "warning"
+                          : tx.type === "debit"
+                          ? "danger"
+                          : tx.type === "bonus"
+                          ? "primary"
+                          : "warning"
                       }
                     >
-                      {transaction.type}
+                      {tx.type}
                     </Badge>
                   </td>
-                  <td>{transaction.amount}</td>
-                  <td>{transaction.description || "—"}</td>
-                  <td>{transaction.createdAt || "—"}</td>
+                  <td>{tx.amount}</td>
+                  <td>{tx.description || "—"}</td>
+                  <td>{tx.createdAt || "—"}</td>
                 </tr>
               ))}
             </tbody>
           </Table>
-
-          {/* Pagination */}
           <Pagination className="justify-content-center">
             <Pagination.Prev
               onClick={() => setWalletPage(walletPage - 1)}

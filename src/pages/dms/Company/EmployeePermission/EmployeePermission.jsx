@@ -4,6 +4,7 @@ import { FaEdit, FaTrash, FaEye, FaPlus } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from '../../../../layouts/dms/AdminLayout/AdminLayout';
 import axios from 'axios';
+import { getModuleId, getToken } from '../../../../utils/authhelper';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -20,7 +21,7 @@ export const EmployeePermission = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [permissionToDelete, setPermissionToDelete] = useState(null);
   const userData = JSON.parse(localStorage.getItem("userData"));
-
+  const moduleId = getModuleId("permission");
   let allowedPermissions = [];
 
   if (Array.isArray(userData?.employeeRole)) {
@@ -38,15 +39,6 @@ export const EmployeePermission = () => {
     }
   }
 
-  const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
-    if (allowedPermissions.includes(permissionType)) {
-      action(); // allowed, run the actual function
-    } else {
-      alert(fallbackMessage || `You don't have permission to ${permissionType} this employee.`);
-    }
-  };
-
-  const MODULE_ID = "permission";
 
   const fetchPermissions = async (page, limit, searchTerm, status) => {
     setLoading(true);
@@ -54,12 +46,15 @@ export const EmployeePermission = () => {
 
     try {
       const response = await axios.get(`${API_BASE_URL}/getAllPermissions`, {
+        headers: {
+          Authorization: `Bearer ${getToken()}`,
+        },
         params: {
           page,
           limit,
           name: searchTerm || undefined,
           status: status || undefined,
-          module_id: MODULE_ID,  // 👈 include module_id as query param
+          module_id: moduleId,
         },
       });
 
@@ -93,7 +88,8 @@ export const EmployeePermission = () => {
       const response = await axios.delete(
         `${API_BASE_URL}/deletePermission/${permissionToDelete}`,
         {
-          data: { module_id: MODULE_ID }
+          headers: { Authorization: `Bearer ${getToken()}` },
+          params: { module_id: moduleId }, 
         }
       );
 

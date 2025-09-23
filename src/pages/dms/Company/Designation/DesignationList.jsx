@@ -4,6 +4,7 @@ import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
 import { AdminLayout } from '../../../../layouts/dms/AdminLayout/AdminLayout';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { getModuleId, getToken } from '../../../../utils/authhelper';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -41,26 +42,15 @@ export const DesignationList = () => {
     }
   }
 
-  const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
-    if (permissions.includes(permissionType)) {
-      action(); // allowed, run the actual function
-    } else {
-      alert(fallbackMessage || `You don't have permission to ${permissionType} this employee.`);
-    }
-  };
-
-  const getAuthHeaders = () => {
-    const token = JSON.parse(localStorage.getItem('userData'))?.token;
-    return {
-      Authorization: `Bearer ${token}`,
-    };
-  };
+  const getAuthHeaders = () => ({
+    Authorization: `Bearer ${getToken()}`,
+  });
 
   const getFetchUrlAndParams = () => {
     const params = {
       page: currentPage,
       limit: itemsPerPage,
-      module_id: "designation",
+      module_id: getModuleId("designation"),
     };
 
     if (search) params.name = search;
@@ -76,7 +66,7 @@ export const DesignationList = () => {
     try {
       const { data } = await axios.get(`${API_BASE_URL}/getAllDesignations`, {
         headers: getAuthHeaders(),
-        params: { module_id: "designation" }
+        params: { module_id: getModuleId("designation") }
       });
       const allDesignations = data?.data?.data || [];
       setFilterOptions([...new Set(allDesignations.map(d => d.designation))]);
@@ -84,6 +74,7 @@ export const DesignationList = () => {
       console.error('Error fetching filter options:', err);
     }
   }, []);
+
 
   const fetchDesignations = useCallback(async () => {
     setLoading(true);
@@ -133,14 +124,14 @@ export const DesignationList = () => {
     try {
       const { data } = await axios.get(`${API_BASE_URL}/getAllDepartments`, {
         headers: getAuthHeaders(),
-        params: { module_id: "designation" }
+        params: { module_id: getModuleId("department") }
       });
-      const allDepartments = data?.data?.data || [];
-      setDepartmentOptions(allDepartments);
+      setDepartmentOptions(data?.data?.data || []);
     } catch (err) {
       console.error('Error fetching departments:', err);
     }
   }, []);
+
 
   useEffect(() => {
     fetchDepartments();
@@ -161,7 +152,7 @@ export const DesignationList = () => {
         `${API_BASE_URL}/deleteDesiganation/${designationToDelete}`,
         {
           headers: getAuthHeaders(),
-          data: { module_id: "designation" }
+          params: { module_id: getModuleId("designation") }
         }
       );
 

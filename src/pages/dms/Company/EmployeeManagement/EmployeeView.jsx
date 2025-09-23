@@ -6,6 +6,7 @@ import { useLocation, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { FaEdit } from 'react-icons/fa';
+import { getToken, getModuleId } from '../../../../utils/authhelper';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const IMAGE_BASE_URL = import.meta.env.VITE_IMAGE_BASE_URL;
@@ -17,8 +18,10 @@ export const EmployeeView = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
-  const MODULE_ID = "employee";
-  const userData = JSON.parse(localStorage.getItem("userData"));
+  
+  const employeeId = paramId || employeeFromState?.id;
+    const userData = JSON.parse(localStorage.getItem("userData"));
+  const token = getToken();
   let permissions = [];
 
   if (Array.isArray(userData?.employeeRole)) {
@@ -44,38 +47,39 @@ export const EmployeeView = () => {
     }
   };
 
-  useEffect(() => {
-    const employeeId = location.state?.employee?.id || paramId;
+    useEffect(() => {
     const fetchEmployee = async () => {
-
-      const token = JSON.parse(localStorage.getItem("userData"))?.token;
-
-      if (!token) {
-        setError('No token found');
-        setLoading(false);
+      if (!employeeId) {
+        setError('No employee ID provided.');
         return;
       }
 
+      setLoading(true);
       try {
-        const response = await axios.get(`${API_BASE_URL}/getEmployeeById/${employeeId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          params: {
-            module_id: MODULE_ID,
-          }
+        const moduleId = getModuleId("employee"); // pass module_id
+        console.log("Fetching employee:", employeeId, "module_id:", moduleId, "token:", token);
+
+        const res = await axios.get(`${API_BASE_URL}/getEmployeeById/${employeeId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { module_id: moduleId } // include module_id in query
         });
 
-        setEmployee(response.data.data);
+        if (res.data.success) {
+          setEmployee(res.data.data);
+          setError('');
+        } else {
+          setError(res.data.message || 'Failed to fetch employee details.');
+        }
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to fetch employee');
+        console.error('Error fetching employee:', err.response || err.message);
+        setError('Error fetching employee.');
       } finally {
         setLoading(false);
       }
     };
 
     fetchEmployee();
-  }, [paramId, location.state?.employee?.id]);
+  }, [employeeId, token]);
 
   if (loading) {
     return (

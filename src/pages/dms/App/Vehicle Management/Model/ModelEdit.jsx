@@ -3,13 +3,14 @@ import { Button, Form, Alert } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { AdminLayout } from '../../../../../layouts/dms/AdminLayout/AdminLayout';
+import { getModuleId, getToken } from '../../../../../utils/authhelper';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const ModelEdit = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const modelData = location.state;
+  const modelData = location.state || {};
 
   const [brandList, setBrandList] = useState([]);
   const [brandId, setBrandId] = useState('');
@@ -17,8 +18,12 @@ export const ModelEdit = () => {
   const [status, setStatus] = useState('');
   const [message, setMessage] = useState('');
   const [variant, setVariant] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  // Load model data
+  const token = getToken();
+  const moduleId = getModuleId('model'); // 🔹 dynamic module ID
+
+  // Load existing model data
   useEffect(() => {
     if (modelData) {
       setBrandId(modelData.brandId || '');
@@ -27,63 +32,67 @@ export const ModelEdit = () => {
     }
   }, [modelData]);
 
-  // Fetch brands
+  // Fetch all brands
   useEffect(() => {
     const fetchBrands = async () => {
       try {
         const response = await axios.get(`${API_BASE_URL}/getAllBrands`, {
-          params: {
-            module_id: 'model', // 🔹 Added module_id
-          },
+          headers: { Authorization: `Bearer ${token}` },
+          params: { module_id: moduleId },
         });
-
-        if (Array.isArray(response.data.data.data)) {
-          setBrandList(response.data.data.data);
-        } else {
-          setBrandList([]);
-        }
+        setBrandList(response.data?.data?.data || []);
       } catch (error) {
         console.error('Error fetching brands:', error);
         setBrandList([]);
       }
     };
-
     fetchBrands();
-  }, []);
+  }, [moduleId, token]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setMessage('');
+    setVariant('');
+
     try {
+      const payload = {
+        brandId,
+        modelName: modelName.trim(),
+        status,
+        module_id: moduleId, // 🔹 dynamic module_id
+      };
+
       const response = await axios.put(
         `${API_BASE_URL}/updateModel/${modelData.id}`,
-        {
-          brandId,
-          modelName,
-          status,
-          module_id: 'model', // 🔹 Added module_id
-        }
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      if (response.data.success) {
+      if (response.data?.success) {
         setVariant('success');
         setMessage('Model updated successfully!');
         setTimeout(() => navigate('/dms/model'), 1500);
       } else {
         setVariant('danger');
-        setMessage('Failed to update model.');
+        setMessage(response.data?.message || 'Failed to update model.');
       }
     } catch (error) {
       console.error('Error updating model:', error);
       setVariant('danger');
-      setMessage('Something went wrong while updating the model.');
+      setMessage(
+        error.response?.data?.message || 'Something went wrong while updating the model.'
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <AdminLayout>
-      <div className='dms-container'>
+      <div className="dms-container">
         <h3>Edit Model</h3>
-        <div className='dms-form-container'>
+        <div className="dms-form-container">
           {message && (
             <Alert variant={variant} onClose={() => setMessage('')} dismissible>
               {message}
@@ -91,7 +100,6 @@ export const ModelEdit = () => {
           )}
 
           <Form onSubmit={handleSubmit}>
-
             {/* Brand Dropdown */}
             <Form.Group controlId="brandId" className="dms-form-group">
               <Form.Label>Brand</Form.Label>
@@ -135,11 +143,19 @@ export const ModelEdit = () => {
               </Form.Select>
             </Form.Group>
 
-            {/* Submit & Cancel */}
-            <Button type="submit">Update Model</Button>
-            <Button className="ms-2" onClick={() => navigate('/dms/model')}>
-              Cancel
-            </Button>
+            {/* Submit & Cancel Buttons */}
+            <div className="mt-3">
+              <Button type="submit" disabled={loading}>
+                {loading ? 'Saving...' : 'Update Model'}
+              </Button>
+              <Button
+                type="button"
+                className="ms-2"
+                onClick={() => navigate('/dms/model')}
+              >
+                Cancel
+              </Button>
+            </div>
           </Form>
         </div>
       </div>

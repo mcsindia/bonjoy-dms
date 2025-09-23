@@ -4,6 +4,7 @@ import { FaEdit, FaTrash, FaPlus } from "react-icons/fa";
 import { AdminLayout } from "../../../../../layouts/dms/AdminLayout/AdminLayout";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { getModuleId, getToken } from "../../../../../utils/authhelper";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -17,59 +18,47 @@ export const RideFareSetting = () => {
   const [loading, setLoading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedFare, setSelectedFare] = useState(null);
-
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
 
   const userData = JSON.parse(localStorage.getItem("userData"));
-  const token = userData?.token;
   let permissions = [];
 
   if (Array.isArray(userData?.employeeRole)) {
     for (const role of userData.employeeRole) {
       for (const child of role.childMenus || []) {
         for (const mod of child.modules || []) {
-          if (mod.moduleUrl?.toLowerCase() === "menu") {
+          if (mod.moduleUrl?.toLowerCase() === "faresettings") {
             permissions = mod.permission
               ?.toLowerCase()
-              .split(',')
-              .map(p => p.trim()) || [];
+              .split(",")
+              .map((p) => p.trim()) || [];
           }
         }
       }
     }
   }
 
-  const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
-    if (permissions.includes(permissionType)) {
-      action(); // allowed, run the actual function
-    } else {
-      alert(fallbackMessage || `You don't have permission to ${permissionType} this employee.`);
-    }
-  };
-
   // Fetch fare settings
   const fetchFareSettings = async (page = 1, searchValue = "", start = "", end = "") => {
     setLoading(true);
     try {
       const response = await axios.get(`${API_BASE_URL}/getAllFareSetting`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${getToken()}` },
         params: {
           page,
           limit: itemsPerPage,
           search: searchValue || undefined,
           fromDate: start || undefined,
           toDate: end || undefined,
-          module_id: "fare_setting", // 🔹 Added module_id
+          module_id: getModuleId("faresettings"), // ✅ dynamic
         },
       });
 
       const apiData = response.data?.data?.models || [];
       const activeData = apiData.filter((f) => f.isActive);
-      const totalPages = response.data?.data?.totalPages || 1;
-
       setFareSettings(activeData);
-      setTotalPages(totalPages);
+      setTotalPages(response.data?.data?.totalPages || 1);
     } catch (error) {
       console.error("Error fetching fare settings:", error);
       setFareSettings([]);
@@ -97,10 +86,8 @@ export const RideFareSetting = () => {
   const confirmDelete = async () => {
     try {
       await axios.delete(`${API_BASE_URL}/deleteFareSetting/${selectedFare.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-        data: {
-          module_id: "fare_setting", // 🔹 Added module_id
-        },
+        headers: { Authorization: `Bearer ${getToken()}` },
+        params: { module_id: getModuleId("faresettings") }, // ✅ dynamic
       });
 
       alert("Fare setting deleted successfully!");
@@ -128,15 +115,29 @@ export const RideFareSetting = () => {
         )}
       </div>
 
-      {/*  Filters */}
+      {/* Filters */}
       <div className="filter-search-container">
-        <div className='filter-container'>
-          <p className='btn btn-primary'>Filter by Date -</p>
+        <div className="filter-container">
+          <p className="btn btn-primary">Filter by Date -</p>
           <Form.Group>
-            <Form.Control type="date" value={startDate} onChange={(e) => { setStartDate(e.target.value); setCurrentPage(1); }} />
+            <Form.Control
+              type="date"
+              value={startDate}
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
           </Form.Group>
           <Form.Group>
-            <Form.Control type="date" value={endDate} onChange={(e) => { setEndDate(e.target.value); setCurrentPage(1); }} />
+            <Form.Control
+              type="date"
+              value={endDate}
+              onChange={(e) => {
+                setEndDate(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
           </Form.Group>
         </div>
         <InputGroup className="dms-custom-width">
@@ -148,6 +149,7 @@ export const RideFareSetting = () => {
         </InputGroup>
       </div>
 
+      {/* Table */}
       <div className="dms-table-container">
         {loading ? (
           <div className="text-center py-5 fs-4">Loading...</div>
@@ -193,7 +195,9 @@ export const RideFareSetting = () => {
                             <FaEdit
                               className="icon icon-green me-2"
                               title="Edit"
-                              onClick={() => navigate("/dms/faresettings/edit", { state: { fare } })}
+                              onClick={() =>
+                                navigate("/dms/faresettings/edit", { state: { fare } })
+                              }
                             />
                           )}
                           {permissions.includes("delete") && (
@@ -262,11 +266,15 @@ export const RideFareSetting = () => {
           <Modal.Title>Delete Fare Setting</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          Are you sure you want to delete <strong>{selectedFare?.baseFare}</strong> fare setting?
+          Are you sure you want to delete <strong>{selectedFare?.base_fare}</strong> fare setting?
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
-          <Button variant="danger" onClick={confirmDelete}>Delete</Button>
+          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={confirmDelete}>
+            Delete
+          </Button>
         </Modal.Footer>
       </Modal>
     </AdminLayout>

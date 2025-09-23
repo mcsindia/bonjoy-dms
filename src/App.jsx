@@ -5,9 +5,6 @@ import ProtectedRoute from './Routes/ProtectedRoute/ProtectedRoute';
 /* Auth */
 import { Login } from './layouts/dms/AuthLayout/Login';
 import { ForgetPassword } from './layouts/dms/AuthLayout/ForgetPassword';
-import { ResetPassword } from './layouts/dms/AuthLayout/ResetPassword';
-import { OTP } from './layouts/dms/AuthLayout/OTP';
-import { Register } from './layouts/dms/AuthLayout/Register';
 import { NewPassword } from './layouts/dms/AuthLayout/NewPassword';
 
 function App() {
@@ -17,7 +14,9 @@ function App() {
                 <Route
                     path="/*"
                     element={
+                        <ProtectedRoute>
                             <DmsRoutes />
+                            </ProtectedRoute>
                     }
                 />
                 {/* Authentication */}

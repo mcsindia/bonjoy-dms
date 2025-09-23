@@ -4,6 +4,7 @@ import { Button, Container, Form, Alert } from 'react-bootstrap';
 import { AdminLayout } from '../../../../layouts/dms/AdminLayout/AdminLayout';
 import axios from 'axios';
 import { QuillEditor } from '../../../../components/dms/QuillEditor/QuillEditor';
+import { getModuleId, getToken } from '../../../../utils/authhelper';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -24,18 +25,16 @@ export const DesignationEdit = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  const moduleId = getModuleId('designation'); // dynamic module ID
+
   // Fetch departments
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
-        const token = JSON.parse(localStorage.getItem("userData"))?.token;
+        const token = getToken();
         const response = await axios.get(`${API_BASE_URL}/getAllDepartments`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          params: {
-            module_id: "designation",
-          },
+          headers: { Authorization: `Bearer ${token}` },
+          params: { module_id: moduleId },
         });
 
         if (response.data.success && Array.isArray(response.data.data.data)) {
@@ -50,7 +49,7 @@ export const DesignationEdit = () => {
     };
 
     fetchDepartments();
-  }, []);
+  }, [moduleId]);
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -64,11 +63,11 @@ export const DesignationEdit = () => {
       designation: formData.designation,
       departmentId: formData.departmentId,
       description: formData.description,
-      module_id: "designation",
+      module_id: moduleId, // include dynamic module_id
     };
 
     try {
-      const token = JSON.parse(localStorage.getItem("userData"))?.token;
+      const token = getToken();
       const response = await axios.put(
         `${API_BASE_URL}/updateDesiganation/${formData.id}`,
         data,

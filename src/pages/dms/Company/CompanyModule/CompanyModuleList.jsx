@@ -4,6 +4,7 @@ import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { AdminLayout } from '../../../../layouts/dms/AdminLayout/AdminLayout';
+import { getModuleId, getToken } from '../../../../utils/authhelper';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -24,7 +25,8 @@ export const CompanyModuleList = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [moduleToDelete, setModuleToDelete] = useState(null);
   const [filter, setFilter] = useState('');
-  const moduleId = "company_module";
+  const moduleId = getModuleId("module");
+  const token = getToken();
 
   const userData = JSON.parse(localStorage.getItem("userData"));
   let permissions = [];
@@ -44,17 +46,6 @@ export const CompanyModuleList = () => {
     }
   }
 
-    const token = JSON.parse(localStorage.getItem("userData"))?.token;
-    console.log(token)
-
-  const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
-    if (permissions.includes(permissionType)) {
-      action(); // allowed, run the actual function
-    } else {
-      alert(fallbackMessage || `You don't have permission to ${permissionType} this employee.`);
-    }
-  };
-
   const fetchModules = async () => {
     try {
       setIsLoading(true);
@@ -64,7 +55,10 @@ export const CompanyModuleList = () => {
           page: currentPage,
           limit: itemsPerPage,
           name: search.trim() || undefined,
-          module_id: moduleId, // 🔹 added module_id
+          module_id: moduleId,
+        },
+        headers: {
+          Authorization: `Bearer ${token}`,   // ✅ attach token
         },
       });
 
@@ -78,7 +72,7 @@ export const CompanyModuleList = () => {
         setTotalPages(1);
       }
     } catch (error) {
-      console.error('Error fetching modules:', error);
+      console.error("Error fetching modules:", error.response || error);
       setModules([]);
       setTotalPages(1);
     } finally {
@@ -97,16 +91,20 @@ export const CompanyModuleList = () => {
 
   const confirmDelete = async () => {
     try {
-      const response = await axios.delete(`${API_BASE_URL}/deleteModule/${moduleToDelete}`, {
-        params: {
-          module_id: moduleId,
-        },
-      });
+      const response = await axios.delete(
+        `${API_BASE_URL}/deleteModule/${moduleToDelete}`,
+        {
+          params: { module_id: moduleId },
+          headers: {
+            Authorization: `Bearer ${token}`,   // ✅ attach token
+          },
+        }
+      );
 
       if (response.data.success) {
         fetchModules();
       } else {
-        alert(response.data.message || 'Failed to delete the module.');
+        alert(response.data.message || "Failed to delete the module.");
       }
     } catch (error) {
       console.error('Full Axios Error:', error);

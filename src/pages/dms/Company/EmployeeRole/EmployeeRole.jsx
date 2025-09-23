@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Table, InputGroup, Form, Pagination, Modal } from 'react-bootstrap';
-import { FaEdit, FaTrash, FaPlus, FaEye, } from 'react-icons/fa';
+import { FaEdit, FaTrash, FaPlus, FaEye } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from '../../../../layouts/dms/AdminLayout/AdminLayout';
 import axios from 'axios';
+import { getModuleId, getToken } from '../../../../utils/authhelper';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -18,6 +19,7 @@ export const EmployeeRole = () => {
   const [roleToDelete, setRoleToDelete] = useState(null);
   const [loading, setLoading] = useState(false);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+
   const userData = JSON.parse(localStorage.getItem("userData"));
   let permissions = [];
 
@@ -36,14 +38,6 @@ export const EmployeeRole = () => {
     }
   }
 
-  const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
-    if (permissions.includes(permissionType)) {
-      action(); // allowed, run the actual function
-    } else {
-      alert(fallbackMessage || `You don't have permission to ${permissionType} this employee.`);
-    }
-  };
-
   useEffect(() => {
     fetchRoles();
   }, [currentPage, itemsPerPage, search, filter]);
@@ -53,14 +47,14 @@ export const EmployeeRole = () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/getAllRoles`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
+          Authorization: `Bearer ${getToken()}`,
         },
         params: {
           page: currentPage,
           limit: itemsPerPage,
           name: search || undefined,
           status: filter || undefined,
-          module_id: "role",
+          module_id: getModuleId("role"),
         }
       });
 
@@ -97,8 +91,6 @@ export const EmployeeRole = () => {
     }
   };
 
-  const currentRoles = roles;
-
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
   const handleDelete = (id) => {
@@ -112,11 +104,9 @@ export const EmployeeRole = () => {
         `${API_BASE_URL}/deleteRole/${roleToDelete}`,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            Authorization: `Bearer ${getToken()}`,
           },
-          data: {
-            module_id: "role",
-          }
+          params: { module_id: getModuleId("role") },
         }
       );
 
@@ -154,12 +144,6 @@ export const EmployeeRole = () => {
       setRoleToDelete(null);
     }
   };
-
-  useEffect(() => {
-    if (roles.length === 0 && currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  }, [roles, currentPage]);
 
   const cancelDelete = () => {
     setShowDeleteModal(false);
@@ -216,8 +200,8 @@ export const EmployeeRole = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {currentRoles.length > 0 ? (
-                    currentRoles.map((role, index) => (
+                  {roles.length > 0 ? (
+                    roles.map((role, index) => (
                       <tr key={role.id}>
                         <td>{index + 1}</td>
                         <td>{role.role}</td>

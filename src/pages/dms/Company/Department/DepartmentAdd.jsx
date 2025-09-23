@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from '../../../../layouts/dms/AdminLayout/AdminLayout';
 import axios from 'axios';
 import { QuillEditor } from '../../../../components/dms/QuillEditor/QuillEditor';
+import { getModuleId, getToken } from '../../../../utils/authhelper';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -14,17 +15,13 @@ export const DepartmentAdd = () => {
     departmentName: '',
     description: '',
   });
-
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -44,14 +41,15 @@ export const DepartmentAdd = () => {
       setIsLoading(true);
       setError('');
 
-      const token = JSON.parse(localStorage.getItem("userData"))?.token;
+      const token = getToken(); // Get token
+      const moduleId = getModuleId('department'); // dynamically get module id
 
       const response = await axios.post(
         `${API_BASE_URL}/createDepartment`,
         {
           departmentName: formData.departmentName,
           description: formData.description,
-          module_id: "department", // 🔹 Add module_id here
+          module_id: moduleId, // include module_id in body
         },
         {
           headers: {
@@ -81,20 +79,11 @@ export const DepartmentAdd = () => {
 
   return (
     <AdminLayout>
-      <Container className='dms-container'>
+      <Container className="dms-container">
         <h4>Add New Department</h4>
-        <div className='dms-form-container'>
-          {error && (
-            <Alert variant="danger" onClose={() => setError('')} dismissible>
-              {error}
-            </Alert>
-          )}
-
-          {successMessage && (
-            <Alert variant="success" onClose={() => setSuccessMessage('')} dismissible>
-              {successMessage}
-            </Alert>
-          )}
+        <div className="dms-form-container">
+          {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
+          {successMessage && <Alert variant="success" onClose={() => setSuccessMessage('')} dismissible>{successMessage}</Alert>}
 
           <Form onSubmit={handleSubmit}>
             <Form.Group className="dms-form-group">
@@ -118,10 +107,10 @@ export const DepartmentAdd = () => {
             </Form.Group>
 
             <div className="save-and-cancel-btn">
-              <Button type="submit" className='me-2' disabled={isLoading}>
+              <Button type="submit" className="me-2" disabled={isLoading}>
                 {isLoading ? 'Saving...' : 'Save changes'}
               </Button>
-              <Button variant='secondary' onClick={() => navigate('/dms/department')}>
+              <Button variant="secondary" onClick={() => navigate('/dms/department')}>
                 Cancel
               </Button>
             </div>

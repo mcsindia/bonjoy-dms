@@ -1,25 +1,28 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Card, Alert, Table } from 'react-bootstrap';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { FaEdit } from 'react-icons/fa';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { AdminLayout } from '../../../../layouts/dms/AdminLayout/AdminLayout';
+import { Card, Table, Button, Spinner, Alert } from 'react-bootstrap';
+import { FaEdit } from 'react-icons/fa';
+import axios from 'axios';
+import { getToken, getModuleId } from '../../../../utils/authhelper';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const EmployeeRoleView = () => {
-  const location = useLocation();
   const navigate = useNavigate();
-  const { role } = location.state || {};
-  const roleId = role?.id;
+  const location = useLocation();
+  const params = useParams();
+  const roleFromState = location.state?.role;
+  const roleId = params.id || roleFromState?.id;
+
   const [roleData, setRoleData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
   const userData = JSON.parse(localStorage.getItem("userData"));
-  const token = userData?.token;
+  const token = getToken();
 
-  // 🔹 Constant module_id for backend validation
-  const MODULE_ID = "role"; // can be string or numeric depending on backend
-
+  // Permissions for "role" module
   let permissions = [];
   if (Array.isArray(userData?.employeeRole)) {
     for (const role of userData.employeeRole) {
@@ -45,38 +48,37 @@ export const EmployeeRoleView = () => {
   };
 
   useEffect(() => {
-    const fetchRoleById = async () => {
+    const fetchRole = async () => {
       if (!roleId) {
         setError('No role ID provided.');
-        setLoading(false);
         return;
       }
 
+      setLoading(true);
       try {
-        const res = await fetch(`${API_BASE_URL}/getRoleById/${roleId}?module_id=${MODULE_ID}`, {
-          method: "GET",
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          }
+        const moduleId = getModuleId("role"); // numeric or string depending on backend
+        console.log("Fetching role:", roleId, "module_id:", moduleId, "token:", token);
+
+        const res = await axios.get(`${API_BASE_URL}/getRoleById/${roleId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { module_id: moduleId }
         });
 
-        const data = await res.json();
-
-        if (data.success) {
-          setRoleData(data.data);
+        if (res.data.success) {
+          setRoleData(res.data.data);
+          setError('');
         } else {
-          setError(data.message || 'Failed to fetch role details.');
+          setError(res.data.message || 'Failed to fetch role details.');
         }
       } catch (err) {
-        console.error('Error fetching role:', err);
-        setError('Something went wrong while fetching role.');
+        console.error('Error fetching role:', err.response || err.message);
+        setError('Error fetching role.');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchRoleById();
+    fetchRole();
   }, [roleId, token]);
 
   const stripHtmlTags = (html) => {
@@ -85,71 +87,88 @@ export const EmployeeRoleView = () => {
     return tmp.textContent || tmp.innerText || '';
   };
 
-  const formatDate = (isoDate) => {
-    return new Date(isoDate).toLocaleString();
-  };
+  const formatDate = (isoDate) => new Date(isoDate).toLocaleString();
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="dms-container text-center">
+          <Spinner animation="border" />
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <AdminLayout>
+        <div className="dms-container">
+          <Alert variant="danger">{error}</Alert>
+          <Button onClick={() => navigate('/dms/role')}>Go Back</Button>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (!roleData) {
+    return (
+      <AdminLayout>
+        <div className="dms-container">
+          <h4>No role data available</h4>
+          <Button onClick={() => navigate('/dms/role')}>Go Back</Button>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
       <div className="dms-container">
-        <div className="d-flex justify-content-between mb-2">
+        <div className="d-flex justify-content-between align-items-center mb-3">
           <h4>Role Details</h4>
           {permissions.includes("edit") && (
             <Button
               className="edit-button"
-              onClick={() =>
-                  navigate('/dms/role/edit', { state: { role } }
-                )
-              }
+              onClick={() => navigate('/dms/role/edit', { state: { role: roleData } })}
             >
               <FaEdit /> Edit
             </Button>
           )}
         </div>
 
-        {loading ? (
-          <div className="text-center mt-5">
-            <h3>Loading role details...</h3>
-          </div>
-        ) : error ? (
-          <Alert variant="danger">{error}</Alert>
-        ) : roleData ? (
-          <Card>
-            <Card.Body>
-              <div className="mb-2"><strong>Role Name:</strong> {roleData.roleName}</div>
-              <div className="mb-2"><strong>Description:</strong> {stripHtmlTags(roleData.responsibility)}</div>
-              <div className="mb-2"><strong>Status:</strong> {roleData.is_active ? 'Active' : 'Inactive'}</div>
-              <div className="mb-2"><strong>Created At:</strong> {formatDate(roleData.createdAt)}</div>
-              <div className="mb-3"><strong>Updated At:</strong> {formatDate(roleData.updatedAt)}</div>
+        <Card className="mb-3">
+          <Card.Body>
+            <div className="mb-2"><strong>Role Name:</strong> {roleData.roleName}</div>
+            <div className="mb-2"><strong>Description:</strong> {stripHtmlTags(roleData.responsibility)}</div>
+            <div className="mb-2"><strong>Status:</strong> {roleData.is_active ? 'Active' : 'Inactive'}</div>
+            <div className="mb-2"><strong>Created At:</strong> {formatDate(roleData.createdAt)}</div>
+            <div className="mb-2"><strong>Updated At:</strong> {formatDate(roleData.updatedAt)}</div>
 
-              <h5 className="mt-4">Associated Modules</h5>
-              {roleData.Modules?.length > 0 ? (
-                <Table striped bordered hover responsive className="mt-2">
-                  <thead>
-                    <tr>
-                      <th>S.no</th>
-                      <th>Module Name</th>
-                      <th>Status</th>
+            <h5 className="mt-4">Associated Modules</h5>
+            {roleData.Modules?.length > 0 ? (
+              <Table striped bordered hover responsive>
+                <thead>
+                  <tr>
+                    <th>S.No</th>
+                    <th>Module Name</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {roleData.Modules.map((mod, index) => (
+                    <tr key={mod.id}>
+                      <td>{index + 1}</td>
+                      <td>{mod.moduleName}</td>
+                      <td>{mod.is_active ? 'Active' : 'Inactive'}</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {roleData.Modules.map((mod, index) => (
-                      <tr key={mod.id}>
-                        <td>{index + 1}</td>
-                        <td>{mod.moduleName}</td>
-                        <td>{mod.is_active ? 'Active' : 'Inactive'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
-              ) : (
-                <div>No modules associated with this role.</div>
-              )}
-            </Card.Body>
-          </Card>
-        ) : (
-          <div className="text-center p-3">No role data available.</div>
-        )}
+                  ))}
+                </tbody>
+              </Table>
+            ) : (
+              <div>No modules associated with this role.</div>
+            )}
+          </Card.Body>
+        </Card>
       </div>
     </AdminLayout>
   );

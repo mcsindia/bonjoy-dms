@@ -4,6 +4,7 @@ import { AdminLayout } from '../../../../layouts/dms/AdminLayout/AdminLayout';
 import { Card, Table, Button, Form, Spinner, Alert } from 'react-bootstrap';
 import { FaEdit } from 'react-icons/fa';
 import axios from 'axios';
+import { getToken, getModuleId } from '../../../../utils/authhelper';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -18,7 +19,7 @@ export const EmployeePermissionView = () => {
   const [error, setError] = useState('');
   const userData = JSON.parse(localStorage.getItem("userData"));
   let permissions = [];
-
+  
   if (Array.isArray(userData?.employeeRole)) {
     for (const role of userData.employeeRole) {
       for (const child of role.childMenus || []) {
@@ -51,7 +52,12 @@ export const EmployeePermissionView = () => {
     const fetchPermission = async () => {
       setLoading(true);
       try {
-        const res = await axios.get(`${API_BASE_URL}/getPermissionById/${permissionId}?module_id=permission`, {
+        const moduleId = getModuleId("permission");
+        const token = getToken(); // JWT token
+
+        const res = await axios.get(`${API_BASE_URL}/getPermissionById/${permissionId}`, {
+          headers: { Authorization: `Bearer ${token}` }, // include JWT token
+          params: { module_id: moduleId } // correct module ID
         });
 
         if (res.data.success) {
@@ -61,7 +67,7 @@ export const EmployeePermissionView = () => {
           setError(res.data.message || 'Failed to fetch permission.');
         }
       } catch (err) {
-        console.error(err);
+        console.error('API error while fetching permission:', err);
         setError('API error while fetching permission.');
       } finally {
         setLoading(false);

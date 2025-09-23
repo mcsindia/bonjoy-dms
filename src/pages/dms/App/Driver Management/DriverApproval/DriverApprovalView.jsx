@@ -127,10 +127,10 @@ export const DriverApprovalView = () => {
         }
     };
 
-    const handleRemarkAction = (doc, docName, type) => {
-        setSelectedResubmitDoc({ ...doc, type });
-        setShowResubmitModal(true);
-    };
+   const handleRemarkAction = (doc, docName, type) => {
+    setSelectedResubmitDoc({ ...doc, type }); // type 'driver' | 'vehicle' | 'bank'
+    setShowResubmitModal(true);
+};
 
     const getActionsByStatus = (status, docName, doc, type = 'driver') => {
         const actions = [
@@ -261,43 +261,40 @@ export const DriverApprovalView = () => {
     }
 
     const handleResubmit = async () => {
-        if (!selectedResubmitDoc?.id) return alert("Document ID is missing.");
+    if (!selectedResubmitDoc?.id) return alert("Document ID is missing.");
 
-        const formData = new FormData();
-        formData.append("rejection_reason", resubmitReason);
-        formData.append("status", selectedResubmitDoc.remarkStatus.toLowerCase());
+    const formData = new FormData();
+    formData.append("rejection_reason", resubmitReason);
+    formData.append("status", selectedResubmitDoc.remarkStatus.toLowerCase());
 
-        const isBankDoc = selectedResubmitDoc?.type === "bank";
-        const isVehicleDoc = currentVehicleDocuments.some(doc => doc.id === selectedResubmitDoc.id);
-
-        try {
-            let endpoint = "";
-            if (isBankDoc) {
-                endpoint = `${API_BASE_URL}/updateDriverBankDocument/${selectedResubmitDoc.id}`;
-            } else if (isVehicleDoc) {
-                endpoint = `${API_BASE_URL}/updateDriverVehicleDocument/${selectedResubmitDoc.id}`;
-            } else {
-                endpoint = `${API_BASE_URL}/updateDriverDocument/${selectedResubmitDoc.id}`;
-            }
-
-            const response = await axios.put(endpoint, formData, {
-                headers: { "Content-Type": "multipart/form-data" }
-            });
-
-            if (response.status === 200) {
-                alert("Document updated successfully.");
-                setShowResubmitModal(false);
-                setResubmitReason("");
-                setSelectedResubmitDoc(null);
-                fetchData();
-            } else {
-                alert("Update failed.");
-            }
-        } catch (error) {
-            console.error("Error during update:", error);
-            alert("An error occurred while updating the document.");
+    try {
+        let endpoint = "";
+        if (selectedResubmitDoc.type === "bank") {
+            endpoint = `${API_BASE_URL}/updateDriverBankDocument/${selectedResubmitDoc.id}`;
+        } else if (selectedResubmitDoc.type === "vehicle") {
+            endpoint = `${API_BASE_URL}/updateDriverVehicleDocument/${selectedResubmitDoc.id}`;
+        } else {
+            endpoint = `${API_BASE_URL}/updateDriverDocument/${selectedResubmitDoc.id}`;
         }
-    };
+
+        const response = await axios.put(endpoint, formData, {
+            headers: { "Content-Type": "multipart/form-data" }
+        });
+
+        if (response.status === 200) {
+            alert("Document updated successfully.");
+            setShowResubmitModal(false);
+            setResubmitReason("");
+            setSelectedResubmitDoc(null);
+            fetchData();
+        } else {
+            alert("Update failed.");
+        }
+    } catch (error) {
+        console.error("Error during update:", error);
+        alert("An error occurred while updating the document.");
+    }
+};
 
     const handleDriverActionMenuToggle = (id) => {
         setShowVehicleActions(null);

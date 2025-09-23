@@ -5,6 +5,7 @@ import { AdminLayout } from '../../../../layouts/dms/AdminLayout/AdminLayout';
 import axios from 'axios';
 import { QuillEditor } from '../../../../components/dms/QuillEditor/QuillEditor';
 import Select from 'react-select';
+import { getModuleId, getToken } from '../../../../utils/authhelper';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -12,84 +13,88 @@ export const EmployeeRoleEdit = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { role } = location.state || {};
+
+  const token = getToken();
+  const moduleId = getModuleId("role");
+
   const [modules, setModules] = useState([]);
   const [selectedModules, setSelectedModules] = useState([]);
-  const [roleName, setRoleName] = useState(role?.role || '');
-  const [responsibilities, setResponsibilities] = useState(role?.responsibility || '');
+  const [roleName, setRoleName] = useState('');
+  const [responsibilities, setResponsibilities] = useState('');
   const [loadingModules, setLoadingModules] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const token = JSON.parse(localStorage.getItem("userData"))?.token;
-
+  // Fetch all modules and role details together
   useEffect(() => {
-    const fetchModules = async () => {
+    const fetchModulesAndRole = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/getAllModules?page=1&limit=100`);
+        // 1️⃣ Fetch all modules
+        const moduleResp = await axios.get(`${API_BASE_URL}/getAllModules`, {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { page: 1, limit: 100, module_id: moduleId },
+        });
 
-        // Flatten the nested module structure
-        const moduleList = response.data?.data.result || [];
-
+        const moduleList = moduleResp.data?.data?.result || [];
         const flattened = moduleList
           .filter((mod) => mod.is_active)
           .map((mod) => ({
             value: mod.id,
             label: `${mod.parentMenuName || '--'} > ${mod.childMenuName || '--'} > ${mod.moduleName}`,
           }));
-
         setModules(flattened);
 
-        // Pre-select modules if role.moduleIds exist
-        if (role?.moduleIds?.length) {
-          const preSelected = flattened.filter((mod) =>
-            role.moduleIds.includes(mod.value)
-          );
-          setSelectedModules(preSelected);
-        }
+        // 2️⃣ Fetch full role details
+        const roleResp = await axios.get(`${API_BASE_URL}/getRoleById/${role?.id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { module_id: moduleId }, // 🔹 include module_id
+        });
 
-        setModules(flattened);
+        if (roleResp.data.success) {
+          const fullRole = roleResp.data.data;
 
-        // Pre-select modules based on role data
-        if (role?.moduleIds?.length) {
-          const preSelected = flattened.filter((mod) =>
-            role.moduleIds.includes(mod.value)
-          );
+          setRoleName(fullRole.roleName || '');
+          setResponsibilities(fullRole.responsibility || '');
+
+          const modIds = fullRole.Modules?.map((mod) => mod.id) || [];
+          const preSelected = flattened.filter((opt) => modIds.includes(opt.value));
           setSelectedModules(preSelected);
         }
       } catch (err) {
-        console.error('Error fetching modules:', err);
-        setError('Failed to load modules');
+        console.error(err);
+        setError('Failed to load modules or role details.');
       } finally {
         setLoadingModules(false);
       }
     };
 
-    fetchModules();
-  }, [role]);
+    if (role?.id) fetchModulesAndRole();
+  }, [role, token, moduleId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!roleName || selectedModules.length === 0) {
+    if (!roleName.trim() || selectedModules.length === 0) {
       setError('Role name and at least one module selection are required.');
       return;
     }
 
-    const updatedRole = {
-      roleName: roleName,
-      responsibility: responsibilities,
+    const payload = {
+      roleName: roleName.trim(),
+      responsibility: responsibilities.trim(),
       moduleId: selectedModules.map((mod) => mod.value),
+      module_id: moduleId, // 🔹 include module_id in body
     };
 
     try {
       const response = await axios.put(
         `${API_BASE_URL}/updateRole/${role?.id}`,
-        updatedRole,
+        payload,
         {
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`,
           },
+          params: { module_id: moduleId }, // 🔹 include module_id in query
         }
       );
 
@@ -100,57 +105,18 @@ export const EmployeeRoleEdit = () => {
         setError(response.data.message || 'Failed to update role');
       }
     } catch (err) {
-      console.error('Error updating role:', err);
-      setError('Failed to update role. Please try again later.');
+      console.error(err);
+      setError(err.response?.data?.message || 'Failed to update role. Please try again later.');
     }
   };
-
-  useEffect(() => {
-    const fetchRoleDetails = async () => {
-      try {
-        const response = await axios.get(`${API_BASE_URL}/getRoleById/${role?.id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-        if (response.data.success) {
-          const fullRole = response.data.data;
-          setRoleName(fullRole.roleName);
-          setResponsibilities(fullRole.responsibility);
-
-          const modIds = fullRole.Modules?.map(mod => mod.id) || [];
-
-          // After setting module options
-          const preSelected = modules.filter((opt) => modIds.includes(opt.value));
-          setSelectedModules(preSelected);
-        }
-      } catch (err) {
-        console.error('Error fetching full role data:', err);
-        setError('Failed to load full role details.');
-      }
-    };
-
-    if (modules.length > 0 && role?.id) {
-      fetchRoleDetails();
-    }
-  }, [modules]);
-
 
   return (
     <AdminLayout>
       <div className="dms-container">
         <h4>Edit Role</h4>
         <div className="dms-form-container">
-          {error && (
-            <Alert variant="danger" onClose={() => setError('')} dismissible>
-              {error}
-            </Alert>
-          )}
-          {success && (
-            <Alert variant="success" onClose={() => setSuccess('')} dismissible>
-              {success}
-            </Alert>
-          )}
+          {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
+          {success && <Alert variant="success" onClose={() => setSuccess('')} dismissible>{success}</Alert>}
 
           {loadingModules ? (
             <div className="text-center my-4">Loading role details...</div>
@@ -191,12 +157,8 @@ export const EmployeeRoleEdit = () => {
 
               {/* Buttons */}
               <div className="save-and-cancel-btn">
-                <Button type="submit" className="me-2">
-                  Save Changes
-                </Button>
-                <Button variant="secondary" onClick={() => navigate('/dms/role')}>
-                  Cancel
-                </Button>
+                <Button type="submit" className="me-2">Save Changes</Button>
+                <Button variant="secondary" onClick={() => navigate('/dms/role')}>Cancel</Button>
               </div>
             </Form>
           )}

@@ -4,6 +4,7 @@ import { Button, Card, Row, Col, Image, Spinner } from "react-bootstrap";
 import { FaMotorcycle, FaMapMarkerAlt, FaEdit } from "react-icons/fa";
 import { AdminLayout } from "../../../../layouts/dms/AdminLayout/AdminLayout";
 import axios from "axios";
+import { getModuleId, getToken } from "../../../../utils/authhelper";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const IMAGE_BASE_URL = import.meta.env.VITE_IMAGE_BASE_URL;
@@ -31,26 +32,18 @@ export const TripDetails = () => {
     }
   }
 
-  const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
-    if (permissions.includes(permissionType)) {
-      action();
-    } else {
-      alert(fallbackMessage || `You don't have permission to ${permissionType} this trip.`);
-    }
-  };
-
   useEffect(() => {
     const fetchTrip = async () => {
+      setLoading(true);
       try {
-        const token = userData?.token;
+        const token = getToken(); // 🔹 Use token helper
+        const moduleId = getModuleId("trip"); // 🔹 dynamic module_id
+
         const response = await axios.get(`${API_BASE_URL}/getRideById/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          params: {
-            module_id: "trip" // 🔹 add module_id
-          }
+          headers: { Authorization: `Bearer ${token}` },
+          params: { module_id: moduleId }, // 🔹 pass module_id
         });
+
         setTrip(response.data);
       } catch (error) {
         console.error("Error fetching trip:", error);
@@ -104,6 +97,8 @@ export const TripDetails = () => {
     cancelled_at,
     emergency_triggeredAt,
     createdAt,
+    rider_user_id,
+    driver_user_id,
   } = trip;
 
   const source = encodeURIComponent(pickup_address || "");
@@ -114,20 +109,14 @@ export const TripDetails = () => {
       <div className="trip-details-page container mt-4">
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h4>Trip Details</h4>
-          <div className="d-flex justify-content-between align-items-center mb-3">
-            <h4>Trip Details</h4>
-
-            {permissions.includes("edit") && (
-              <Button
-                className="edit-button"
-                onClick={() =>
-                  navigate("/dms/trip/edit", { state: { trip } })
-                }
-              >
-                <FaEdit /> Edit
-              </Button>
-            )}
-          </div>
+          {permissions.includes("edit") && (
+            <Button
+              className="edit-button"
+              onClick={() => navigate("/dms/trip/edit", { state: { trip } })}
+            >
+              <FaEdit /> Edit
+            </Button>
+          )}
         </div>
 
         {/* Trip Info */}
@@ -174,7 +163,6 @@ export const TripDetails = () => {
               <h4>Rider Information</h4>
               <hr />
               <Row className="align-items-center">
-                {/* Image Left */}
                 <Col xs={4} className="text-center">
                   <Image
                     src={IMAGE_BASE_URL + rider_profile_image}
@@ -184,11 +172,9 @@ export const TripDetails = () => {
                     height={80}
                   />
                 </Col>
-
-                {/* Info Right */}
                 <Col xs={8}>
                   <p><strong>Name:</strong> {rider_name}</p>
-                  <p><strong>User ID:</strong> {trip.rider_user_id}</p>
+                  <p><strong>User ID:</strong> {rider_user_id}</p>
                 </Col>
               </Row>
             </Card>
@@ -199,7 +185,6 @@ export const TripDetails = () => {
               <h4>Driver Information</h4>
               <hr />
               <Row className="align-items-center">
-                {/* Image Left */}
                 <Col xs={4} className="text-center">
                   <Image
                     src={IMAGE_BASE_URL + driver_profile_image}
@@ -209,11 +194,9 @@ export const TripDetails = () => {
                     height={80}
                   />
                 </Col>
-
-                {/* Info Right */}
                 <Col xs={8}>
                   <p><strong>Name:</strong> {driver_name}</p>
-                  <p><strong>User ID:</strong> {trip.driver_user_id}</p>
+                  <p><strong>User ID:</strong> {driver_user_id}</p>
                 </Col>
               </Row>
             </Card>

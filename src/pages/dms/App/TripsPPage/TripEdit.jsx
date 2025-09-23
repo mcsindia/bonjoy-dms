@@ -4,6 +4,7 @@ import { Button, Container, Form, Row, Col, Alert, Spinner } from "react-bootstr
 import axios from "axios";
 import Select from "react-select";
 import { AdminLayout } from "../../../../layouts/dms/AdminLayout/AdminLayout";
+import { getModuleId, getToken } from '../../../../utils/authhelper';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -21,6 +22,7 @@ export const TripEdit = () => {
   const [initialized, setInitialized] = useState(false);
 
   // Fetch riders, drivers, ride types
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -29,20 +31,16 @@ export const TripEdit = () => {
 
         const [rideTypesRes, driversRes, ridersRes] = await Promise.all([
           axios.get(`${API_BASE_URL}/getAllRideType`, {
-            headers: { Authorization: `Bearer ${token}` },
-            params: { module_id: "ride_type" } // 🔹 add module_id
+            ...config,
+            params: { module_id: getModuleId("ridetypes") }   
           }),
           axios.get(`${API_BASE_URL}/getAllDriverProfiles`, {
-            headers: { Authorization: `Bearer ${token}` },
-            params: { module_id: "driver" } // 🔹 add module_id
+            ...config,
+            params: { module_id: getModuleId("driver") }
           }),
-          axios.get(`${API_BASE_URL}/getAllRiderProfiles`, {
-            headers: { Authorization: `Bearer ${token}` },
-            params: { module_id: "rider" } // 🔹 add module_id
-          })
+          axios.get(`${API_BASE_URL}/getAllRiderProfiles`, config) // ❌ यहाँ module_id नहीं भेजना
         ]);
 
-        // Map ride types
         setRideTypes(
           rideTypesRes.data?.data?.models?.map(rt => ({
             value: rt.id,
@@ -50,7 +48,6 @@ export const TripEdit = () => {
           })) || []
         );
 
-        // Map drivers with fallback to mobile if name is null
         setDrivers(
           driversRes.data?.data?.data?.map(d => ({
             value: d.userId,
@@ -58,7 +55,6 @@ export const TripEdit = () => {
           })) || []
         );
 
-        // Map riders with fallback to mobile if name is null
         setRiders(
           ridersRes.data?.data?.data?.map(r => ({
             value: r.id,
@@ -142,6 +138,9 @@ export const TripEdit = () => {
     setSuccessMessage("");
 
     try {
+      const token = getToken();
+      const moduleId = getModuleId("trip"); // dynamic module ID
+
       const payload = {
         rider_id: formValues.riderId,
         driver_id: formValues.driverId,
@@ -165,17 +164,10 @@ export const TripEdit = () => {
         payment_status: formValues.payment_status?.toLowerCase()
       };
 
-      console.log("Payload to update trip:", payload);
-
       const response = await axios.put(
         `${API_BASE_URL}/updateRide/${trip.id}`,
-        {
-          ...payload,
-          module_id: "trip" // 🔹 add module_id here
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` }
-        }
+        { ...payload, module_id: moduleId }, // 🔹 use dynamic moduleId
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       if (response.data.success) {

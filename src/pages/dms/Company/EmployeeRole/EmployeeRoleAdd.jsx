@@ -5,6 +5,7 @@ import { AdminLayout } from '../../../../layouts/dms/AdminLayout/AdminLayout';
 import { QuillEditor } from '../../../../components/dms/QuillEditor/QuillEditor';
 import axios from 'axios';
 import Select from 'react-select';
+import { getModuleId, getToken } from '../../../../utils/authhelper';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -21,24 +22,19 @@ export const EmployeeRoleAdd = () => {
     responsibility: '',
   });
 
-  const token = JSON.parse(localStorage.getItem("userData"))?.token;
+  const token = getToken();
+  const moduleId = getModuleId("role"); 
 
+  // Fetch all modules for permissions
   useEffect(() => {
     const fetchModules = async () => {
       try {
         const response = await axios.get(`${API_BASE_URL}/getAllModules`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          params: {
-            page: 1,
-            limit: 100,
-            module_id: "role", 
-          },
+          headers: { Authorization: `Bearer ${token}` },
+          params: { page: 1, limit: 100, module_id: moduleId },
         });
 
         const result = response.data?.data?.result || [];
-
         const flattenedModules = result
           .filter(mod => mod.is_active)
           .map(mod => ({
@@ -55,11 +51,11 @@ export const EmployeeRoleAdd = () => {
     };
 
     fetchModules();
-  }, []);
+  }, [token, moduleId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -76,43 +72,31 @@ export const EmployeeRoleAdd = () => {
     }
 
     try {
-      const res = await axios.post(
-        `${API_BASE_URL}/createRole?module_id=role`,
-        {
-          roleName: formData.role_name,
-          responsibility: formData.responsibility,
-          moduleId: selectedModules.map(mod => mod.value),
+      setError('');
+      const payload = {
+        roleName: formData.role_name,
+        responsibility: formData.responsibility,
+        moduleId: selectedModules.map(mod => mod.value),
+        module_id: moduleId, 
+      };
+
+      const res = await axios.post(`${API_BASE_URL}/createRole`, payload, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
         },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+        params: { module_id: moduleId } 
+      });
 
       if (res.data.success) {
         setSuccess('Role added successfully!');
         setTimeout(() => navigate('/dms/role'), 1500);
       } else {
-        // Check if backend sends a duplicate error
-        if (res.data.message?.toLowerCase().includes('already exists')) {
-          setError(`Role "${formData.role_name}" already exists. Please choose a different name.`);
-        } else {
-          setError(res.data.message || 'Failed to add role.');
-        }
+        setError(res.data.message || 'Failed to add role.');
       }
     } catch (err) {
       console.error('Error creating role:', err.response?.data || err.message);
-
-      const apiMessage = err.response?.data?.message;
-
-      if (apiMessage?.toLowerCase() === 'validation error') {
-        // Show user-friendly message
-        setError(`Role "${formData.role_name}" already exists. Please choose a different name.`);
-      } else {
-        setError(apiMessage || 'Something went wrong. Please try again.');
-      }
+      setError(err.response?.data?.message || 'Something went wrong. Please try again.');
     }
   };
 
@@ -125,9 +109,7 @@ export const EmployeeRoleAdd = () => {
           {success && <Alert variant="success" onClose={() => setSuccess('')} dismissible>{success}</Alert>}
 
           {loadingModules ? (
-            <div className="text-center my-4">
-              <div>Loading modules...</div>
-            </div>
+            <div className="text-center my-4">Loading modules...</div>
           ) : (
             <Form onSubmit={handleSubmit}>
               <Form.Group className="dms-form-group">
@@ -158,7 +140,7 @@ export const EmployeeRoleAdd = () => {
                 <QuillEditor
                   value={formData.responsibility}
                   onChange={(value) =>
-                    setFormData((prev) => ({ ...prev, responsibility: value }))
+                    setFormData(prev => ({ ...prev, responsibility: value }))
                   }
                 />
               </Form.Group>

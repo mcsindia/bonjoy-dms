@@ -4,6 +4,7 @@ import { Button, Table, InputGroup, Form, Pagination, Dropdown, DropdownButton, 
 import { FaEdit, FaEye, FaStar, FaFileExport, FaFileExcel, FaFilePdf, FaBell, FaHistory, FaSignInAlt } from 'react-icons/fa';
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { getModuleId, getToken, getModulePermissions } from '../../../../../utils/authhelper';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -26,6 +27,8 @@ export const AllDrivers = () => {
     const [totalRecords, setTotalRecords] = useState(0);
     const [allCities, setAllCities] = useState([]);
     const userData = JSON.parse(localStorage.getItem("userData"));
+    const moduleId = getModuleId("driver"); // 🔹 dynamic module ID
+    const token = getToken();               // 🔹 dynamic token
     let permissions = [];
 
     if (Array.isArray(userData?.employeeRole)) {
@@ -42,14 +45,6 @@ export const AllDrivers = () => {
             }
         }
     }
-
-    const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
-        if (permissions.includes(permissionType)) {
-            action(); // allowed, run the actual function
-        } else {
-            alert(fallbackMessage || `You don't have permission to ${permissionType} this employee.`);
-        }
-    };
 
     const fetchDrivers = async (
         page = 1,
@@ -70,11 +65,14 @@ export const AllDrivers = () => {
             if (status) params.append("status", status);
             if (rideStatus) params.append("rideStatus", rideStatus);
             if (rating) params.append("ratings", rating);
-            params.append("module_id", "driver"); // 🔹 add module_id
+            params.append("module_id", moduleId);
 
-            const res = await axios.get(`${API_BASE_URL}/getAllDriverProfiles?${params.toString()}`);
+            const res = await axios.get(`${API_BASE_URL}/getAllDriverProfiles?${params.toString()}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+
             const result = res.data?.data;
-
+            console.log(result)
             if (result?.data) {
                 const sortedDrivers = result.data.sort((a, b) => parseInt(a.id) - parseInt(b.id));
                 setDriverData(sortedDrivers);
@@ -95,15 +93,42 @@ export const AllDrivers = () => {
         }
     };
 
+    // Update your delete request
+    const confirmDelete = async () => {
+        if (!driverToDelete) return;
+        try {
+            const res = await axios.delete(`${API_BASE_URL}/deleteDriverProfile/${driverToDelete.id}`, {
+                headers: { Authorization: `Bearer ${token}` },
+                params: { module_id: moduleId }, // 🔹 dynamic module_id
+            });
+
+            if (res.status === 200) {
+                const newPage = (driverData.length === 1 && currentPage > 1) ? currentPage - 1 : currentPage;
+                setCurrentPage(newPage);
+                await fetchDrivers(currentPage, itemsPerPage, search, filterCity, filterDriverStatus, filterRideStatus, filterRating);
+            }
+        } catch (error) {
+            console.error("Error deleting driver:", error);
+        } finally {
+            setShowDeleteModal(false);
+            setDriverToDelete(null);
+        }
+    };
+
     useEffect(() => {
         fetchDrivers(currentPage, itemsPerPage, search, filterCity, filterDriverStatus, filterRideStatus, filterRating);
     }, [currentPage, itemsPerPage, search, filterCity, filterDriverStatus, filterRideStatus, filterRating]);
 
     const fetchAllCities = async () => {
         try {
-            const res = await axios.get(`${API_BASE_URL}/getAllDriverProfiles`);
+            const res = await axios.get(`${API_BASE_URL}/getAllDriverProfiles?page=1&limit=1000`, {
+                headers: { Authorization: `Bearer ${token}` },
+                params: { module_id: moduleId }
+            });
             const allDrivers = res.data?.data?.data || [];
-            const cities = Array.from(new Set(allDrivers.map(driver => driver.city).filter(Boolean)));
+            const cities = Array.from(
+                new Set(allDrivers.map(driver => driver.city || driver.WorkingCity).filter(Boolean))
+            );
             setAllCities(cities);
         } catch (error) {
             console.error("Error fetching cities:", error);
@@ -121,7 +146,7 @@ export const AllDrivers = () => {
     };
 
     const uniqueCities = Array.from(
-        new Set(driverData.map(driver => driver.city).filter(Boolean))
+        new Set(driverData.map(driver => driver.city || driver.WorkingCity).filter(Boolean))
     );
 
     const handleFilterCity = (city) => {
@@ -145,35 +170,10 @@ export const AllDrivers = () => {
         fetchDrivers(1, itemsPerPage, search, filterCity, filterDriverStatus, status, filterRating);
     };
 
-    const handleDelete = (driver) => {
-        setDriverToDelete(driver);
-        setShowDeleteModal(true);
-    };
 
     const handleFilterRating = (rating) => {
         setFilterRating(rating);
         fetchDrivers(1, itemsPerPage, search, filterCity, filterDriverStatus, filterRideStatus, rating);
-    };
-
-    const confirmDelete = async () => {
-        if (!driverToDelete) return;
-        try {
-            const res = await axios.delete(`${API_BASE_URL}/deleteDriverProfile/${driverToDelete.id}`, {
-                params: {
-                    module_id: "driver" // 🔹 add module_id
-                }
-            });
-            if (res.status === 200) {
-                const newPage = (driverData.length === 1 && currentPage > 1) ? currentPage - 1 : currentPage;
-                setCurrentPage(newPage); // trigger useEffect
-                await fetchDrivers(currentPage, itemsPerPage, search, filterCity, filterDriverStatus, filterRideStatus, filterRating);
-            }
-        } catch (error) {
-            console.error("Error deleting driver:", error);
-        } finally {
-            setShowDeleteModal(false);
-            setDriverToDelete(null);
-        }
     };
 
     useEffect(() => {
@@ -229,9 +229,11 @@ export const AllDrivers = () => {
                     </DropdownButton>
 
                     <DropdownButton title={`City: ${filterCity || "All"}`} className="me-2">
-                        <Dropdown.Item onClick={() => handleFilterCity("")}>All</Dropdown.Item>
+                        <Dropdown.Item as="button" onClick={() => handleFilterCity("")}>
+                            All
+                        </Dropdown.Item>
                         {allCities.map((city, idx) => (
-                            <Dropdown.Item key={idx} onClick={() => handleFilterCity(city)}>
+                            <Dropdown.Item as="button" key={idx} onClick={() => handleFilterCity(city)}>
                                 {city}
                             </Dropdown.Item>
                         ))}

@@ -4,6 +4,7 @@ import { Button, Container, Form, Alert } from 'react-bootstrap';
 import axios from 'axios';
 import { AdminLayout } from '../../../../layouts/dms/AdminLayout/AdminLayout';
 import { QuillEditor } from '../../../../components/dms/QuillEditor/QuillEditor';
+import { getModuleId, getToken } from '../../../../utils/authhelper';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -17,7 +18,6 @@ export const DepartmentEdit = () => {
     departmentName: '',
     description: ''
   });
-
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [hasInitialized, setHasInitialized] = useState(false);
@@ -39,47 +39,48 @@ export const DepartmentEdit = () => {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!formData.departmentName.trim()) {
-    setError('Department Name is required!');
-    return;
-  }
-
-  if (!formData.description.trim()) {
-    setError('Description is required!');
-    return;
-  }
-
-  try {
-    const token = JSON.parse(localStorage.getItem("userData"))?.token;
-
-    const response = await axios.put(
-      `${API_BASE_URL}/updateDepartment/${formData.id}`,
-      {
-        departmentName: formData.departmentName,
-        description: formData.description,
-        module_id: "department", 
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-
-    if (response.data.success) {
-      setSuccess(response.data.message || 'Department updated successfully.');
-      setTimeout(() => navigate('/dms/department'), 1500);
-    } else {
-      setError(response.data.message || 'Something went wrong.');
+    if (!formData.departmentName.trim()) {
+      setError('Department Name is required!');
+      return;
     }
-  } catch (err) {
-    console.error('Update failed:', err);
-    setError('Failed to update department. Please try again later.');
-  }
-};
+
+    if (!formData.description.trim()) {
+      setError('Description is required!');
+      return;
+    }
+
+    try {
+      const token = getToken(); // use helper
+      const moduleId = getModuleId('department'); // dynamic module id
+
+      const response = await axios.put(
+        `${API_BASE_URL}/updateDepartment/${formData.id}`,
+        {
+          departmentName: formData.departmentName,
+          description: formData.description,
+          module_id: moduleId, // include module_id in body
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (response.data.success) {
+        setSuccess(response.data.message || 'Department updated successfully.');
+        setTimeout(() => navigate('/dms/department'), 1500);
+      } else {
+        setError(response.data.message || 'Something went wrong.');
+      }
+    } catch (err) {
+      console.error('Update failed:', err);
+      setError('Failed to update department. Please try again later.');
+    }
+  };
 
   return (
     <AdminLayout>

@@ -4,6 +4,7 @@ import { Button, Container, Form, Alert } from 'react-bootstrap';
 import { AdminLayout } from '../../../../layouts/dms/AdminLayout/AdminLayout';
 import axios from 'axios';
 import { QuillEditor } from '../../../../components/dms/QuillEditor/QuillEditor';
+import { getModuleId, getToken } from '../../../../utils/authhelper';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -25,14 +26,11 @@ export const DesignationAdd = () => {
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
-        const token = JSON.parse(localStorage.getItem("userData"))?.token;
+        const token = getToken();
+        const moduleId = getModuleId('designation'); // dynamic module_id
         const response = await axios.get(`${API_BASE_URL}/getAllDepartments`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          params: {
-            module_id: "designation",
-          },
+          headers: { Authorization: `Bearer ${token}` },
+          params: { module_id: moduleId },
         });
 
         if (response.data.success && Array.isArray(response.data.data.data)) {
@@ -75,16 +73,16 @@ export const DesignationAdd = () => {
       return;
     }
 
-    const data = {
-      departmentId: parseInt(formData.departmentId, 10),
-      designation: formData.designation,
-      description: formData.description,
-      module_id: "designation",
-    };
-
     try {
-      const token = JSON.parse(localStorage.getItem("userData"))?.token;
-      const response = await axios.post(`${API_BASE_URL}/createDesignation`, data, {
+      const token = getToken();
+      const moduleId = getModuleId('designation'); // dynamic module_id
+
+      const response = await axios.post(`${API_BASE_URL}/createDesignation`, {
+        departmentId: parseInt(formData.departmentId, 10),
+        designation: formData.designation,
+        description: formData.description,
+        module_id: moduleId,
+      }, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -115,7 +113,6 @@ export const DesignationAdd = () => {
           {successMessage && <Alert variant="success">{successMessage}</Alert>}
 
           <Form onSubmit={handleSubmit}>
-            {/* Department Dropdown */}
             <Form.Group className="dms-form-group">
               <Form.Label>Department</Form.Label>
               <Form.Control
@@ -134,7 +131,6 @@ export const DesignationAdd = () => {
               </Form.Control>
             </Form.Group>
 
-            {/* Designation */}
             <Form.Group className="dms-form-group">
               <Form.Label>Designation</Form.Label>
               <Form.Control
@@ -147,27 +143,19 @@ export const DesignationAdd = () => {
               />
             </Form.Group>
 
-            {/* Description with Quill Editor */}
             <Form.Group className="dms-form-group">
               <Form.Label>Description</Form.Label>
               <QuillEditor
                 value={formData.description}
-                onChange={(value) =>
-                  setFormData((prev) => ({ ...prev, description: value }))
-                }
+                onChange={(value) => setFormData((prev) => ({ ...prev, description: value }))}
               />
             </Form.Group>
 
-            {/* Buttons */}
             <div className="save-and-cancel-btn">
               <Button type="submit" className="me-2" disabled={isLoading}>
                 {isLoading ? 'Saving...' : 'Save changes'}
               </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={() => navigate('/dms/designation')}
-              >
+              <Button type="button" variant="secondary" onClick={() => navigate('/dms/designation')}>
                 Cancel
               </Button>
             </div>

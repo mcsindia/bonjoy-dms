@@ -4,6 +4,7 @@ import { FaEdit, FaTrash, FaEye, FaFileExport, FaPlus, FaFileExcel, FaFilePdf } 
 import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from '../../../../layouts/dms/AdminLayout/AdminLayout';
 import axios from 'axios';
+import { getModuleId, getToken } from '../../../../utils/authhelper';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -48,14 +49,6 @@ export const EmployeeList = () => {
     }
   }
 
-  const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
-    if (permissions.includes(permissionType)) {
-      action(); // allowed, run the actual function
-    } else {
-      alert(fallbackMessage || `You don't have permission to ${permissionType} this employee.`);
-    }
-  };
-
   const fetchEmployees = async (page = 1) => {
     setLoading(true);
     const token = JSON.parse(localStorage.getItem("userData"))?.token;
@@ -71,7 +64,7 @@ export const EmployeeList = () => {
           status: selectedStatus || undefined,
           designationId: filter || undefined,
           department: selectedDepartment || undefined,
-          module_id: "employee",
+          module_id: getModuleId("employee")
         }
       });
 
@@ -103,7 +96,7 @@ export const EmployeeList = () => {
 
       const response = await axios.get(`${API_BASE_URL}/getAllDepartments`, {
         headers: { Authorization: `Bearer ${token}` },
-        params: { limit: 100, module_id: "employee" }
+        params: { limit: 100, module_id: getModuleId("department") }
       });
 
       const data = response.data?.data?.data || [];
@@ -120,7 +113,7 @@ export const EmployeeList = () => {
 
       const response = await axios.get(`${API_BASE_URL}/getDesignationsByDepartmentId/${departmentId}`, {
         headers: { Authorization: `Bearer ${token}` },
-        params: { module_id: "employee" }
+        params: { module_id: getModuleId("designation") }
       });
 
       const designationsArray = response.data?.data || [];
@@ -233,9 +226,7 @@ export const EmployeeList = () => {
 
       await axios.delete(`${API_BASE_URL}/deleteEmployee/${employeeToDelete}`, {
         headers: { Authorization: `Bearer ${token}` },
-        data: {
-          module_id: "employee",
-        }
+        params: { module_id: getModuleId("employee") }
       });
 
       // Close modal

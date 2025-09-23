@@ -3,6 +3,7 @@ import { Form, Button, Alert, Container } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AdminLayout } from '../../../../layouts/dms/AdminLayout/AdminLayout';
 import axios from 'axios';
+import { getModuleId, getToken } from '../../../../utils/authhelper';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -21,8 +22,8 @@ export const MenuEdit = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const userData = JSON.parse(localStorage.getItem('userData')) || {};
-  const token = userData?.token;
+  const token = getToken();                  // dynamic token
+  const moduleId = getModuleId('menu');      // dynamic module ID
 
   useEffect(() => {
     fetchParentMenus();
@@ -39,10 +40,9 @@ export const MenuEdit = () => {
 
   const fetchParentMenus = async () => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/getAllParentMenu?module_id=menu`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const response = await axios.get(`${API_BASE_URL}/getAllParentMenu`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { module_id: moduleId }, // use dynamic module_id
       });
 
       if (response.data?.success) {
@@ -59,42 +59,37 @@ export const MenuEdit = () => {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
+    if (!formData.name.trim()) return setError('Menu Name is required.');
 
-  if (!formData.name.trim()) return setError('Menu Name is required.');
+    setIsLoading(true);
+    setError('');
 
-  setIsLoading(true);
-  setError('');
+    try {
+      const payload = {
+        ...formData,
+        module_id: moduleId, // include dynamic module_id
+      };
 
-  try {
-    const payload = {
-      ...formData,
-      module_id: "menu"
-    };
+      const res = await axios.put(
+        `${API_BASE_URL}/updateMenu/${menu.id}`,
+        payload,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-    const res = await axios.put(
-      `${API_BASE_URL}/updateMenu/${menu.id}`,
-      payload,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      if (res.data?.success) {
+        setSuccessMessage('Menu updated successfully!');
+        setTimeout(() => navigate('/dms/menu'), 1500);
+      } else {
+        setError(res.data?.message || 'Failed to update menu.');
       }
-    );
-
-    if (res.data?.success) {
-      setSuccessMessage('Menu updated successfully!');
-      setTimeout(() => navigate('/dms/menu'), 1500);
-    } else {
-      setError(res.data?.message || 'Failed to update menu.');
+    } catch (err) {
+      console.error('Update menu error:', err);
+      setError(err?.response?.data?.message || 'Something went wrong.');
+    } finally {
+      setIsLoading(false);
     }
-  } catch (err) {
-    console.error('Update menu error:', err);
-    setError(err?.response?.data?.message || 'Something went wrong.');
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   return (
     <AdminLayout>

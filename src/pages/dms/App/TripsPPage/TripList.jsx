@@ -12,6 +12,7 @@ import { FaEye, FaEdit, FaFileExport, FaFileExcel, FaFilePdf } from "react-icons
 import { AdminLayout } from "../../../../layouts/dms/AdminLayout/AdminLayout";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { getModuleId, getToken } from "../../../../utils/authhelper";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -26,6 +27,7 @@ export const TripList = () => {
     const [totalItems, setTotalItems] = useState(0);
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [loading, setLoading] = useState(false);
+
     const userData = JSON.parse(localStorage.getItem("userData"));
     let permissions = [];
 
@@ -35,39 +37,31 @@ export const TripList = () => {
                 for (const mod of child.modules || []) {
                     if (mod.moduleUrl?.toLowerCase() === "trip") {
                         permissions =
-                            mod.permission?.toLowerCase().split(",").map((p) => p.trim()) ||
-                            [];
+                            mod.permission?.toLowerCase().split(",").map((p) => p.trim()) || [];
                     }
                 }
             }
         }
     }
 
-    const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
-        if (permissions.includes(permissionType)) {
-            action();
-        } else {
-            alert(fallbackMessage || `You don't have permission to ${permissionType} this trip.`);
-        }
-    };
-
     const fetchTrips = async (page = 1, searchValue = "", statusFilter = "", dateFilter = "") => {
         setLoading(true);
         try {
-            const token = JSON.parse(localStorage.getItem("userData"))?.token;
+            const token = getToken();
+            const moduleId = getModuleId("trip"); // dynamic module_id
+
+            const params = {
+                page,
+                limit: itemsPerPage,
+                module_id: moduleId,
+            };
+            if (searchValue) params.search = searchValue;
+            if (statusFilter) params.status = statusFilter;
+            if (dateFilter) params.date = dateFilter;
 
             const response = await axios.get(`${API_BASE_URL}/getAllRides`, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-                params: {
-                    page,
-                    limit: itemsPerPage,
-                    search: searchValue || undefined,
-                    status: statusFilter || undefined,
-                    date: dateFilter || undefined,
-                    module_id: "trip" // 🔹 added module_id here
-                },
+                headers: { Authorization: `Bearer ${token}` },
+                params,
             });
 
             const apiData = response.data?.data || [];
@@ -77,6 +71,7 @@ export const TripList = () => {
             setTrips(apiData);
             setTotalItems(totalItems);
             setTotalPages(totalPages);
+            setCurrentPage(response.data?.currentPage || page);
         } catch (error) {
             console.error("Error fetching trips:", error);
             setTrips([]);
@@ -108,17 +103,11 @@ export const TripList = () => {
                 <div className="live-count">
                     <h3>Trips List</h3>
                     <div className="live-count-container">
-                        <Button className="green-button">
-                            🏍️ Total Trips: {totalItems}
-                        </Button>
+                        <Button className="green-button">🏍️ Total Trips: {totalItems}</Button>
                     </div>
                 </div>
                 <div className="export-import-container">
-                    <DropdownButton
-                        variant="primary"
-                        title={<><FaFileExport /> Export</>}
-                        className="me-2"
-                    >
+                    <DropdownButton variant="primary" title={<><FaFileExport /> Export</>} className="me-2">
                         <Dropdown.Item>
                             <FaFileExcel className="icon-green" /> Export to Excel
                         </Dropdown.Item>
@@ -128,29 +117,14 @@ export const TripList = () => {
                     </DropdownButton>
                 </div>
             </div>
+
             <div className="filter-search-container">
                 <div className='filter-container'>
-                    <DropdownButton
-                        variant="primary"
-                        title="Filter Status"
-                        id="filter-dropdown"
-                    >
+                    <DropdownButton variant="primary" title="Filter Status" id="filter-dropdown">
                         <Dropdown.Item onClick={() => setFilter("")}>All</Dropdown.Item>
-                        <Dropdown.Item onClick={() => setFilter("completed")}>
-                            Completed
-                        </Dropdown.Item>
-                        <Dropdown.Item
-                            onClick={() => setFilter("cancelled")}
-                            className="text-custom-danger"
-                        >
-                            Cancelled
-                        </Dropdown.Item>
-                        <Dropdown.Item
-                            onClick={() => setFilter("emergency")}
-                            className="text-custom-warning"
-                        >
-                            Emergency
-                        </Dropdown.Item>
+                        <Dropdown.Item onClick={() => setFilter("completed")}>Completed</Dropdown.Item>
+                        <Dropdown.Item onClick={() => setFilter("cancelled")} className="text-custom-danger">Cancelled</Dropdown.Item>
+                        <Dropdown.Item onClick={() => setFilter("emergency")} className="text-custom-warning">Emergency</Dropdown.Item>
                     </DropdownButton>
                     <p className='btn btn-primary'>Filter by date -</p>
                     <Form.Group>
@@ -207,44 +181,29 @@ export const TripList = () => {
                                         <td>{trip.drop_address}</td>
                                         <td>₹{trip.fare}</td>
                                         <td>{trip.status}</td>
+                                        <td>{trip.createdAt ? new Date(trip.createdAt).toLocaleDateString() : "-"}</td>
                                         <td>
-                                            {trip.createdAt
-                                                ? new Date(trip.createdAt).toLocaleDateString()
-                                                : "-"}
-                                        </td>
-                                        <td>
-                                            {(!permissions.includes("edit") && !permissions.includes("view")) ? (
-                                                <span>-</span>
-                                            ) : (
-                                                <>
-                                                    {permissions.includes("view") && (
-                                                        <FaEye
-                                                            title="View"
-                                                            className="icon icon-blue"
-                                                            onClick={() =>
-                                                                navigate(`/dms/trip/view/${trip.id}`, { state: { trip } })
-                                                            }
-                                                        />
-                                                    )}
-                                                    {permissions.includes("edit") && (
-                                                        <FaEdit
-                                                            title="Edit"
-                                                            className="icon icon-green"
-                                                            onClick={() =>
-                                                                navigate("/dms/trip/edit", { state: { trip } })
-                                                            }
-                                                        />
-                                                    )}
-                                                </>
+                                            {permissions.includes("view") && (
+                                                <FaEye
+                                                    title="View"
+                                                    className="icon icon-blue"
+                                                    onClick={() => navigate(`/dms/trip/view/${trip.id}`, { state: { trip } })}
+                                                />
                                             )}
+                                            {permissions.includes("edit") && (
+                                                <FaEdit
+                                                    title="Edit"
+                                                    className="icon icon-green"
+                                                    onClick={() => navigate("/dms/trip/edit", { state: { trip } })}
+                                                />
+                                            )}
+                                            {!permissions.includes("view") && !permissions.includes("edit") && '—'}
                                         </td>
                                     </tr>
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="11" className="text-center">
-                                        No trips found.
-                                    </td>
+                                    <td colSpan="10" className="text-center">No trips found.</td>
                                 </tr>
                             )}
                         </tbody>
@@ -254,10 +213,7 @@ export const TripList = () => {
                 {/* Pagination */}
                 <div className="pagination-container">
                     <Pagination className="mb-0">
-                        <Pagination.Prev
-                            onClick={() => handlePageChange(currentPage - 1)}
-                            disabled={currentPage === 1}
-                        />
+                        <Pagination.Prev onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} />
                         {[...Array(totalPages)].map((_, index) => (
                             <Pagination.Item
                                 key={index + 1}
@@ -267,19 +223,13 @@ export const TripList = () => {
                                 {index + 1}
                             </Pagination.Item>
                         ))}
-                        <Pagination.Next
-                            onClick={() => handlePageChange(currentPage + 1)}
-                            disabled={currentPage === totalPages}
-                        />
+                        <Pagination.Next onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} />
                     </Pagination>
 
                     <Form.Select
                         value={itemsPerPage}
-                        onChange={(e) => {
-                            setItemsPerPage(Number(e.target.value));
-                            setCurrentPage(1);
-                        }}
-                        className="pagination-option w-auto"
+                        onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                        className='pagination-option w-auto'
                     >
                         <option value="5">Show 5</option>
                         <option value="10">Show 10</option>

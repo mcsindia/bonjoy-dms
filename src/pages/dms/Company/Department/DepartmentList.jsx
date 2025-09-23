@@ -4,13 +4,13 @@ import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
 import { AdminLayout } from '../../../../layouts/dms/AdminLayout/AdminLayout';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { getModuleId, getToken } from '../../../../utils/authhelper';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-const getAuthHeaders = () => {
-  const token = JSON.parse(localStorage.getItem("userData"))?.token;
-  return { Authorization: `Bearer ${token}` };
-};
+const getAuthHeaders = () => ({
+  Authorization: `Bearer ${getToken()}`,
+});
 
 function stripHtmlTags(html) {
   const tmp = document.createElement('DIV');
@@ -46,21 +46,13 @@ export const DepartmentList = () => {
     }
   }
 
-  const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
-    if (permissions.includes(permissionType)) {
-      action(); // allowed, run the actual function
-    } else {
-      alert(fallbackMessage || `You don't have permission to ${permissionType} this employee.`);
-    }
-  };
-
   const fetchDepartments = async (page = 1) => {
     setLoading(true);
     try {
       const params = {
         page,
         limit: itemsPerPage,
-        module_id: "department",
+        module_id: getModuleId("department"),
       };
 
       if (search) params.name = search;
@@ -115,13 +107,10 @@ export const DepartmentList = () => {
 
   const confirmDelete = async () => {
     try {
-      const response = await axios.delete(
-        `${API_BASE_URL}/deleteDepartment/${selectedDepartment.id}`,
-        {
-          headers: getAuthHeaders(),
-          data: { module_id: "department" },
-        }
-      );
+      const response = await axios.delete(`${API_BASE_URL}/deleteDepartment/${selectedDepartment.id}`, {
+        headers: getAuthHeaders(),
+        params: { module_id: getModuleId("department") } 
+      });
 
       if (response.data.success) {
         const updatedList = departments.filter((d) => d.id !== selectedDepartment.id);
@@ -153,7 +142,6 @@ export const DepartmentList = () => {
     <AdminLayout>
       <div className="dms-pages-header sticky-header">
         <h3>Department List</h3>
-
         {permissions.includes("add") && (
           <Button variant="primary" onClick={() => navigate('/dms/department/add')}>
             <FaPlus /> Add Department
