@@ -16,62 +16,67 @@ import { getModuleId, getToken } from "../../../../utils/authhelper";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+const getAuthHeaders = () => ({
+    Authorization: `Bearer ${getToken()}`,
+});
+
 export const TripList = () => {
     const navigate = useNavigate();
     const [trips, setTrips] = useState([]);
+    const [loading, setLoading] = useState(false);
+
+    // Filters
     const [search, setSearch] = useState("");
-    const [filter, setFilter] = useState("");
-    const [filterDate, setFilterDate] = useState("");
+    const [statusFilter, setStatusFilter] = useState("All");
+    const [dateFilter, setDateFilter] = useState("");
+    const [paymentStatus, setPaymentStatus] = useState("All");
+    const [emergencyRide, setEmergencyRide] = useState("All");
+
+    // Pagination
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
     const [itemsPerPage, setItemsPerPage] = useState(10);
-    const [loading, setLoading] = useState(false);
 
+    // Permissions
     const userData = JSON.parse(localStorage.getItem("userData"));
     let permissions = [];
-
     if (Array.isArray(userData?.employeeRole)) {
         for (const role of userData.employeeRole) {
             for (const child of role.childMenus || []) {
                 for (const mod of child.modules || []) {
                     if (mod.moduleUrl?.toLowerCase() === "trip") {
-                        permissions =
-                            mod.permission?.toLowerCase().split(",").map((p) => p.trim()) || [];
+                        permissions = mod.permission?.toLowerCase().split(",").map((p) => p.trim()) || [];
                     }
                 }
             }
         }
     }
 
-    const fetchTrips = async (page = 1, searchValue = "", statusFilter = "", dateFilter = "") => {
+    const fetchTrips = async () => {
         setLoading(true);
         try {
-            const token = getToken();
-            const moduleId = getModuleId("trip"); // dynamic module_id
-
             const params = {
-                page,
+                page: currentPage,
                 limit: itemsPerPage,
-                module_id: moduleId,
+                module_id: getModuleId("trip"),
             };
-            if (searchValue) params.search = searchValue;
-            if (statusFilter) params.status = statusFilter;
+
+            if (search) params.search = search;
+            if (statusFilter !== "All") params.status = statusFilter;
             if (dateFilter) params.date = dateFilter;
+            if (paymentStatus !== "All") params.payment_status = paymentStatus;
+            if (emergencyRide !== "All") params.emergency_ride = emergencyRide;
 
             const response = await axios.get(`${API_BASE_URL}/getAllRides`, {
-                headers: { Authorization: `Bearer ${token}` },
+                headers: getAuthHeaders(),
                 params,
             });
 
-            const apiData = response.data?.data || [];
-            const totalItems = response.data?.totalItems || 0;
-            const totalPages = response.data?.totalPages || 1;
-
-            setTrips(apiData);
-            setTotalItems(totalItems);
-            setTotalPages(totalPages);
-            setCurrentPage(response.data?.currentPage || page);
+            const data = response.data?.data || [];
+            setTrips(data);
+            setTotalItems(response.data?.totalItems || 0);
+            setTotalPages(response.data?.totalPages || 1);
         } catch (error) {
             console.error("Error fetching trips:", error);
             setTrips([]);
@@ -81,20 +86,11 @@ export const TripList = () => {
     };
 
     useEffect(() => {
-        fetchTrips(currentPage, search, filter, filterDate);
-    }, [currentPage, itemsPerPage, filter, filterDate]);
-
-    const handleSearch = (e) => {
-        const value = e.target.value;
-        setSearch(value);
-        setCurrentPage(1);
-        fetchTrips(1, value, filter, filterDate);
-    };
+        fetchTrips();
+    }, [search, statusFilter, dateFilter, paymentStatus, emergencyRide, currentPage, itemsPerPage]);
 
     const handlePageChange = (pageNumber) => {
-        if (pageNumber >= 1 && pageNumber <= totalPages) {
-            setCurrentPage(pageNumber);
-        }
+        if (pageNumber >= 1 && pageNumber <= totalPages) setCurrentPage(pageNumber);
     };
 
     return (
@@ -118,38 +114,84 @@ export const TripList = () => {
                 </div>
             </div>
 
+            {/* Filters */}
             <div className="filter-search-container">
-                <div className='filter-container'>
-                    <DropdownButton variant="primary" title="Filter Status" id="filter-dropdown">
-                        <Dropdown.Item onClick={() => setFilter("")}>All</Dropdown.Item>
-                        <Dropdown.Item onClick={() => setFilter("completed")}>Completed</Dropdown.Item>
-                        <Dropdown.Item onClick={() => setFilter("cancelled")} className="text-custom-danger">Cancelled</Dropdown.Item>
-                        <Dropdown.Item onClick={() => setFilter("emergency")} className="text-custom-warning">Emergency</Dropdown.Item>
+                <div className="filter-container">
+                    {/* Status Filter */}
+                    <DropdownButton
+                        title={`Filter by Status`}
+                        className="me-2"
+                        onSelect={(val) => {
+                            setStatusFilter(val);
+                            setCurrentPage(1);
+                        }}
+                    >
+                        <Dropdown.Item eventKey="All">All</Dropdown.Item>
+                        <Dropdown.Item eventKey="booked">Booked</Dropdown.Item>
+                        <Dropdown.Item eventKey="completed">Completed</Dropdown.Item>
+                        <Dropdown.Item eventKey="cancelled">Cancelled</Dropdown.Item>
+                        <Dropdown.Item eventKey="emergency">Emergency</Dropdown.Item>
                     </DropdownButton>
-                    <p className='btn btn-primary'>Filter by date -</p>
-                    <Form.Group>
+
+                    {/* Payment Status Filter */}
+                    <DropdownButton
+                        title={`Filter by Payment`}
+                        className="me-2"
+                        onSelect={(val) => {
+                            setPaymentStatus(val);
+                            setCurrentPage(1);
+                        }}
+                    >
+                        <Dropdown.Item eventKey="All">All</Dropdown.Item>
+                        <Dropdown.Item eventKey="pending">Pending</Dropdown.Item>
+                        <Dropdown.Item eventKey="completed">Completed</Dropdown.Item>
+                    </DropdownButton>
+
+                    {/* Emergency Filter */}
+                    <DropdownButton
+                        title={`Filter by Emergency`}
+                        className="me-2"
+                        onSelect={(val) => {
+                            setEmergencyRide(val);
+                            setCurrentPage(1);
+                        }}
+                    >
+                        <Dropdown.Item eventKey="All">All</Dropdown.Item>
+                        <Dropdown.Item eventKey="1">Yes</Dropdown.Item>
+                        <Dropdown.Item eventKey="0">No</Dropdown.Item>
+                    </DropdownButton>
+
+                    {/* Date Filter */}
+                    <DropdownButton variant="primary" title="Filter by Date" className="me-2">
                         <Form.Control
                             type="date"
-                            value={filterDate}
-                            max={new Date().toISOString().split("T")[0]}
+                            value={dateFilter}
                             onChange={(e) => {
-                                const selectedDate = e.target.value;
-                                setFilterDate(selectedDate);
+                                setDateFilter(e.target.value);
                                 setCurrentPage(1);
                             }}
+                            max={new Date().toISOString().split("T")[0]}
                         />
-                    </Form.Group>
-                </div>
+                    </DropdownButton>
 
-                <InputGroup className="dms-custom-width">
-                    <Form.Control
-                        placeholder="Search trips..."
-                        value={search}
-                        onChange={handleSearch}
-                    />
-                </InputGroup>
+                    {/* 🔄 Clear Filters */}
+                    <Button
+                        variant="secondary"
+                        onClick={() => {
+                            setSearch("");
+                            setStatusFilter("All");
+                            setDateFilter("");
+                            setPaymentStatus("All");
+                            setEmergencyRide("All");
+                            setCurrentPage(1);
+                        }}
+                    >
+                        Clear Filters
+                    </Button>
+                </div>
             </div>
 
+            {/* Table */}
             <div className="dms-table-container">
                 {loading ? (
                     <div className="text-center py-5 fs-4">Loading...</div>
@@ -165,6 +207,8 @@ export const TripList = () => {
                                 <th>Drop</th>
                                 <th>Fare</th>
                                 <th>Status</th>
+                                <th>Payment</th>
+                                <th>Emergency</th>
                                 <th>Trip Date</th>
                                 <th>Actions</th>
                             </tr>
@@ -181,6 +225,8 @@ export const TripList = () => {
                                         <td>{trip.drop_address}</td>
                                         <td>₹{trip.fare}</td>
                                         <td>{trip.status}</td>
+                                        <td>{trip.payment_status}</td>
+                                        <td>{trip.emergency_ride === 1 ? "Yes" : "No"}</td>
                                         <td>{trip.createdAt ? new Date(trip.createdAt).toLocaleDateString() : "-"}</td>
                                         <td>
                                             {permissions.includes("view") && (
@@ -197,13 +243,15 @@ export const TripList = () => {
                                                     onClick={() => navigate("/dms/trip/edit", { state: { trip } })}
                                                 />
                                             )}
-                                            {!permissions.includes("view") && !permissions.includes("edit") && '—'}
+                                            {!permissions.includes("view") && !permissions.includes("edit") && "—"}
                                         </td>
                                     </tr>
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="10" className="text-center">No trips found.</td>
+                                    <td colSpan="12" className="text-center">
+                                        No trips found.
+                                    </td>
                                 </tr>
                             )}
                         </tbody>
@@ -213,7 +261,10 @@ export const TripList = () => {
                 {/* Pagination */}
                 <div className="pagination-container">
                     <Pagination className="mb-0">
-                        <Pagination.Prev onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} />
+                        <Pagination.Prev
+                            onClick={() => handlePageChange(currentPage - 1)}
+                            disabled={currentPage === 1}
+                        />
                         {[...Array(totalPages)].map((_, index) => (
                             <Pagination.Item
                                 key={index + 1}
@@ -223,13 +274,19 @@ export const TripList = () => {
                                 {index + 1}
                             </Pagination.Item>
                         ))}
-                        <Pagination.Next onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} />
+                        <Pagination.Next
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                        />
                     </Pagination>
 
                     <Form.Select
                         value={itemsPerPage}
-                        onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                        className='pagination-option w-auto'
+                        onChange={(e) => {
+                            setItemsPerPage(Number(e.target.value));
+                            setCurrentPage(1);
+                        }}
+                        className="pagination-option w-auto"
                     >
                         <option value="5">Show 5</option>
                         <option value="10">Show 10</option>

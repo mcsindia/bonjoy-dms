@@ -1,4 +1,4 @@
-import React, { useState} from 'react';
+import React, { useState } from 'react';
 import { Form, Button, Alert } from 'react-bootstrap';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AdminLayout } from '../../../../../layouts/dms/AdminLayout/AdminLayout';
@@ -17,43 +17,39 @@ export const UserEdit = () => {
   const [email, setEmail] = useState(user?.email || '');
   const [userType, setUserType] = useState(user?.userType || 'Rider');
   const [status, setStatus] = useState(user?.status || 'Active');
-   const [profileFile, setProfileFile] = useState(null);
   
-  // Error and Success state
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
   // Handle form submission
- const handleSubmit = async (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  const formData = new FormData();
-  formData.append('fullName', fullName);
-  formData.append('mobile', mobile);
-  formData.append('email', email);
-  formData.append('userType', userType);
-  formData.append('status', status);
-  if (profileFile) formData.append('profileFile', profileFile);
-  formData.append('module_id', 'user'); // 🔹 Added module_id
+    const payload = {
+      fullName,
+      mobile,
+      email,
+      userType,
+      status
+    };
 
-  try {
-    const res = await axios.put(
-      `${API_BASE_URL}/updateUser/${user.id}`,
-      formData,
-      { headers: { 'Content-Type': 'multipart/form-data' } }
-    );
+    try {
+      const res = await axios.put(
+        `${API_BASE_URL}/updateUser/${user.id}`,
+        payload
+      );
 
-    if (res.status === 200) {
-      setSuccess('User updated successfully!');
-      setTimeout(() => navigate('/dms/user'), 1000);
-    } else {
-      setError('Failed to update the user.');
+      if (res.status === 200) {
+        setSuccess('User updated successfully!');
+        setTimeout(() => navigate('/dms/user'), 1000);
+      } else {
+        setError('Failed to update the user.');
+      }
+    } catch (err) {
+      console.error("Error updating user:", err);
+      setError('There was an error updating the user.');
     }
-  } catch (err) {
-    console.error("Error updating user:", err);
-    setError('There was an error updating the user.');
-  }
-};
+  };
 
   return (
     <AdminLayout>
@@ -128,22 +124,12 @@ export const UserEdit = () => {
               </Form.Select>
             </Form.Group>
 
-            {/* Profile Picture URL */}
-                <Form.Group className="dms-form-group">
-              <Form.Label>Profile Picture</Form.Label>
-              <Form.Control
-                type="file"
-                accept="image/*"
-                onChange={(e) => setProfileFile(e.target.files[0])}
-              />
-            </Form.Group>
-
             {/* Buttons */}
             <div className="save-and-cancel-btn">
               <Button type="submit" className="me-2">
                 Save Changes
               </Button>
-              <Button type="cancel" onClick={() => navigate('/dms/user')}>
+              <Button variant="secondary" onClick={() => navigate('/dms/user')}>
                 Cancel
               </Button>
             </div>
@@ -153,4 +139,3 @@ export const UserEdit = () => {
     </AdminLayout>
   );
 };
-

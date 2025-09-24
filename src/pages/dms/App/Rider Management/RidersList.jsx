@@ -47,39 +47,39 @@ export const RidersList = () => {
         }
     };
 
- // Fetch riders
-const fetchRiders = async (page = 1, searchName = '', filter = selectedFilter) => {
-    setLoading(true);
-    try {
-        const response = await axios.get(`${API_BASE_URL}/getAllRiderProfiles`, {
-            params: {
-                page,
-                limit: itemsPerPage,
-                name: searchName || undefined,
-                preferredPaymentMethod: filter || undefined,
-                module_id: 'rider', // 🔹 added module_id
+    // Fetch riders
+    const fetchRiders = async (page = 1, searchName = '', filter = selectedFilter) => {
+        setLoading(true);
+        try {
+            const response = await axios.get(`${API_BASE_URL}/getAllRiderProfiles`, {
+                params: {
+                    page,
+                    limit: itemsPerPage,
+                    name: searchName || undefined,
+                    preferredPaymentMethod: filter || undefined,
+                    module_id: 'rider', // 🔹 added module_id
+                }
+            });
+
+            const ridersList = response.data?.data?.data;
+            const totalItems = response.data?.data?.totalRecords;
+            const totalPages = response.data?.data?.totalPages;
+
+            if (Array.isArray(ridersList)) {
+                setRiders(ridersList);
+                setTotalItems(totalItems);
+                setTotalPages(totalPages);
+            } else {
+                console.error("Unexpected data format:", response.data);
+                setRiders([]);
             }
-        });
-
-        const ridersList = response.data?.data?.data;
-        const totalItems = response.data?.data?.totalRecords;
-        const totalPages = response.data?.data?.totalPages;
-
-        if (Array.isArray(ridersList)) {
-            setRiders(ridersList);
-            setTotalItems(totalItems);
-            setTotalPages(totalPages);
-        } else {
-            console.error("Unexpected data format:", response.data);
+        } catch (error) {
+            console.error("Error fetching riders:", error);
             setRiders([]);
+        } finally {
+            setLoading(false);
         }
-    } catch (error) {
-        console.error("Error fetching riders:", error);
-        setRiders([]);
-    } finally {
-        setLoading(false);
-    }
-};
+    };
 
     // Handle Search
     const handleSearch = (e) => {
@@ -117,30 +117,30 @@ const fetchRiders = async (page = 1, searchName = '', filter = selectedFilter) =
     };
 
     const handleRemarkSubmit = async () => {
-    try {
-        const response = await axios.put(`${API_BASE_URL}/updateRiderProfile/${selectedRiderId}`, {
-            status: intendedStatus,
-            remark: remark,
-            module_id: 'rider' // 🔹 added module_id
-        });
+        try {
+            const response = await axios.put(`${API_BASE_URL}/updateRiderProfile/${selectedRiderId}`, {
+                status: intendedStatus,
+                remark: remark,
+                module_id: 'rider'
+            });
 
-        if (response.data.success) {
-            const updatedRiders = riders.map(rider =>
-                (rider.id === selectedRiderId || rider.rider_id === selectedRiderId)
-                    ? { ...rider, status: intendedStatus, remark: remark }
-                    : rider
-            );
-            setRiders(updatedRiders);
+            if (response.data.success) {
+                const updatedRiders = riders.map(rider =>
+                    (rider.id === selectedRiderId || rider.rider_id === selectedRiderId)
+                        ? { ...rider, status: intendedStatus, remark: remark }
+                        : rider
+                );
+                setRiders(updatedRiders);
+            }
+        } catch (error) {
+            console.error("Failed to update rider status with remark:", error);
         }
-    } catch (error) {
-        console.error("Failed to update rider status with remark:", error);
-    }
 
-    setShowRemarkModal(false);
-    setRemark('');
-    setSelectedRiderId(null);
-    setIntendedStatus('');
-};
+        setShowRemarkModal(false);
+        setRemark('');
+        setSelectedRiderId(null);
+        setIntendedStatus('');
+    };
 
     useEffect(() => {
         fetchRiders(currentPage, search, selectedFilter);
@@ -168,7 +168,9 @@ const fetchRiders = async (page = 1, searchName = '', filter = selectedFilter) =
                     <Dropdown.Item onClick={() => handleFilter('Card')}>Card</Dropdown.Item>
                     <Dropdown.Item onClick={() => handleFilter('Cash')}>Cash</Dropdown.Item>
                     <Dropdown.Item onClick={() => handleFilter('Bank Transfer')}>Bank Transfer</Dropdown.Item>
-                    <Dropdown.Item className='text-custom-danger' onClick={() => handleFilter('')}>Cancel</Dropdown.Item>
+                    <Dropdown.Item onClick={() => handleFilter('Online')}>Online Payment</Dropdown.Item>
+                    <Dropdown.Item onClick={() => handleFilter('UPI')}>UPI</Dropdown.Item>
+                    <Dropdown.Item className="text-custom-danger" onClick={() => handleFilter('')}>Cancel</Dropdown.Item>
                 </DropdownButton>
 
                 {/* Search Bar */}

@@ -18,8 +18,7 @@ export const RideFareSetting = () => {
   const [loading, setLoading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedFare, setSelectedFare] = useState(null);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [createdDate, setCreatedDate] = useState("");
 
   const userData = JSON.parse(localStorage.getItem("userData"));
   let permissions = [];
@@ -29,10 +28,8 @@ export const RideFareSetting = () => {
       for (const child of role.childMenus || []) {
         for (const mod of child.modules || []) {
           if (mod.moduleUrl?.toLowerCase() === "faresettings") {
-            permissions = mod.permission
-              ?.toLowerCase()
-              .split(",")
-              .map((p) => p.trim()) || [];
+            permissions =
+              mod.permission?.toLowerCase().split(",").map((p) => p.trim()) || [];
           }
         }
       }
@@ -40,7 +37,7 @@ export const RideFareSetting = () => {
   }
 
   // Fetch fare settings
-  const fetchFareSettings = async (page = 1, searchValue = "", start = "", end = "") => {
+  const fetchFareSettings = async (page = 1, searchValue = "", created = "") => {
     setLoading(true);
     try {
       const response = await axios.get(`${API_BASE_URL}/getAllFareSetting`, {
@@ -49,9 +46,8 @@ export const RideFareSetting = () => {
           page,
           limit: itemsPerPage,
           search: searchValue || undefined,
-          fromDate: start || undefined,
-          toDate: end || undefined,
-          module_id: getModuleId("faresettings"), // ✅ dynamic
+          date: created || undefined, // ✅ single date param
+          module_id: getModuleId("faresettings"),
         },
       });
 
@@ -68,14 +64,14 @@ export const RideFareSetting = () => {
   };
 
   useEffect(() => {
-    fetchFareSettings(currentPage, search, startDate, endDate);
-  }, [currentPage, itemsPerPage, startDate, endDate]);
+    fetchFareSettings(currentPage, search, createdDate);
+  }, [currentPage, itemsPerPage, createdDate]);
 
   const handleSearch = (e) => {
     const searchValue = e.target.value;
     setSearch(searchValue);
     setCurrentPage(1);
-    fetchFareSettings(1, searchValue, startDate, endDate);
+    fetchFareSettings(1, searchValue, createdDate);
   };
 
   const handleDelete = (fare) => {
@@ -87,11 +83,11 @@ export const RideFareSetting = () => {
     try {
       await axios.delete(`${API_BASE_URL}/deleteFareSetting/${selectedFare.id}`, {
         headers: { Authorization: `Bearer ${getToken()}` },
-        params: { module_id: getModuleId("faresettings") }, // ✅ dynamic
+        params: { module_id: getModuleId("faresettings") },
       });
 
       alert("Fare setting deleted successfully!");
-      fetchFareSettings(currentPage, search, startDate, endDate);
+      fetchFareSettings(currentPage, search, createdDate);
     } catch (error) {
       console.error("Failed to delete fare setting:", error);
       alert("Failed to delete fare setting. Please try again.");
@@ -122,31 +118,14 @@ export const RideFareSetting = () => {
           <Form.Group>
             <Form.Control
               type="date"
-              value={startDate}
+              value={createdDate}
               onChange={(e) => {
-                setStartDate(e.target.value);
-                setCurrentPage(1);
-              }}
-            />
-          </Form.Group>
-          <Form.Group>
-            <Form.Control
-              type="date"
-              value={endDate}
-              onChange={(e) => {
-                setEndDate(e.target.value);
+                setCreatedDate(e.target.value);
                 setCurrentPage(1);
               }}
             />
           </Form.Group>
         </div>
-        <InputGroup className="dms-custom-width">
-          <Form.Control
-            placeholder="Search fare settings..."
-            value={search}
-            onChange={handleSearch}
-          />
-        </InputGroup>
       </div>
 
       {/* Table */}
@@ -179,15 +158,18 @@ export const RideFareSetting = () => {
                     <td>{fare.base_fare}</td>
                     <td>{fare.per_km_fare}</td>
                     <td>{fare.per_km_fare_night}</td>
-                    <td>{fare.night_start_time} - {fare.night_end_time}</td>
+                    <td>
+                      {fare.night_start_time} - {fare.night_end_time}
+                    </td>
                     <td>{fare.waiting_charge_per_min}</td>
                     <td>{fare.emergency_bonus}</td>
                     <td>{fare.first_ride_bonus}</td>
                     <td>{new Date(fare.effective_from).toLocaleDateString()}</td>
-                    <td>{new Date(fare.createdAt).toLocaleString()}</td>
-                    <td>{new Date(fare.updatedAt).toLocaleString()}</td>
+                    <td>{fare.createdAt.slice(0, 10)}</td>
+                    <td>{fare.updatedAt.slice(0, 10)}</td>
                     <td>
-                      {(!permissions.includes("edit") && !permissions.includes("delete")) ? (
+                      {(!permissions.includes("edit") &&
+                        !permissions.includes("delete")) ? (
                         <span>-</span>
                       ) : (
                         <>
@@ -261,12 +243,17 @@ export const RideFareSetting = () => {
       </div>
 
       {/* Delete Modal */}
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
+      <Modal
+        show={showDeleteModal}
+        onHide={() => setShowDeleteModal(false)}
+        centered
+      >
         <Modal.Header closeButton>
           <Modal.Title>Delete Fare Setting</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          Are you sure you want to delete <strong>{selectedFare?.base_fare}</strong> fare setting?
+          Are you sure you want to delete{" "}
+          <strong>{selectedFare?.base_fare}</strong> fare setting?
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>

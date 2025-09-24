@@ -52,7 +52,7 @@ export const UserList = () => {
       const queryParams = new URLSearchParams({
         page: currentPage,
         limit: itemsPerPage,
-        module_id: getModuleId("user")   // ✅ dynamic module_id
+        module_id: getModuleId("user") 
       });
 
       const isSearching = !!search;
@@ -111,31 +111,6 @@ export const UserList = () => {
 
   const handleView = (user) => navigate(`/dms/user/view/${user.id}`, { state: { user } });
 
-  // Delete user
-  const handleDelete = (user) => {
-    setUserToDelete(user);
-    setShowDeleteModal(true);
-  };
-
-  const confirmDelete = async () => {
-    if (!userToDelete) return;
-    try {
-      const token = getToken();
-      const res = await axios.delete(`${API_BASE_URL}/deleteUser/${userToDelete.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-        params: { module_id: getModuleId("user") } // ✅ dynamic
-      });
-
-      if (res.status === 200) {
-        setShowDeleteModal(false);
-        setUserToDelete(null);
-        fetchUsers();
-      }
-    } catch (error) {
-      console.error("Error deleting user:", error);
-    }
-  };
-
   // Export
   const handleExport = (format) => {
     const url = `${API_BASE_URL}/exportUsers?format=${format}&module_id=${getModuleId("user")}`;
@@ -155,7 +130,7 @@ export const UserList = () => {
 
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('module_id', getModuleId("user")); // ✅ dynamic
+      formData.append('module_id', getModuleId("user")); 
 
       try {
         const token = getToken();
@@ -287,13 +262,6 @@ export const UserList = () => {
                               onClick={() => handleEdit(user)}
                             />
                           )}
-                          {permissions.includes("delete") && (
-                            <FaTrash
-                              className="icon-red"
-                              title="Delete"
-                              onClick={() => handleDelete(user)}
-                            />
-                          )}
                         </>
                       ) : (
                         <span>-</span>
@@ -345,23 +313,6 @@ export const UserList = () => {
           </>
         )}
       </div>
-
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
-        <Modal.Header closeButton>
-          <Modal.Title>Confirm Deletion</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          Are you sure you want to delete <strong>{userToDelete?.fullName} (User ID: {userToDelete?.id})</strong>?
-        </Modal.Body>
-        <Modal.Footer>
-          <Button type='cancel' onClick={() => setShowDeleteModal(false)}>
-            Cancel
-          </Button>
-          <Button type='submit' onClick={confirmDelete}>
-            Delete
-          </Button>
-        </Modal.Footer>
-      </Modal>
     </AdminLayout>
   );
 };

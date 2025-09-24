@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Table, Form, InputGroup, Pagination, Modal } from 'react-bootstrap';
+import { Button, Table, Form, InputGroup, Dropdown, DropdownButton, Pagination, Modal } from 'react-bootstrap';
 import { FaEdit, FaTrash, FaPlus } from 'react-icons/fa';
 import { AdminLayout } from '../../../../../layouts/dms/AdminLayout/AdminLayout';
 import { useNavigate } from 'react-router-dom';
@@ -21,17 +21,25 @@ function stripHtmlTags(html) {
 export const RideTypeList = () => {
   const navigate = useNavigate();
   const [rideTypes, setRideTypes] = useState([]);
-  const [search, setSearch] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedRideType, setSelectedRideType] = useState(null);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [loading, setLoading] = useState(false);
 
+  // Filters
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [dateFilter, setDateFilter] = useState('');
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // Delete Modal
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedRideType, setSelectedRideType] = useState(null);
+
+  // Permissions
   const userData = JSON.parse(localStorage.getItem("userData"));
   let permissions = [];
-
   if (Array.isArray(userData?.employeeRole)) {
     for (const role of userData.employeeRole) {
       for (const child of role.childMenus || []) {
@@ -44,15 +52,18 @@ export const RideTypeList = () => {
     }
   }
 
-  const fetchRideTypes = async (page = 1, searchValue = '') => {
+  const fetchRideTypes = async () => {
     setLoading(true);
     try {
       const params = {
-        page,
+        page: currentPage,
         limit: itemsPerPage,
         module_id: getModuleId("ridetypes"),
       };
-      if (searchValue) params.name = searchValue;
+
+      if (search) params.name = search;
+      if (statusFilter !== 'All') params.status = statusFilter;
+      if (dateFilter) params.date = dateFilter;
 
       const response = await axios.get(`${API_BASE_URL}/getAllRideType`, {
         headers: getAuthHeaders(),
@@ -73,15 +84,8 @@ export const RideTypeList = () => {
   };
 
   useEffect(() => {
-    fetchRideTypes(currentPage, search);
-  }, [currentPage, itemsPerPage]);
-
-  const handleSearch = (e) => {
-    const value = e.target.value;
-    setSearch(value);
-    setCurrentPage(1);
-    fetchRideTypes(1, value);
-  };
+    fetchRideTypes();
+  }, [search, statusFilter, dateFilter, currentPage, itemsPerPage]);
 
   const handleDelete = (ride) => {
     setSelectedRideType(ride);
@@ -94,7 +98,7 @@ export const RideTypeList = () => {
         headers: getAuthHeaders(),
         params: { module_id: getModuleId("ridetypes") },
       });
-      fetchRideTypes(currentPage, search);
+      fetchRideTypes();
       alert("Ride type deleted successfully!");
     } catch (error) {
       const msg = error.response?.data?.message || "Failed to delete ride type.";
@@ -121,16 +125,47 @@ export const RideTypeList = () => {
         )}
       </div>
 
+      {/* Filters */}
       <div className="filter-search-container">
+        <div className="filter-container">
+          <DropdownButton
+            title={`Filter by Status`}
+            onSelect={(val) => {
+              setStatusFilter(val);
+              setCurrentPage(1);
+            }}
+          >
+            <Dropdown.Item eventKey="All">All</Dropdown.Item>
+            <Dropdown.Item eventKey="Active">Active</Dropdown.Item>
+            <Dropdown.Item eventKey="Inactive">Inactive</Dropdown.Item>
+          </DropdownButton>
+
+          <p className="btn btn-primary">Filter by Date -</p>
+          <Form.Group>
+            <Form.Control
+              type="date"
+              value={dateFilter}
+              onChange={(e) => {
+                setDateFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+          </Form.Group>
+        </div>
+
         <InputGroup className="dms-custom-width">
           <Form.Control
             placeholder="Search ride type..."
             value={search}
-            onChange={handleSearch}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
           />
         </InputGroup>
       </div>
 
+      {/* Table */}
       <div className="dms-table-container">
         {loading ? (
           <div className="text-center py-5 fs-4">Loading...</div>
@@ -158,8 +193,8 @@ export const RideTypeList = () => {
                       <td>{ride.multiplier}</td>
                       <td>{stripHtmlTags(ride.description)}</td>
                       <td>{ride.status}</td>
-                      <td>{new Date(ride.createdAt).toLocaleString()}</td>
-                      <td>{new Date(ride.updatedAt).toLocaleString()}</td>
+                      <td>{ride.createdAt ? new Date(ride.createdAt).toLocaleDateString() : "N/A"}</td>
+                      <td>{ride.updatedAt ? new Date(ride.updatedAt).toLocaleDateString() : "N/A"}</td>
                       <td className="actions">
                         {permissions.includes("edit") && (
                           <FaEdit
@@ -211,7 +246,10 @@ export const RideTypeList = () => {
 
               <Form.Select
                 value={itemsPerPage}
-                onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
                 className="pagination-option w-auto"
               >
                 <option value="5">Show 5</option>
@@ -225,6 +263,7 @@ export const RideTypeList = () => {
         )}
       </div>
 
+      {/* Delete Modal */}
       <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Confirm Delete</Modal.Title>
