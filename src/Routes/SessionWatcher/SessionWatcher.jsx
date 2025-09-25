@@ -13,6 +13,7 @@ const SessionWatcher = () => {
         navigate("/dms", { replace: true });
       }
     }, 1000 * 5); 
+    console.log("watching...")
 
     return () => clearInterval(interval);
   }, [navigate]);

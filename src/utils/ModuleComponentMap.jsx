@@ -59,9 +59,7 @@ import { ModelList } from '../pages/dms/App/Vehicle Management/Model/ModelList'
 import { ModelAdd } from '../pages/dms/App/Vehicle Management/Model/ModelAdd'
 import { ModelEdit } from '../pages/dms/App/Vehicle Management/Model/ModelEdit'
 /* Feedback and Ratings */
-import { FeedbackByRider } from '../pages/dms/App/Driver Management/FeedbackByRider'
 import { FeedbackToRider } from '../pages/dms/App/Driver Management/FeedbackToRider'
-import { FeedbackByDriver } from '../pages/dms/App/Rider Management/FeedbackByDriver'
 import { FeedbackToDriverList } from '../pages/dms/App/Rider Management/FeedbackToDriverList'
 /* Payment and Transaction */
 import {RidePaymentList} from '../pages/dms/App/PaymentPage/RidePayments/RidePaymentList'
@@ -81,15 +79,24 @@ import { CommissionFeeList } from '../pages/dms/App/PaymentPage/CommissionFee/Co
 import { CommissionFeeAdd } from '../pages/dms/App/PaymentPage/CommissionFee/CommissionFeeAdd';
 import { CommissionFeeEdit } from '../pages/dms/App/PaymentPage/CommissionFee/CommissionFeeEdit';
 /* Settings */
-import {RideFareSetting} from '../pages/dms/App/Settings/RideFareSetting/RideFareSetting'
-import { FareSettingAdd } from '../pages/dms/App/Settings/RideFareSetting/FareSettingAdd';
-import { FareSettingEdit } from '../pages/dms/App/Settings/RideFareSetting/FareSettingEdit';
+import {RideFareSetting} from '../pages/dms/App/FareManagement/RideFareSetting/RideFareSetting'
+import { FareSettingAdd } from '../pages/dms/App/FareManagement/RideFareSetting/FareSettingAdd';
+import { FareSettingEdit } from '../pages/dms/App/FareManagement/RideFareSetting/FareSettingEdit';
 /* Ride Type */
 import { RideTypeList } from '../pages/dms/App/TripsPPage/RideTypes/RideTypeList';
 import { RideTypeAdd } from '../pages/dms/App/TripsPPage/RideTypes/RideTypeAdd';
 import { RideTypeEdit } from '../pages/dms/App/TripsPPage/RideTypes/RideTypeEdit';
 /* Icon */
 import { FaChartLine, } from "react-icons/fa";
+import { FareDynamicRuleList } from '../pages/dms/App/FareManagement/FareDynamicRules/FareDynamicRuleList';
+import { FareDynamicRuleAdd } from '../pages/dms/App/FareManagement/FareDynamicRules/FareDynamicRuleAdd';
+import { FareDynamicRuleEdit } from '../pages/dms/App/FareManagement/FareDynamicRules/FareDynamicRuleEdit';
+import { FareRegionList } from '../pages/dms/App/FareManagement/FareRegionSetting/FareRegionList';
+import { FareRegionAdd } from '../pages/dms/App/FareManagement/FareRegionSetting/FareRegionAdd';
+import { FareRegionEdit } from '../pages/dms/App/FareManagement/FareRegionSetting/FareRegionEdit';
+import { FareSlabList } from '../pages/dms/App/FareManagement/FareSlabs/FareSlabList';
+import { FareSlabAdd } from '../pages/dms/App/FareManagement/FareSlabs/FareSlabAdd';
+import { FareSlabEdit } from '../pages/dms/App/FareManagement/FareSlabs/FareSlabEdit';
 
 export const moduleComponentMap = {
   dashboard: {
@@ -209,5 +216,20 @@ export const moduleComponentMap = {
     view: RideFareSetting,
     add: FareSettingAdd,
     edit: FareSettingEdit
+  },
+  faredynamicrules:{
+   view: FareDynamicRuleList,
+   add: FareDynamicRuleAdd,
+   edit: FareDynamicRuleEdit,
+  },
+  fareregion:{
+    view: FareRegionList,
+    add: FareRegionAdd,
+    edit: FareRegionEdit,
+  },
+  fareslab:{
+   view: FareSlabList,
+   add: FareSlabAdd,
+   edit: FareSlabEdit
   }
 };

@@ -127,10 +127,10 @@ export const DriverApprovalView = () => {
         }
     };
 
-   const handleRemarkAction = (doc, docName, type) => {
-    setSelectedResubmitDoc({ ...doc, type }); // type 'driver' | 'vehicle' | 'bank'
-    setShowResubmitModal(true);
-};
+    const handleRemarkAction = (doc, docName, type) => {
+        setSelectedResubmitDoc({ ...doc, type }); // type 'driver' | 'vehicle' | 'bank'
+        setShowResubmitModal(true);
+    };
 
     const getActionsByStatus = (status, docName, doc, type = 'driver') => {
         const actions = [
@@ -261,40 +261,40 @@ export const DriverApprovalView = () => {
     }
 
     const handleResubmit = async () => {
-    if (!selectedResubmitDoc?.id) return alert("Document ID is missing.");
+        if (!selectedResubmitDoc?.id) return alert("Document ID is missing.");
 
-    const formData = new FormData();
-    formData.append("rejection_reason", resubmitReason);
-    formData.append("status", selectedResubmitDoc.remarkStatus.toLowerCase());
+        const formData = new FormData();
+        formData.append("rejection_reason", resubmitReason);
+        formData.append("status", selectedResubmitDoc.remarkStatus.toLowerCase());
 
-    try {
-        let endpoint = "";
-        if (selectedResubmitDoc.type === "bank") {
-            endpoint = `${API_BASE_URL}/updateDriverBankDocument/${selectedResubmitDoc.id}`;
-        } else if (selectedResubmitDoc.type === "vehicle") {
-            endpoint = `${API_BASE_URL}/updateDriverVehicleDocument/${selectedResubmitDoc.id}`;
-        } else {
-            endpoint = `${API_BASE_URL}/updateDriverDocument/${selectedResubmitDoc.id}`;
+        try {
+            let endpoint = "";
+            if (selectedResubmitDoc.type === "bank") {
+                endpoint = `${API_BASE_URL}/updateDriverBankDocument/${selectedResubmitDoc.id}`;
+            } else if (selectedResubmitDoc.type === "vehicle") {
+                endpoint = `${API_BASE_URL}/updateDriverVehicleDocument/${selectedResubmitDoc.id}`;
+            } else {
+                endpoint = `${API_BASE_URL}/updateDriverDocument/${selectedResubmitDoc.id}`;
+            }
+
+            const response = await axios.put(endpoint, formData, {
+                headers: { "Content-Type": "multipart/form-data" }
+            });
+
+            if (response.status === 200) {
+                alert("Document updated successfully.");
+                setShowResubmitModal(false);
+                setResubmitReason("");
+                setSelectedResubmitDoc(null);
+                fetchData();
+            } else {
+                alert("Update failed.");
+            }
+        } catch (error) {
+            console.error("Error during update:", error);
+            alert("An error occurred while updating the document.");
         }
-
-        const response = await axios.put(endpoint, formData, {
-            headers: { "Content-Type": "multipart/form-data" }
-        });
-
-        if (response.status === 200) {
-            alert("Document updated successfully.");
-            setShowResubmitModal(false);
-            setResubmitReason("");
-            setSelectedResubmitDoc(null);
-            fetchData();
-        } else {
-            alert("Update failed.");
-        }
-    } catch (error) {
-        console.error("Error during update:", error);
-        alert("An error occurred while updating the document.");
-    }
-};
+    };
 
     const handleDriverActionMenuToggle = (id) => {
         setShowVehicleActions(null);
@@ -335,9 +335,17 @@ export const DriverApprovalView = () => {
     };
 
     const handleApproveProfile = async () => {
-        const allDriverDocsApproved = currentDocuments.every(doc => doc.verificationStatus === "Approved");
-        const allVehicleDocsApproved = currentVehicleDocuments.every(doc => doc.verificationStatus === "Approved");
-        const allBankDocsApproved = bankDocuments.every(doc => doc.details?.verificationStatus === "Approved");
+        const allDriverDocsApproved = currentDocuments.every(
+            doc => doc.verificationStatus?.trim().toLowerCase() === "approved"
+        );
+
+        const allVehicleDocsApproved = currentVehicleDocuments.every(
+            doc => doc.verificationStatus?.trim().toLowerCase() === "approved"
+        );
+
+        const allBankDocsApproved = bankDocuments.every(
+            doc => doc.details?.verificationStatus?.trim().toLowerCase() === "approved"
+        );
 
         if (!allDriverDocsApproved || !allVehicleDocsApproved || !allBankDocsApproved) {
             alert("All driver, vehicle, and bank documents must be approved before activating the profile.");
