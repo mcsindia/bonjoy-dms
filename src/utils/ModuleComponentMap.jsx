@@ -97,6 +97,9 @@ import { FareRegionEdit } from '../pages/dms/App/FareManagement/FareRegionSettin
 import { FareSlabList } from '../pages/dms/App/FareManagement/FareSlabs/FareSlabList';
 import { FareSlabAdd } from '../pages/dms/App/FareManagement/FareSlabs/FareSlabAdd';
 import { FareSlabEdit } from '../pages/dms/App/FareManagement/FareSlabs/FareSlabEdit';
+import { FareNightRulesList } from '../pages/dms/App/FareManagement/FareNightRules/FareNightRulesList';
+import { FareNightRulesAdd } from '../pages/dms/App/FareManagement/FareNightRules/FareNightRulesAdd';
+import { FareNightRulesEdit } from '../pages/dms/App/FareManagement/FareNightRules/FareNightRulesEdit';
 
 export const moduleComponentMap = {
   dashboard: {
@@ -231,5 +234,10 @@ export const moduleComponentMap = {
    view: FareSlabList,
    add: FareSlabAdd,
    edit: FareSlabEdit
+  },
+  farenightrules:{
+   view: FareNightRulesList,
+   add: FareNightRulesAdd,
+   edit: FareNightRulesEdit,
   }
 };

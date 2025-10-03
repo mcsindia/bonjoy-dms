@@ -13,7 +13,7 @@ import { FaEdit, FaTrash, FaPlus } from "react-icons/fa";
 import { AdminLayout } from "../../../../../layouts/dms/AdminLayout/AdminLayout";
 import { useNavigate } from "react-router-dom";
 
-export const FareDynamicRuleList = () => {
+export const FareNightRulesList = () => {
   const navigate = useNavigate();
 
   // 🔹 Dummy regions
@@ -23,44 +23,40 @@ export const FareDynamicRuleList = () => {
     { region_id: "3", city: "Bengaluru", state: "Karnataka" },
   ];
 
-  // 🔹 Dummy rules
-  const dummyRules = [
+  // 🔹 Dummy night rules
+  const dummyNightRules = [
     {
-      rule_id: "101",
+      night_rule_id: "201",
       region_id: "1",
-      rule_type: "peak",
-      multiplier: 1.25,
-      start_time: "2025-09-25T08:00:00Z",
-      end_time: "2025-09-25T10:00:00Z",
+      night_start_time: "22:00",
+      night_end_time: "05:00",
+      effective_from: "2025-09-01T00:00:00Z",
       created_at: "2025-09-01T12:00:00Z",
     },
     {
-      rule_id: "102",
+      night_rule_id: "202",
       region_id: "2",
-      rule_type: "weather",
-      multiplier: 1.50,
-      start_time: "2025-09-25T14:00:00Z",
-      end_time: "2025-09-25T16:00:00Z",
+      night_start_time: "23:00",
+      night_end_time: "06:00",
+      effective_from: "2025-09-02T00:00:00Z",
       created_at: "2025-09-02T12:00:00Z",
     },
     {
-      rule_id: "103",
+      night_rule_id: "203",
       region_id: "3",
-      rule_type: "special_event",
-      multiplier: 2.00,
-      start_time: "2025-09-26T18:00:00Z",
-      end_time: "2025-09-26T21:00:00Z",
+      night_start_time: "21:30",
+      night_end_time: "04:30",
+      effective_from: "2025-09-05T00:00:00Z",
       created_at: "2025-09-05T12:00:00Z",
     },
   ];
 
-  const [rules, setRules] = useState(dummyRules);
+  const [nightRules, setNightRules] = useState(dummyNightRules);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedRule, setSelectedRule] = useState(null);
   const [searchText, setSearchText] = useState("");
-  const [ruleTypeFilter, setRuleTypeFilter] = useState("");
 
   const permissions = ["add", "edit", "delete"];
 
@@ -70,7 +66,9 @@ export const FareDynamicRuleList = () => {
   };
 
   const confirmDelete = () => {
-    setRules(rules.filter((r) => r.rule_id !== selectedRule.rule_id));
+    setNightRules(
+      nightRules.filter((r) => r.night_rule_id !== selectedRule.night_rule_id)
+    );
     setShowDeleteModal(false);
     setSelectedRule(null);
   };
@@ -82,15 +80,9 @@ export const FareDynamicRuleList = () => {
   };
 
   // 🔹 Filter & Search
-  const filteredRules = rules.filter((rule) => {
+  const filteredRules = nightRules.filter((rule) => {
     const regionName = getRegionName(rule.region_id).toLowerCase();
-    const matchesSearch =
-      regionName.includes(searchText.toLowerCase()) ||
-      rule.rule_type.toLowerCase().includes(searchText.toLowerCase());
-    const matchesRuleType = ruleTypeFilter
-      ? rule.rule_type === ruleTypeFilter
-      : true;
-    return matchesSearch && matchesRuleType;
+    return regionName.includes(searchText.toLowerCase());
   });
 
   // Pagination
@@ -102,34 +94,27 @@ export const FareDynamicRuleList = () => {
   return (
     <AdminLayout>
       <div className="dms-pages-header sticky-header">
-        <h3>Fare Dynamic Rules</h3>
+        <h3>Fare Night Rules</h3>
         {permissions.includes("add") && (
           <Button
             variant="primary"
-            onClick={() => navigate("/dms/faredynamicrules/add")}
+            onClick={() => navigate("/dms/farenightrules/add")}
           >
-            <FaPlus /> Add Rule
+            <FaPlus /> Add Night Rule
           </Button>
         )}
       </div>
 
       {/* Filter & Search */}
       <div className="filter-search-container d-flex align-items-center mb-3">
-        <DropdownButton
-          title={ruleTypeFilter ? `Rule: ${ruleTypeFilter}` : "Filter by Rule Type"}
-          className="me-2"
-        >
-          <Dropdown.Item onClick={() => { setRuleTypeFilter(""); setCurrentPage(1); }}>All</Dropdown.Item>
-          <Dropdown.Item onClick={() => { setRuleTypeFilter("peak"); setCurrentPage(1); }}>Peak</Dropdown.Item>
-          <Dropdown.Item onClick={() => { setRuleTypeFilter("weather"); setCurrentPage(1); }}>Weather</Dropdown.Item>
-          <Dropdown.Item onClick={() => { setRuleTypeFilter("special_event"); setCurrentPage(1); }}>Special Event</Dropdown.Item>
-        </DropdownButton>
-
         <InputGroup className="dms-custom-width">
           <Form.Control
-            placeholder="Search by Region or Rule Type"
+            placeholder="Search by Region"
             value={searchText}
-            onChange={(e) => { setSearchText(e.target.value); setCurrentPage(1); }}
+            onChange={(e) => {
+              setSearchText(e.target.value);
+              setCurrentPage(1);
+            }}
           />
         </InputGroup>
       </div>
@@ -141,10 +126,9 @@ export const FareDynamicRuleList = () => {
             <tr>
               <th>S.No</th>
               <th>Region</th>
-              <th>Rule Type</th>
-              <th>Multiplier</th>
-              <th>Start Time</th>
-              <th>End Time</th>
+              <th>Night Start</th>
+              <th>Night End</th>
+              <th>Effective From</th>
               <th>Created At</th>
               <th>Action</th>
             </tr>
@@ -152,16 +136,16 @@ export const FareDynamicRuleList = () => {
           <tbody>
             {currentRules.length > 0 ? (
               currentRules.map((rule, index) => (
-                <tr key={rule.rule_id}>
+                <tr key={rule.night_rule_id}>
                   <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
                   <td>{getRegionName(rule.region_id)}</td>
-                  <td>{rule.rule_type}</td>
-                  <td>{rule.multiplier.toFixed(2)}</td>
-                  <td>{new Date(rule.start_time).toLocaleString()}</td>
-                  <td>{new Date(rule.end_time).toLocaleString()}</td>
+                  <td>{rule.night_start_time}</td>
+                  <td>{rule.night_end_time}</td>
+                  <td>{new Date(rule.effective_from).toLocaleString()}</td>
                   <td>{new Date(rule.created_at).toLocaleString()}</td>
                   <td>
-                    {(!permissions.includes("edit") && !permissions.includes("delete")) ? (
+                    {(!permissions.includes("edit") &&
+                    !permissions.includes("delete")) ? (
                       <span>-</span>
                     ) : (
                       <>
@@ -170,7 +154,7 @@ export const FareDynamicRuleList = () => {
                             className="icon icon-green me-2"
                             title="Edit"
                             onClick={() =>
-                              navigate("/dms/faredynamicrules/edit", { state: { rule } })
+                              navigate("/dms/farenightrules/edit", { state: { rule } })
                             }
                           />
                         )}
@@ -188,8 +172,8 @@ export const FareDynamicRuleList = () => {
               ))
             ) : (
               <tr>
-                <td colSpan="8" className="text-center">
-                  No dynamic rules found.
+                <td colSpan="7" className="text-center">
+                  No night rules found.
                 </td>
               </tr>
             )}
@@ -220,7 +204,10 @@ export const FareDynamicRuleList = () => {
 
           <Form.Select
             value={itemsPerPage}
-            onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+            onChange={(e) => {
+              setItemsPerPage(Number(e.target.value));
+              setCurrentPage(1);
+            }}
             className="pagination-option w-auto"
           >
             <option value="5">Show 5</option>
@@ -237,16 +224,18 @@ export const FareDynamicRuleList = () => {
         centered
       >
         <Modal.Header closeButton>
-          <Modal.Title>Delete Dynamic Rule</Modal.Title>
+          <Modal.Title>Delete Night Rule</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          Are you sure you want to delete the rule <br />
-          <strong>ID: {selectedRule?.rule_id}</strong> <br />
-          for Region <strong>{getRegionName(selectedRule?.region_id)}</strong> <br />
-          of type <strong>{selectedRule?.rule_type}</strong>?
+          Are you sure you want to delete the night rule <br />
+          <strong>ID: {selectedRule?.night_rule_id}</strong> <br />
+          for Region <strong>{getRegionName(selectedRule?.region_id)}</strong>?
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+          <Button
+            variant="secondary"
+            onClick={() => setShowDeleteModal(false)}
+          >
             Cancel
           </Button>
           <Button variant="danger" onClick={confirmDelete}>

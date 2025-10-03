@@ -1,12 +1,10 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import React, { useState } from "react";
 import { Button, Container, Form, Alert, Row, Col } from "react-bootstrap";
+import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "../../../../../layouts/dms/AdminLayout/AdminLayout";
 
-export const FareDynamicRuleEdit = () => {
+export const FareNightRulesAdd = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { rule } = location.state || {}; 
 
   // Dummy regions
   const dummyRegions = [
@@ -16,33 +14,15 @@ export const FareDynamicRuleEdit = () => {
   ];
 
   const [formData, setFormData] = useState({
-    rule_id: "",
     region_id: "",
-    rule_type: "peak",
-    multiplier: "",
-    start_time: "",
-    end_time: "",
+    night_start_time: "",
+    night_end_time: "",
+    effective_from: "",
   });
 
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [hasInitialized, setHasInitialized] = useState(false);
-
-  // Prefill form on edit
-  useEffect(() => {
-    if (rule && !hasInitialized) {
-      setFormData({
-        rule_id: rule.rule_id || "",
-        region_id: rule.region_id || "",
-        rule_type: rule.rule_type || "peak",
-        multiplier: rule.multiplier || "",
-        start_time: rule.start_time || "",
-        end_time: rule.end_time || "",
-      });
-      setHasInitialized(true);
-    }
-  }, [rule, hasInitialized]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -52,39 +32,47 @@ export const FareDynamicRuleEdit = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!formData.region_id || !formData.multiplier || !formData.start_time || !formData.end_time) {
-      setError("Region, Multiplier, Start Time and End Time are required!");
+    if (!formData.region_id || !formData.night_start_time || !formData.night_end_time) {
+      setError("Region, Night Start Time, and Night End Time are required.");
       return;
     }
 
     setIsLoading(true);
     setError("");
-    setSuccess("");
+    setSuccessMessage("");
 
-    // Simulate saving
+    // Simulate API delay
     setTimeout(() => {
       setIsLoading(false);
-      setSuccess("Dynamic rule updated successfully!");
-      console.log("Updated Rule:", formData);
+      setSuccessMessage("Night rule added successfully!");
+      console.log("Submitted Night Rule:", formData);
+
+      // Reset form
+      setFormData({
+        region_id: "",
+        night_start_time: "",
+        night_end_time: "",
+        effective_from: "",
+      });
 
       // Navigate back after short delay
-      setTimeout(() => navigate("/dms/faredynamicrules"), 1500);
+      setTimeout(() => navigate("/dms/farenightrules"), 1500);
     }, 1000);
   };
 
   return (
     <AdminLayout>
       <Container className="dms-container">
-        <h4>Edit Dynamic Rule</h4>
+        <h4>Add New Fare Night Rule</h4>
         <div className="dms-form-container">
           {error && (
             <Alert variant="danger" onClose={() => setError("")} dismissible>
               {error}
             </Alert>
           )}
-          {success && (
-            <Alert variant="success" onClose={() => setSuccess("")} dismissible>
-              {success}
+          {successMessage && (
+            <Alert variant="success" onClose={() => setSuccessMessage("")} dismissible>
+              {successMessage}
             </Alert>
           )}
 
@@ -111,45 +99,12 @@ export const FareDynamicRuleEdit = () => {
 
               <Col md={6}>
                 <Form.Group className="dms-form-group">
-                  <Form.Label>Rule Type</Form.Label>
-                  <Form.Select
-                    name="rule_type"
-                    value={formData.rule_type}
-                    onChange={handleChange}
-                  >
-                    <option value="peak">Peak</option>
-                    <option value="weather">Weather</option>
-                    <option value="special_event">Special Event</option>
-                  </Form.Select>
-                </Form.Group>
-              </Col>
-            </Row>
-
-            <Row>
-              <Col md={6}>
-                <Form.Group className="dms-form-group">
-                  <Form.Label>Multiplier</Form.Label>
-                  <Form.Control
-                    type="number"
-                    name="multiplier"
-                    value={formData.multiplier}
-                    onChange={handleChange}
-                    placeholder="Enter multiplier (e.g. 1.2)"
-                    step="0.01"
-                    required
-                  />
-                </Form.Group>
-              </Col>
-
-              <Col md={6}>
-                <Form.Group className="dms-form-group">
-                  <Form.Label>Start Time</Form.Label>
+                  <Form.Label>Effective From</Form.Label>
                   <Form.Control
                     type="datetime-local"
-                    name="start_time"
-                    value={formData.start_time}
+                    name="effective_from"
+                    value={formData.effective_from}
                     onChange={handleChange}
-                    required
                   />
                 </Form.Group>
               </Col>
@@ -158,11 +113,24 @@ export const FareDynamicRuleEdit = () => {
             <Row>
               <Col md={6}>
                 <Form.Group className="dms-form-group">
-                  <Form.Label>End Time</Form.Label>
+                  <Form.Label>Night Start Time</Form.Label>
                   <Form.Control
-                    type="datetime-local"
-                    name="end_time"
-                    value={formData.end_time}
+                    type="time"
+                    name="night_start_time"
+                    value={formData.night_start_time}
+                    onChange={handleChange}
+                    required
+                  />
+                </Form.Group>
+              </Col>
+
+              <Col md={6}>
+                <Form.Group className="dms-form-group">
+                  <Form.Label>Night End Time</Form.Label>
+                  <Form.Control
+                    type="time"
+                    name="night_end_time"
+                    value={formData.night_end_time}
                     onChange={handleChange}
                     required
                   />
@@ -172,12 +140,9 @@ export const FareDynamicRuleEdit = () => {
 
             <div className="save-and-cancel-btn mt-3">
               <Button type="submit" className="me-2" disabled={isLoading}>
-                {isLoading ? "Saving..." : "Save Changes"}
+                {isLoading ? "Saving..." : "Save Rule"}
               </Button>
-              <Button
-                variant="secondary"
-                onClick={() => navigate("/dms/faredynamicrules")}
-              >
+              <Button variant="secondary" onClick={() => navigate("/dms/farenightrules")}>
                 Cancel
               </Button>
             </div>

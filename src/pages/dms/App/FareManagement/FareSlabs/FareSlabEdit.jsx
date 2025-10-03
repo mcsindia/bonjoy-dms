@@ -10,14 +10,15 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 export const FareSlabEdit = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { slab } = location.state || {}; // 👈 slab passed from list
+  const { slab } = location.state || {};
 
   const [formData, setFormData] = useState({
     slab_id: "",
     fare_id: "",
     start_km: "",
     end_km: "",
-    rate_per_km: "",
+    rate_type: "per_km", // default ENUM
+    rate: "",
   });
 
   const [error, setError] = useState("");
@@ -28,15 +29,16 @@ export const FareSlabEdit = () => {
   const token = getToken();
   const moduleId = getModuleId("fareslab");
 
-  // ✅ Prefill when editing
+  // ✅ Prefill values when editing
   useEffect(() => {
     if (slab && !hasInitialized) {
       setFormData({
         slab_id: slab.slab_id || "",
         fare_id: slab.fare_id || "",
         start_km: slab.start_km || "",
-        end_km: slab.end_km ?? "", // null → ""
-        rate_per_km: slab.rate_per_km || "",
+        end_km: slab.end_km ?? "",
+        rate_type: slab.rate_type || "per_km",
+        rate: slab.rate || "",
       });
       setHasInitialized(true);
     }
@@ -50,8 +52,8 @@ export const FareSlabEdit = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.start_km || !formData.rate_per_km) {
-      setError("Start KM and Rate per KM are required!");
+    if (!formData.start_km || !formData.rate || !formData.fare_id) {
+      setError("Start KM, Rate and Fare ID are required!");
       return;
     }
 
@@ -64,7 +66,8 @@ export const FareSlabEdit = () => {
         fare_id: formData.fare_id,
         start_km: formData.start_km,
         end_km: formData.end_km === "" ? null : formData.end_km,
-        rate_per_km: formData.rate_per_km,
+        rate_type: formData.rate_type,
+        rate: formData.rate,
         module_id: moduleId,
       };
 
@@ -139,31 +142,45 @@ export const FareSlabEdit = () => {
             <Row>
               <Col md={6}>
                 <Form.Group className="dms-form-group">
-                  <Form.Label>Rate per KM</Form.Label>
-                  <Form.Control
-                    type="number"
-                    name="rate_per_km"
-                    value={formData.rate_per_km}
+                  <Form.Label>Rate Type</Form.Label>
+                  <Form.Select
+                    name="rate_type"
+                    value={formData.rate_type}
                     onChange={handleChange}
-                    placeholder="Enter rate per km"
-                    required
-                  />
+                  >
+                    <option value="per_km">Per KM</option>
+                    <option value="flat">Flat</option>
+                  </Form.Select>
                 </Form.Group>
               </Col>
 
               <Col md={6}>
                 <Form.Group className="dms-form-group">
-                  <Form.Label>Fare ID</Form.Label>
+                  <Form.Label>Rate</Form.Label>
                   <Form.Control
-                    type="text"
-                    name="fare_id"
-                    value={formData.fare_id}
+                    type="number"
+                    step="0.01"
+                    name="rate"
+                    value={formData.rate}
                     onChange={handleChange}
-                    placeholder="Enter fare ID"
+                    placeholder="Enter rate"
+                    required
                   />
                 </Form.Group>
               </Col>
             </Row>
+
+            <Form.Group className="dms-form-group">
+              <Form.Label>Fare ID</Form.Label>
+              <Form.Control
+                type="text"
+                name="fare_id"
+                value={formData.fare_id}
+                onChange={handleChange}
+                placeholder="Enter fare ID"
+                required
+              />
+            </Form.Group>
 
             <div className="save-and-cancel-btn mt-4">
               <Button type="submit" className="me-2" disabled={isLoading}>

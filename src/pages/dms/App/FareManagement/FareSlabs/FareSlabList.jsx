@@ -7,28 +7,31 @@ import { useNavigate } from "react-router-dom";
 export const FareSlabList = () => {
   const navigate = useNavigate();
 
-  // Dummy data
+  // Dummy data (aligned with DB schema)
   const dummySlabs = [
     {
       slab_id: "1",
       fare_id: "F001",
       start_km: 0,
       end_km: 5,
-      rate_per_km: 10.5,
+      rate_type: "per_km",
+      rate: 10.5,
     },
     {
       slab_id: "2",
       fare_id: "F002",
       start_km: 6,
       end_km: 10,
-      rate_per_km: 9.0,
+      rate_type: "per_km",
+      rate: 9.0,
     },
     {
       slab_id: "3",
       fare_id: "F003",
       start_km: 11,
       end_km: null,
-      rate_per_km: 8.5,
+      rate_type: "flat",
+      rate: 100,
     },
   ];
 
@@ -39,7 +42,6 @@ export const FareSlabList = () => {
   const [selectedSlab, setSelectedSlab] = useState(null);
 
   // 🔹 Mock permissions like RideFareSetting
-  const userData = JSON.parse(localStorage.getItem("userData"));
   let permissions = ["add", "edit", "delete"]; // ✅ Replace with real role logic
 
   // Pagination logic
@@ -81,7 +83,8 @@ export const FareSlabList = () => {
               <th>S.No</th>
               <th>Start KM</th>
               <th>End KM</th>
-              <th>Rate per KM</th>
+              <th>Rate Type</th>
+              <th>Rate</th>
               <th>Fare ID</th>
               <th>Action</th>
             </tr>
@@ -93,7 +96,8 @@ export const FareSlabList = () => {
                   <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
                   <td>{slab.start_km}</td>
                   <td>{slab.end_km === null ? "∞" : slab.end_km}</td>
-                  <td>{slab.rate_per_km}</td>
+                  <td>{slab.rate_type}</td>
+                  <td>{slab.rate}</td>
                   <td>{slab.fare_id}</td>
                   <td>
                     {(!permissions.includes("edit") &&
@@ -124,7 +128,7 @@ export const FareSlabList = () => {
               ))
             ) : (
               <tr>
-                <td colSpan="6" className="text-center">
+                <td colSpan="7" className="text-center">
                   No fare slabs found.
                 </td>
               </tr>
@@ -179,7 +183,7 @@ export const FareSlabList = () => {
           <Modal.Title>Delete Fare Slab</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          Are you sure you want to delete slab starting at{" "}
+          Are you sure you want to delete the slab starting at{" "}
           <strong>{selectedSlab?.start_km} km</strong>?
         </Modal.Body>
         <Modal.Footer>

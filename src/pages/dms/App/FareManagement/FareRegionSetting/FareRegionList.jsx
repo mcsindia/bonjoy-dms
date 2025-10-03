@@ -7,10 +7,11 @@ import { useNavigate } from "react-router-dom";
 export const FareRegionList = () => {
     const navigate = useNavigate();
 
+    // Dummy schema-aligned data
     const dummyRegions = [
-        { region_id: "R001", city: "Mumbai", state: "Maharashtra", tier: "tier1", base_fare: 50, per_km_fare: 12, per_km_fare_night: 15, waiting_charge_per_min: 2, fuel_type: "petrol", peak_multiplier: 1.2, effective_from: "2025-01-01" },
-        { region_id: "R002", city: "Pune", state: "Maharashtra", tier: "tier2", base_fare: 40, per_km_fare: 10, per_km_fare_night: 12, waiting_charge_per_min: 1.5, fuel_type: "cng", peak_multiplier: 1, effective_from: "2025-02-01" },
-        { region_id: "R003", city: "Delhi", state: "Delhi", tier: "tier1", base_fare: 60, per_km_fare: 14, per_km_fare_night: 16, waiting_charge_per_min: 2.5, fuel_type: "diesel", peak_multiplier: 1.3, effective_from: "2025-03-01" },
+        { region_id: "R001", city: "Mumbai", state: "Maharashtra", tier: "tier1", base_fare: 50, per_km_fare: 12, per_km_fare_night: 15, waiting_charge_per_min: 2, fuel_type: "petrol", peak_multiplier: 1.2, effective_from: "2025-01-01 10:00:00", updated_at: "2025-01-10 14:30:00" },
+        { region_id: "R002", city: "Pune", state: "Maharashtra", tier: "tier2", base_fare: 40, per_km_fare: 10, per_km_fare_night: 12, waiting_charge_per_min: 1.5, fuel_type: "cng", peak_multiplier: 1, effective_from: "2025-02-01 09:00:00", updated_at: "2025-02-05 11:00:00" },
+        { region_id: "R003", city: "Delhi", state: "Delhi", tier: "tier1", base_fare: 60, per_km_fare: 14, per_km_fare_night: 16, waiting_charge_per_min: 2.5, fuel_type: "ev", peak_multiplier: 1.3, effective_from: "2025-03-01 08:00:00", updated_at: "2025-03-02 15:45:00" },
     ];
 
     const [fareRegions, setFareRegions] = useState(dummyRegions);
@@ -54,7 +55,7 @@ export const FareRegionList = () => {
     return (
         <AdminLayout>
             <div className="dms-pages-header sticky-header">
-                <h3>Fare Region List</h3>
+                <h3>Fare Region Settings</h3>
                 {permissions.includes("add") && (
                     <Button variant="primary" onClick={() => navigate("/dms/fareregion/add")}>
                         <FaPlus /> Add Fare Region
@@ -62,7 +63,7 @@ export const FareRegionList = () => {
                 )}
             </div>
 
-            {/* Filter & Search - Ride Fare Style */}
+            {/* Filter & Search */}
             <div className="filter-search-container">
                 <div className='filter-container'>
                     {/* Tier Dropdown */}
@@ -82,7 +83,7 @@ export const FareRegionList = () => {
                         <Dropdown.Item onClick={() => { setFuelFilter(""); setCurrentPage(1); }}>All Fuel Types</Dropdown.Item>
                         <Dropdown.Item onClick={() => { setFuelFilter("petrol"); setCurrentPage(1); }}>Petrol</Dropdown.Item>
                         <Dropdown.Item onClick={() => { setFuelFilter("cng"); setCurrentPage(1); }}>CNG</Dropdown.Item>
-                        <Dropdown.Item onClick={() => { setFuelFilter("diesel"); setCurrentPage(1); }}>Diesel</Dropdown.Item>
+                        <Dropdown.Item onClick={() => { setFuelFilter("ev"); setCurrentPage(1); }}>EV</Dropdown.Item>
                     </DropdownButton>
                 </div>
                 {/* Search */}
@@ -111,6 +112,7 @@ export const FareRegionList = () => {
                             <th>Fuel Type</th>
                             <th>Peak Multiplier</th>
                             <th>Effective From</th>
+                            <th>Updated At</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -127,8 +129,9 @@ export const FareRegionList = () => {
                                     <td>{region.per_km_fare_night}</td>
                                     <td>{region.waiting_charge_per_min}</td>
                                     <td>{region.fuel_type || "-"}</td>
-                                    <td>{region.peak_multiplier}</td>
+                                    <td>{region.peak_multiplier || 1}</td>
                                     <td>{region.effective_from}</td>
+                                    <td>{region.updated_at}</td>
                                     <td>
                                         {(!permissions.includes("edit") && !permissions.includes("delete")) ? (
                                             <span>-</span>
@@ -149,7 +152,7 @@ export const FareRegionList = () => {
                             ))
                         ) : (
                             <tr>
-                                <td colSpan="12" className="text-center">No fare regions found.</td>
+                                <td colSpan="13" className="text-center">No fare regions found.</td>
                             </tr>
                         )}
                     </tbody>

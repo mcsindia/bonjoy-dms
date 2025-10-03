@@ -10,7 +10,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 export const FareRegionEdit = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { region } = location.state || {}; // 👈 region passed from list
+  const { region } = location.state || {};
 
   const [formData, setFormData] = useState({
     region_id: "",
@@ -21,10 +21,9 @@ export const FareRegionEdit = () => {
     per_km_fare: "",
     per_km_fare_night: "",
     waiting_charge_per_min: "",
-    fuel_type: "petrol",
-    peak_multiplier: "",
-    effective_from: "",
-    isActive: "1",
+    fuel_type: "", // nullable
+    peak_multiplier: "1", // default 1
+    effective_from: "", // timestamp
   });
 
   const [error, setError] = useState("");
@@ -47,10 +46,11 @@ export const FareRegionEdit = () => {
         per_km_fare: region.per_km_fare || "",
         per_km_fare_night: region.per_km_fare_night || "",
         waiting_charge_per_min: region.waiting_charge_per_min || "",
-        fuel_type: region.fuel_type || "petrol",
-        peak_multiplier: region.peak_multiplier || "",
-        effective_from: region.effective_from || "",
-        isActive: region.isActive ?? "1",
+        fuel_type: region.fuel_type || "", // can be null
+        peak_multiplier: region.peak_multiplier || "1",
+        effective_from: region.effective_from
+          ? region.effective_from.split("T")[0] // handle timestamp → date
+          : "",
       });
       setHasInitialized(true);
     }
@@ -76,15 +76,15 @@ export const FareRegionEdit = () => {
 
       const payload = {
         ...formData,
+        fuel_type: formData.fuel_type || null, // allow null
+        peak_multiplier: formData.peak_multiplier || "1",
         module_id: moduleId,
       };
 
       const response = await axios.put(
         `${API_BASE_URL}/updateFareRegion/${formData.region_id}`,
         payload,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       if (response.data?.success) {
@@ -151,7 +151,11 @@ export const FareRegionEdit = () => {
               <Col md={6}>
                 <Form.Group className="dms-form-group">
                   <Form.Label>Tier</Form.Label>
-                  <Form.Select name="tier" value={formData.tier} onChange={handleChange}>
+                  <Form.Select
+                    name="tier"
+                    value={formData.tier}
+                    onChange={handleChange}
+                  >
                     <option value="tier1">Tier 1</option>
                     <option value="tier2">Tier 2</option>
                     <option value="tier3">Tier 3</option>
@@ -160,11 +164,16 @@ export const FareRegionEdit = () => {
               </Col>
               <Col md={6}>
                 <Form.Group className="dms-form-group">
-                  <Form.Label>Fuel Type</Form.Label>
-                  <Form.Select name="fuel_type" value={formData.fuel_type} onChange={handleChange}>
+                  <Form.Label>Fuel Type (optional)</Form.Label>
+                  <Form.Select
+                    name="fuel_type"
+                    value={formData.fuel_type || ""}
+                    onChange={handleChange}
+                  >
+                    <option value="">-- None --</option>
                     <option value="petrol">Petrol</option>
                     <option value="cng">CNG</option>
-                    <option value="diesel">Diesel</option>
+                    <option value="ev">EV</option>
                   </Form.Select>
                 </Form.Group>
               </Col>
@@ -232,7 +241,7 @@ export const FareRegionEdit = () => {
                     name="peak_multiplier"
                     value={formData.peak_multiplier}
                     onChange={handleChange}
-                    placeholder="Enter peak multiplier"
+                    placeholder="Default = 1"
                   />
                 </Form.Group>
               </Col>
@@ -249,19 +258,14 @@ export const FareRegionEdit = () => {
               </Col>
             </Row>
 
-            <Form.Group className="dms-form-group mt-3">
-              <Form.Label>Status</Form.Label>
-              <Form.Select name="isActive" value={formData.isActive} onChange={handleChange}>
-                <option value="1">Active</option>
-                <option value="0">Inactive</option>
-              </Form.Select>
-            </Form.Group>
-
             <div className="save-and-cancel-btn mt-3">
               <Button type="submit" className="me-2" disabled={isLoading}>
                 {isLoading ? "Saving..." : "Save Changes"}
               </Button>
-              <Button variant="secondary" onClick={() => navigate("/dms/fareregion")}>
+              <Button
+                variant="secondary"
+                onClick={() => navigate("/dms/fareregion")}
+              >
                 Cancel
               </Button>
             </div>

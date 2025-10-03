@@ -2,13 +2,16 @@ import React, { useState } from "react";
 import { Button, Container, Form, Alert, Row, Col } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "../../../../../layouts/dms/AdminLayout/AdminLayout";
-import axios from "axios";
-import { getModuleId, getToken } from "../../../../../utils/authhelper";
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const FareDynamicRuleAdd = () => {
   const navigate = useNavigate();
+
+  // Dummy regions
+  const dummyRegions = [
+    { region_id: "Reg001", city: "Mumbai", state: "Maharashtra" },
+    { region_id: "Reg002", city: "Delhi", state: "Delhi" },
+    { region_id: "Reg003", city: "Bengaluru", state: "Karnataka" },
+  ];
 
   const [formData, setFormData] = useState({
     region_id: "",
@@ -22,56 +25,41 @@ export const FareDynamicRuleAdd = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const token = getToken();
-  const moduleId = getModuleId("faredynamicrules");
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
 
     if (!formData.region_id || !formData.multiplier || !formData.start_time || !formData.end_time) {
-      setError("Region, Multiplier, Start Time and End Time are required.");
+      setError("Region, Multiplier, Start Time, and End Time are required.");
       return;
     }
 
-    try {
-      setIsLoading(true);
-      setError("");
-      setSuccessMessage("");
+    setIsLoading(true);
+    setError("");
+    setSuccessMessage("");
 
-      const payload = {
-        ...formData,
-        module_id: moduleId,
-      };
+    // Simulate API delay
+    setTimeout(() => {
+      setIsLoading(false);
+      setSuccessMessage("Dynamic rule added successfully!");
+      console.log("Submitted Rule:", formData);
 
-      // Replace with your actual API endpoint
-      const response = await axios.post(`${API_BASE_URL}/createFareDynamicRule`, payload, {
-        headers: { Authorization: `Bearer ${token}` },
+      // Reset form
+      setFormData({
+        region_id: "",
+        rule_type: "peak",
+        multiplier: "",
+        start_time: "",
+        end_time: "",
       });
 
-      if (response.data?.success) {
-        setSuccessMessage("Dynamic rule added successfully!");
-        setFormData({
-          region_id: "",
-          rule_type: "peak",
-          multiplier: "",
-          start_time: "",
-          end_time: "",
-        });
-        setTimeout(() => navigate("/dms/faredynamicrules"), 1500);
-      } else {
-        setError(response.data?.message || "Failed to add dynamic rule.");
-      }
-    } catch (err) {
-      console.error("Error adding dynamic rule:", err);
-      setError("Failed to add dynamic rule. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
+      // Navigate back after short delay
+      setTimeout(() => navigate("/dms/faredynamicrules"), 1500);
+    }, 1000);
   };
 
   return (
@@ -94,15 +82,20 @@ export const FareDynamicRuleAdd = () => {
             <Row>
               <Col md={6}>
                 <Form.Group className="dms-form-group">
-                  <Form.Label>Region ID</Form.Label>
-                  <Form.Control
-                    type="text"
+                  <Form.Label>Region</Form.Label>
+                  <Form.Select
                     name="region_id"
                     value={formData.region_id}
                     onChange={handleChange}
-                    placeholder="Enter region ID"
                     required
-                  />
+                  >
+                    <option value="">Select Region</option>
+                    {dummyRegions.map((r) => (
+                      <option key={r.region_id} value={r.region_id}>
+                        {r.city} ({r.state})
+                      </option>
+                    ))}
+                  </Form.Select>
                 </Form.Group>
               </Col>
 

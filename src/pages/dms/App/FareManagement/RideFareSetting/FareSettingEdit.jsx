@@ -15,15 +15,14 @@ export const FareSettingEdit = () => {
   const [formData, setFormData] = useState({
     fare_id: "",
     base_fare: "",
-    per_km_fare: "",
-    per_km_fare_night: "",
-    night_start_time: "",
-    night_end_time: "",
     waiting_charge_per_min: "",
+    waiting_grace_period: "",
+    cancellation_normal: "",
+    cancellation_emergency_cap: "",
     emergency_bonus: "",
     first_ride_bonus: "",
     effective_from: "",
-    isActive: "",
+    isActive: "1",
   });
 
   const [error, setError] = useState("");
@@ -31,21 +30,21 @@ export const FareSettingEdit = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
 
-  const token = getToken();                        
-  const moduleId = getModuleId("faresettings");   
+  const token = getToken();
+  const moduleId = getModuleId("faresettings");
 
+  // Prefill when editing
   useEffect(() => {
     if (fare && !hasInitialized) {
       setFormData({
-        fare_id: fare.id || "",
+        fare_id: fare.id || fare.fare_id || "",
         base_fare: fare.base_fare || "",
-        per_km_fare: fare.per_km_fare || "",
-        per_km_fare_night: fare.per_km_fare_night || "",
-        night_start_time: fare.night_start_time || "",
-        night_end_time: fare.night_end_time || "",
         waiting_charge_per_min: fare.waiting_charge_per_min || "",
-        emergency_bonus: fare.emergency_bonus || "",
-        first_ride_bonus: fare.first_ride_bonus || "",
+        waiting_grace_period: fare.waiting_grace_period || 3,
+        cancellation_normal: fare.cancellation_normal || 25,
+        cancellation_emergency_cap: fare.cancellation_emergency_cap || 100,
+        emergency_bonus: fare.emergency_bonus || 20,
+        first_ride_bonus: fare.first_ride_bonus || 50,
         effective_from: fare.effective_from ? fare.effective_from.split("T")[0] : "",
         isActive: fare.isActive ? "1" : "0",
       });
@@ -61,8 +60,8 @@ export const FareSettingEdit = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.base_fare || !formData.per_km_fare) {
-      setError("Base fare and per km fare are required!");
+    if (!formData.base_fare) {
+      setError("Base fare is required!");
       return;
     }
 
@@ -72,17 +71,8 @@ export const FareSettingEdit = () => {
       setSuccess("");
 
       const payload = {
-        base_fare: formData.base_fare,
-        per_km_fare: formData.per_km_fare,
-        per_km_fare_night: formData.per_km_fare_night,
-        night_start_time: formData.night_start_time,
-        night_end_time: formData.night_end_time,
-        waiting_charge_per_min: formData.waiting_charge_per_min,
-        emergency_bonus: formData.emergency_bonus,
-        first_ride_bonus: formData.first_ride_bonus,
-        effective_from: formData.effective_from,
-        isActive: formData.isActive,
-        module_id: moduleId, // ✅ include dynamic module_id
+        ...formData,
+        module_id: moduleId,
       };
 
       const response = await axios.put(
@@ -142,59 +132,6 @@ export const FareSettingEdit = () => {
               </Col>
               <Col md={6}>
                 <Form.Group className="dms-form-group">
-                  <Form.Label>Per Km Fare (Day)</Form.Label>
-                  <Form.Control
-                    type="number"
-                    name="per_km_fare"
-                    value={formData.per_km_fare}
-                    onChange={handleChange}
-                    placeholder="Enter per km fare (day)"
-                    required
-                  />
-                </Form.Group>
-              </Col>
-            </Row>
-
-            <Row>
-              <Col md={6}>
-                <Form.Group className="dms-form-group">
-                  <Form.Label>Per Km Fare (Night)</Form.Label>
-                  <Form.Control
-                    type="number"
-                    name="per_km_fare_night"
-                    value={formData.per_km_fare_night}
-                    onChange={handleChange}
-                    placeholder="Enter per km fare (night)"
-                  />
-                </Form.Group>
-              </Col>
-              <Col md={3}>
-                <Form.Group className="dms-form-group">
-                  <Form.Label>Night Start Time</Form.Label>
-                  <Form.Control
-                    type="time"
-                    name="night_start_time"
-                    value={formData.night_start_time}
-                    onChange={handleChange}
-                  />
-                </Form.Group>
-              </Col>
-              <Col md={3}>
-                <Form.Group className="dms-form-group">
-                  <Form.Label>Night End Time</Form.Label>
-                  <Form.Control
-                    type="time"
-                    name="night_end_time"
-                    value={formData.night_end_time}
-                    onChange={handleChange}
-                  />
-                </Form.Group>
-              </Col>
-            </Row>
-
-            <Row>
-              <Col md={4}>
-                <Form.Group className="dms-form-group">
                   <Form.Label>Waiting Charge Per Min</Form.Label>
                   <Form.Control
                     type="number"
@@ -205,8 +142,49 @@ export const FareSettingEdit = () => {
                   />
                 </Form.Group>
               </Col>
+            </Row>
 
-              <Col md={4}>
+            <Row>
+              <Col md={6}>
+                <Form.Group className="dms-form-group">
+                  <Form.Label>Waiting Grace Period (Minutes)</Form.Label>
+                  <Form.Control
+                    type="number"
+                    name="waiting_grace_period"
+                    value={formData.waiting_grace_period}
+                    onChange={handleChange}
+                    placeholder="Enter free waiting minutes"
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="dms-form-group">
+                  <Form.Label>Cancellation Fee (Normal)</Form.Label>
+                  <Form.Control
+                    type="number"
+                    name="cancellation_normal"
+                    value={formData.cancellation_normal}
+                    onChange={handleChange}
+                    placeholder="Enter normal cancellation fee"
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Row>
+              <Col md={6}>
+                <Form.Group className="dms-form-group">
+                  <Form.Label>Cancellation Fee (Emergency Cap)</Form.Label>
+                  <Form.Control
+                    type="number"
+                    name="cancellation_emergency_cap"
+                    value={formData.cancellation_emergency_cap}
+                    onChange={handleChange}
+                    placeholder="Enter emergency cancellation cap"
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
                 <Form.Group className="dms-form-group">
                   <Form.Label>Emergency Bonus</Form.Label>
                   <Form.Control
@@ -218,7 +196,10 @@ export const FareSettingEdit = () => {
                   />
                 </Form.Group>
               </Col>
-              <Col md={4}>
+            </Row>
+
+            <Row>
+              <Col md={6}>
                 <Form.Group className="dms-form-group">
                   <Form.Label>First Ride Bonus</Form.Label>
                   <Form.Control
@@ -230,17 +211,18 @@ export const FareSettingEdit = () => {
                   />
                 </Form.Group>
               </Col>
+              <Col md={6}>
+                <Form.Group className="dms-form-group">
+                  <Form.Label>Effective From</Form.Label>
+                  <Form.Control
+                    type="date"
+                    name="effective_from"
+                    value={formData.effective_from}
+                    onChange={handleChange}
+                  />
+                </Form.Group>
+              </Col>
             </Row>
-
-            <Form.Group className="dms-form-group">
-              <Form.Label>Effective From</Form.Label>
-              <Form.Control
-                type="date"
-                name="effective_from"
-                value={formData.effective_from}
-                onChange={handleChange}
-              />
-            </Form.Group>
 
             <div className="save-and-cancel-btn mt-4">
               <Button type="submit" className="me-2" disabled={isLoading}>

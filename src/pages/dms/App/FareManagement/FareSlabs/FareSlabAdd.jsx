@@ -13,7 +13,8 @@ export const FareSlabAdd = () => {
   const [formData, setFormData] = useState({
     start_km: "",
     end_km: "",
-    rate_per_km: "",
+    rate_type: "per_km", // ENUM default
+    rate: "",
     fare_id: "",
     isActive: "1",
   });
@@ -25,6 +26,13 @@ export const FareSlabAdd = () => {
   const token = getToken();
   const moduleId = getModuleId("fareslab");
 
+  // Example fare settings (replace with real fare settings list you maintain)
+  const fareOptions = [
+    { fare_id: "1", name: "Base Fare (City)" },
+    { fare_id: "2", name: "Outstation Fare" },
+    { fare_id: "3", name: "Airport Fare" },
+  ];
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -33,8 +41,8 @@ export const FareSlabAdd = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.start_km || !formData.rate_per_km || !formData.fare_id) {
-      setError("Start KM, Rate per KM and Fare ID are required.");
+    if (!formData.start_km || !formData.rate || !formData.fare_id) {
+      setError("Start KM, Rate and Fare ID are required.");
       return;
     }
 
@@ -44,10 +52,11 @@ export const FareSlabAdd = () => {
 
       const payload = {
         ...formData,
+        end_km: formData.end_km || null, // allow NULL for ∞
         module_id: moduleId,
       };
 
-      // ✅ Replace with real API
+      // POST to backend
       const response = await axios.post(`${API_BASE_URL}/createFareSlab`, payload, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -59,7 +68,8 @@ export const FareSlabAdd = () => {
         setFormData({
           start_km: "",
           end_km: "",
-          rate_per_km: "",
+          rate_type: "per_km",
+          rate: "",
           fare_id: "",
           isActive: "1",
         });
@@ -126,42 +136,48 @@ export const FareSlabAdd = () => {
             <Row>
               <Col md={6}>
                 <Form.Group className="dms-form-group">
-                  <Form.Label>Rate per KM</Form.Label>
-                  <Form.Control
-                    type="number"
-                    name="rate_per_km"
-                    value={formData.rate_per_km}
+                  <Form.Label>Rate Type</Form.Label>
+                  <Form.Select
+                    name="rate_type"
+                    value={formData.rate_type}
                     onChange={handleChange}
-                    placeholder="Enter rate per km"
-                    required
-                  />
+                  >
+                    <option value="per_km">Per KM</option>
+                    <option value="flat">Flat</option>
+                  </Form.Select>
                 </Form.Group>
               </Col>
 
               <Col md={6}>
                 <Form.Group className="dms-form-group">
-                  <Form.Label>Fare ID</Form.Label>
+                  <Form.Label>Rate</Form.Label>
                   <Form.Control
-                    type="text"
-                    name="fare_id"
-                    value={formData.fare_id}
+                    type="number"
+                    name="rate"
+                    value={formData.rate}
                     onChange={handleChange}
-                    placeholder="Enter fare ID"
+                    placeholder="Enter rate"
                     required
                   />
                 </Form.Group>
               </Col>
             </Row>
 
+            {/* Fare ID Dropdown (Static List) */}
             <Form.Group className="dms-form-group">
-              <Form.Label>Status</Form.Label>
+              <Form.Label>Fare Setting</Form.Label>
               <Form.Select
-                name="isActive"
-                value={formData.isActive}
+                name="fare_id"
+                value={formData.fare_id}
                 onChange={handleChange}
+                required
               >
-                <option value="1">Active</option>
-                <option value="0">Inactive</option>
+                <option value="">-- Select Fare Setting --</option>
+                {fareOptions.map((fare) => (
+                  <option key={fare.fare_id} value={fare.fare_id}>
+                    {fare.name}
+                  </option>
+                ))}
               </Form.Select>
             </Form.Group>
 

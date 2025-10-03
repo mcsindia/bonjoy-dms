@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Button, Table, Form, InputGroup, Pagination, Modal } from "react-bootstrap";
+import { Button, Table, Form, Pagination, Modal } from "react-bootstrap";
 import { FaEdit, FaTrash, FaPlus } from "react-icons/fa";
 import { AdminLayout } from "../../../../../layouts/dms/AdminLayout/AdminLayout";
 import { useNavigate } from "react-router-dom";
@@ -46,7 +46,7 @@ export const RideFareSetting = () => {
           page,
           limit: itemsPerPage,
           search: searchValue || undefined,
-          date: created || undefined, // ✅ single date param
+          date: created || undefined,
           module_id: getModuleId("faresettings"),
         },
       });
@@ -133,23 +133,25 @@ export const RideFareSetting = () => {
         {loading ? (
           <div className="text-center py-5 fs-4">Loading...</div>
         ) : (
-          <Table striped bordered hover responsive>
-            <thead>
-              <tr>
-                <th>S.No</th>
-                <th>Base Fare</th>
-                <th>Per Km Fare</th>
-                <th>Night Fare /km</th>
-                <th>Night Time</th>
-                <th>Waiting Charge</th>
-                <th>Emergency Bonus</th>
-                <th>First Ride Bonus</th>
-                <th>Effective From</th>
-                <th>Created At</th>
-                <th>Updated At</th>
-                <th>Action</th>
-              </tr>
-            </thead>
+          <Table striped bordered hover responsive><thead>
+            <tr>
+              <th>S.No</th>
+              <th>Base Fare</th>
+              <th>Per Km Fare</th>
+              <th>Night Fare /km</th>
+              <th>Night Time</th>
+              <th>Waiting Charge</th>
+              <th>Grace Period (min)</th> {/* NEW */}
+              <th>Cancel Fee (Normal)</th> {/* NEW */}
+              <th>Cancel Fee (Emergency Cap)</th> {/* NEW */}
+              <th>Emergency Bonus</th>
+              <th>First Ride Bonus</th>
+              <th>Effective From</th>
+              <th>Created At</th>
+              <th>Updated At</th>
+              <th>Action</th>
+            </tr>
+          </thead>
             <tbody>
               {fareSettings.length > 0 ? (
                 fareSettings.map((fare, index) => (
@@ -158,10 +160,11 @@ export const RideFareSetting = () => {
                     <td>{fare.base_fare}</td>
                     <td>{fare.per_km_fare}</td>
                     <td>{fare.per_km_fare_night}</td>
-                    <td>
-                      {fare.night_start_time} - {fare.night_end_time}
-                    </td>
+                    <td>{fare.night_start_time} - {fare.night_end_time}</td>
                     <td>{fare.waiting_charge_per_min}</td>
+                    <td>{fare.waiting_grace_period || 'NA'}</td>
+                    <td>{fare.cancellation_normal || 'NA'}</td>
+                    <td>{fare.cancellation_emergency_cap || 'NA'}</td> 
                     <td>{fare.emergency_bonus}</td>
                     <td>{fare.first_ride_bonus}</td>
                     <td>{new Date(fare.effective_from).toLocaleDateString()}</td>
