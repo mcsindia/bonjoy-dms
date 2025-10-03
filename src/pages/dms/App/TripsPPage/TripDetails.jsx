@@ -8,6 +8,7 @@ import { getModuleId, getToken } from "../../../../utils/authhelper";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const IMAGE_BASE_URL = import.meta.env.VITE_IMAGE_BASE_URL;
+const googleMapsKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
 export const TripDetails = () => {
   const { id } = useParams();
@@ -36,12 +37,12 @@ export const TripDetails = () => {
     const fetchTrip = async () => {
       setLoading(true);
       try {
-        const token = getToken(); // 🔹 Use token helper
-        const moduleId = getModuleId("trip"); // 🔹 dynamic module_id
+        const token = getToken();
+        const moduleId = getModuleId("trip");
 
         const response = await axios.get(`${API_BASE_URL}/getRideById/${id}`, {
           headers: { Authorization: `Bearer ${token}` },
-          params: { module_id: moduleId }, // 🔹 pass module_id
+          params: { module_id: moduleId },
         });
 
         setTrip(response.data);
@@ -123,6 +124,24 @@ export const TripDetails = () => {
         <Card className="p-4 mb-4 shadow-sm">
           <h4>Trip Information</h4>
           <hr />
+          <div className="d-flex align-items-center justify-content-around text-center">
+            <div className="d-flex flex-column align-items-center">
+              <FaMapMarkerAlt className="text-success mb-2" size={24} />
+              <span className="fw-bold">Pickup</span>
+              <span className="text-muted">{pickup_address}</span>
+            </div>
+
+            <div className="position-relative d-flex flex-column align-items-center">
+              <FaMotorcycle className="text-primary" size={30} />
+            </div>
+
+            <div className="d-flex flex-column align-items-center">
+              <FaMapMarkerAlt className="text-danger mb-2" size={24} />
+              <span className="fw-bold">Drop-off</span>
+              <span className="text-muted">{drop_address}</span>
+            </div>
+          </div>
+          <hr />
           <Row>
             <Col md={6}><p><strong>Status:</strong> {status}</p></Col>
             <Col md={6}><p><strong>Fare:</strong> ₹{fare}</p></Col>
@@ -134,10 +153,6 @@ export const TripDetails = () => {
           <Row>
             <Col md={6}><p><strong>Emergency:</strong> {emergency_ride ? "Yes" : "No"}</p></Col>
             <Col md={6}><p><strong>Payment:</strong> {payment_status}</p></Col>
-          </Row>
-          <Row>
-            <Col md={6}><p><strong>Pickup:</strong> {pickup_address}</p></Col>
-            <Col md={6}><p><strong>Drop:</strong> {drop_address}</p></Col>
           </Row>
           <Row>
             <Col md={6}><p><strong>Scheduled:</strong> {scheduled_time}</p></Col>
@@ -210,7 +225,7 @@ export const TripDetails = () => {
             <iframe
               title="trip map"
               className="trip-iframe"
-              src={`https://www.google.com/maps/embed/v1/directions?key=YOUR_GOOGLE_MAPS_API_KEY&origin=${source}&destination=${destination}`}
+              src={`https://www.google.com/maps/embed/v1/directions?key=${googleMapsKey}&origin=${source}&destination=${destination}`}
               frameBorder="0"
               allowFullScreen
             />

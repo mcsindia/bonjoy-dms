@@ -11,6 +11,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const IMAGE_BASE_URL = import.meta.env.VITE_IMAGE_BASE_URL;
 
 export const DriversDetailsView = () => {
+
   const location = useLocation();
   const navigate = useNavigate();
   const driverId = location.state?.driver?.userId;
@@ -23,7 +24,10 @@ export const DriversDetailsView = () => {
   const [showVersionModal, setShowVersionModal] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [contactDetails, setContactDetails] = useState([]);
-  const itemsPerPage = 5;
+  const [showDriverActions, setShowDriverActions] = useState(null);
+  const [showResubmitModal, setShowResubmitModal] = useState(false);
+  const [resubmitReason, setResubmitReason] = useState("");
+  const [selectedResubmitDoc, setSelectedResubmitDoc] = useState(null);
 
   const userData = JSON.parse(localStorage.getItem("userData"));
   let permissions = [];
@@ -48,6 +52,186 @@ export const DriversDetailsView = () => {
       action(); // allowed, run the actual function
     } else {
       alert(fallbackMessage || `You don't have permission to ${permissionType} this employee.`);
+    }
+  };
+
+  const isExpiringSoon = (expiryDate) => {
+    if (!expiryDate) return false;
+    const today = new Date();
+    const expiry = new Date(expiryDate);
+    const diffTime = expiry - today;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays <= 30 && diffDays >= 0; // within 30 days
+  };
+
+  const isExpired = (expiryDate) => {
+    if (!expiryDate) return false;
+    const today = new Date();
+    const expiry = new Date(expiryDate);
+    return today > expiry;
+  };
+
+  const getActionsByStatus = (status, docName, doc, type = 'driver', expiryDate = null) => {
+  const actions = [
+    <li key="view" onClick={() => handlePermissionCheck("view", () => window.open(`${IMAGE_BASE_URL}${doc.file_url}`, '_blank'))}>
+      <FaEye className="dms-menu-icon" /> View
+    </li>,
+    <li key="download" onClick={() => handlePermissionCheck("view", () => handleDownload(`${IMAGE_BASE_URL}${doc.file_url}`))}>
+      <FaDownload className="dms-menu-icon" /> Download
+    </li>,
+    <li key="versions" onClick={() => handlePermissionCheck("view", () => handleViewVersions(doc, type))}>
+      <FaHistory className="dms-menu-icon" /> View Versions
+    </li>
+  ];
+
+  // Show Remark if status is pending
+  if (status?.toLowerCase() === "pending") {
+    actions.push(
+      <li key="remark" onClick={() => handlePermissionCheck("edit", () => handleRemarkAction(doc, docName, type))}>
+        <FaEdit className="dms-menu-icon" /> Remark
+      </li>
+    );
+  }
+
+  // Show Reminder if document is not pending and expiring within 30 days
+  if (status?.toLowerCase() !== "pending" && isExpiringSoon(expiryDate)) {
+    actions.push(
+      <li key="reminder" onClick={() => handlePermissionCheck("edit", () => sendReminder(doc, type))}>
+        <FaBell className="dms-menu-icon" /> Reminder
+      </li>
+    );
+  }
+
+  return actions;
+};
+
+  const handleImageView = (doc) => {
+    if (doc && doc.docFile) {
+      const fullUrl = `${IMAGE_BASE_URL}${doc.docFile.startsWith("/") ? "" : "/"}${doc.docFile}`;
+      window.open(fullUrl, '_blank');
+    } else {
+      alert('Document file is missing or not available.');
+    }
+  };
+
+  const handleAction = async (action, docName, doc = null, type = 'driver', driverId = null, vehicleId = null) => {
+    if (!doc?.id) return alert("Document ID is missing");
+
+    if (action === "Resubmit") {
+      setSelectedResubmitDoc(doc);
+      setShowResubmitModal(true);
+    } else if (action === "View") {
+      handleImageView(doc);
+    } else if (action === "Download") {
+      if (doc && doc.docFile) {
+        handleImageDownload(doc.docFile, docName);
+      } else {
+        alert('Document file is missing or not available for download.');
+      }
+    } else if (action === "Approve" || action === "Reject") {
+      if ((type === "driver" && !driverId) || (type === "vehicle" && !vehicleId)) {
+        return alert(`${type.charAt(0).toUpperCase() + type.slice(1)} ID is missing.`);
+      }
+
+      try {
+        const updatedStatus = action === "Approve" ? "Approved" : "Rejected";
+
+        if (type === "driver" && driverId) {
+          const response = await axios.put(
+            `${API_BASE_URL}/updateDriverProfile/${driverId}`,
+            {
+              accountStatus: updatedStatus,
+              reason: action === "Resubmit" ? "accountstatus - resubmission" : ""
+            }
+          );
+          if (response.status === 200) {
+            alert(`Driver profile ${updatedStatus.toLowerCase()} successfully.`);
+            fetchData();
+          } else {
+            alert("Failed to update driver profile. Please try again.");
+          }
+        } else if (type === "vehicle" && vehicleId) {
+          const response = await axios.put(
+            `${API_BASE_URL}/updateVehicle/${vehicleId}`,
+            {
+              status: updatedStatus
+            }
+          );
+          if (response.status === 200) {
+            alert(`Vehicle status updated to ${updatedStatus.toLowerCase()}.`);
+            fetchData();
+          } else {
+            alert("Failed to update vehicle status. Please try again.");
+          }
+        } else if (type === "document") {
+          const response = await axios.put(
+            `${API_BASE_URL}/updateDocumentFile/${doc.id}`,
+            {
+              verificationStatus: updatedStatus
+            }
+          );
+          if (response.status === 200) {
+            alert(`Document ${updatedStatus.toLowerCase()} successfully.`);
+            fetchData();
+          } else {
+            alert("Failed to update document status. Please try again.");
+          }
+        }
+      } catch (error) {
+        console.error(`${action} error:`, error);
+        alert(`Failed to ${action.toLowerCase()} the ${type}.`);
+      }
+    } else {
+      alert(`${action} clicked for ${docName}`);
+    }
+  };
+
+  const handleRemarkAction = (doc, docName, type) => {
+    setSelectedResubmitDoc({ ...doc, type }); // type = 'driver' | 'vehicle' | 'bank'
+    setShowResubmitModal(true);
+  };
+
+  const handleDriverActionMenuToggle = (docId) => {
+    setShowDriverActions(prev => (prev === docId ? null : docId));
+  };
+
+  const handleResubmit = async () => {
+    if (!selectedResubmitDoc?.id) return alert("Document ID is missing.");
+
+    const formData = new FormData();
+    formData.append("rejection_reason", resubmitReason);
+    formData.append("status", selectedResubmitDoc.remarkStatus.toLowerCase());
+
+    try {
+      let endpoint = "";
+
+      if (selectedResubmitDoc.type === "bank") {
+        endpoint = `${API_BASE_URL}/updateDriverBankDocument/${selectedResubmitDoc.id}`;
+      } else if (selectedResubmitDoc.type === "vehicle") {
+        endpoint = `${API_BASE_URL}/updateDriverVehicleDocument/${selectedResubmitDoc.id}`;
+      } else {
+        endpoint = `${API_BASE_URL}/updateDriverDocument/${selectedResubmitDoc.id}`;
+      }
+
+      const response = await axios.put(endpoint, formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+
+      if (response.status === 200) {
+        alert("Document updated successfully.");
+        setShowResubmitModal(false);
+        setResubmitReason("");
+        setSelectedResubmitDoc(null);
+        // Refresh the documents list
+        axios.get(`${API_BASE_URL}/getDriverAllDocument/${driverId}`)
+          .then(res => setDriverDocs(res.data?.data?.Document || []))
+          .catch(err => console.error(err));
+      } else {
+        alert("Update failed.");
+      }
+    } catch (error) {
+      console.error("Error during update:", error);
+      alert("An error occurred while updating the document.");
     }
   };
 
@@ -400,24 +584,12 @@ export const DriversDetailsView = () => {
                     <td>{doc.status || 'NA'}</td>
                     <td>{doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : 'NA'}</td>
                     <td>
-                      <FaEye
-                        className="icon icon-blue"
-                        onClick={() => handlePermissionCheck("view", () => window.open(`${IMAGE_BASE_URL}${doc.file_url}`, '_blank'))}
-                      />
-                      <FaDownload
-                        className="icon icon-black"
-                        onClick={() => handlePermissionCheck("view", () => handleDownload(`${IMAGE_BASE_URL}${doc.file_url}`))}
-                      />
-                      <FaHistory
-                        className="icon icon-gray "
-                        title="Version History"
-                        onClick={() => handlePermissionCheck("view", () => handleViewVersions(doc, "driver"))}
-                      />
-                      <FaBell
-                        className="icon icon-orange "
-                        title="Send Reminder"
-                        onClick={() => handlePermissionCheck("add", () => sendReminder(doc, "driver"))}
-                      />
+                      <span className="dms-span-action" onClick={() => handleDriverActionMenuToggle(doc.id)}>⋮</span>
+                      {showDriverActions === doc.id && (
+                        <div className="dms-show-actions-menu">
+                          <ul>{getActionsByStatus(doc.verificationStatus, doc.fileLabel, doc, 'driver')}</ul>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -446,24 +618,12 @@ export const DriversDetailsView = () => {
                     <td>{doc.expiryDate ? new Date(doc.expiryDate).toLocaleDateString() : 'NA'}</td>
                     <td>{doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : 'NA'}</td>
                     <td>
-                      <FaEye
-                        className="icon icon-blue"
-                        onClick={() => handlePermissionCheck("view", () => window.open(`${IMAGE_BASE_URL}${doc.file_url}`, '_blank'))}
-                      />
-                      <FaDownload
-                        className="icon icon-black"
-                        onClick={() => handlePermissionCheck("view", () => handleDownload(`${IMAGE_BASE_URL}${doc.file_url}`))}
-                      />
-                      <FaHistory
-                        className="icon icon-gray "
-                        title="Version History"
-                        onClick={() => handlePermissionCheck("view", () => handleViewVersions(doc, "vehicle"))}
-                      />
-                      <FaBell
-                        className="icon icon-orange "
-                        title="Send Reminder"
-                        onClick={() => handlePermissionCheck("add", () => sendReminder(doc, "vehicle"))}
-                      />
+                      <span className="dms-span-action" onClick={() => handleDriverActionMenuToggle(doc.id)}>⋮</span>
+                      {showDriverActions === doc.id && (
+                        <div className="dms-show-actions-menu">
+                          <ul>{getActionsByStatus(doc.verificationStatus, doc.fileLabel, doc, 'driver')}</ul>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -492,24 +652,12 @@ export const DriversDetailsView = () => {
                       <td>{doc.status?.trim() || 'N/A'}</td>
                       <td>{doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : 'N/A'}</td>
                       <td>
-                        <FaEye
-                          className="icon icon-blue"
-                          onClick={() => handlePermissionCheck("view", () => window.open(`${IMAGE_BASE_URL}${doc.file_url}`, '_blank'))}
-                        />
-                        <FaDownload
-                          className="icon icon-black"
-                          onClick={() => handlePermissionCheck("view", () => handleDownload(`${IMAGE_BASE_URL}${doc.file_url}`))}
-                        />
-                        <FaHistory
-                          className="icon icon-gray "
-                          title="Version History"
-                          onClick={() => handlePermissionCheck("view", () => handleViewVersions(doc, "bank"))}
-                        />
-                        <FaBell
-                          className="icon icon-orange"
-                          title="Send Reminder"
-                          onClick={() => handlePermissionCheck("add", () => sendReminder(doc, "bank"))}
-                        />
+                        <span className="dms-span-action" onClick={() => handleDriverActionMenuToggle(doc.id)}>⋮</span>
+                        {showDriverActions === doc.id && (
+                          <div className="dms-show-actions-menu">
+                            <ul>{getActionsByStatus(doc.verificationStatus, doc.fileLabel, doc, 'driver')}</ul>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))
@@ -594,6 +742,54 @@ export const DriversDetailsView = () => {
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowVersionModal(false)}>Close</Button>
+        </Modal.Footer>
+      </Modal>
+
+      <Modal show={showResubmitModal} onHide={() => setShowResubmitModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Document Remark</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p><strong>Document:</strong> {selectedResubmitDoc?.file_label || "NA"}</p>
+
+          <div className="mb-3">
+            <label className="form-label"><strong>Status</strong></label>
+            <select
+              className="form-select"
+              value={selectedResubmitDoc?.remarkStatus || ''}
+              onChange={(e) =>
+                setSelectedResubmitDoc(prev => ({
+                  ...prev,
+                  remarkStatus: e.target.value
+                }))
+              }
+            >
+              <option value="">Select Status</option>
+              <option value="approved">approved</option>
+              <option value="rejected">rejected</option>
+            </select>
+          </div>
+
+          <div className="mb-3">
+            <label className="form-label"><strong>Remark</strong></label>
+            <textarea
+              className="form-control"
+              rows="4"
+              placeholder="Enter your remark..."
+              value={resubmitReason}
+              onChange={(e) => setResubmitReason(e.target.value)}
+            />
+          </div>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowResubmitModal(false)}>Cancel</Button>
+          <Button
+            variant="primary"
+            onClick={handleResubmit}
+            disabled={!selectedResubmitDoc?.remarkStatus || !resubmitReason.trim()}
+          >
+            Submit
+          </Button>
         </Modal.Footer>
       </Modal>
     </AdminLayout>
