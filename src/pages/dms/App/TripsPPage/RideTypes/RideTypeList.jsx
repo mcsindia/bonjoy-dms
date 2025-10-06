@@ -191,7 +191,7 @@ export const RideTypeList = () => {
                       <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
                       <td>{ride.name}</td>
                       <td>{ride.multiplier}</td>
-                      <td>{stripHtmlTags(ride.description)}</td>
+                      <td className='table-description'>{stripHtmlTags(ride.description)}</td>
                       <td>{ride.status}</td>
                       <td>{ride.createdAt ? new Date(ride.createdAt).toLocaleDateString() : "N/A"}</td>
                       <td>{ride.updatedAt ? new Date(ride.updatedAt).toLocaleDateString() : "N/A"}</td>

@@ -227,19 +227,13 @@ ul, li{
 .btn-light.position-relative .badge {
   position: absolute;
   top: 20px;
-  /* Adjust vertical alignment */
   transform: translate(-50%, -50%);
   background-color: var(--danger-red);
-  /* Red color for the badge */
   color: var(--pure-white);
   font-size: 12px;
-  /* Adjust size of the badge text */
   padding: 4px 6px;
-  /* Space inside the badge */
   border-radius: 50%;
-  /* Makes it circular */
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  /* Optional: Adds depth */
 }
 
 .dms-notification-list ul {
@@ -264,9 +258,7 @@ ul, li{
 
 .dms-notification-list ul li:hover {
   background-color: var(--light-gray);
-  /* Light gray background */
   box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
-  /* Subtle shadow */
   cursor: pointer;
 }
 
@@ -280,12 +272,10 @@ ul, li{
 
 .dms-notification-list ul li:last-child {
   border-bottom: none;
-  /* Remove divider for the last item */
 }
 
 .dms-notification-list ul li div {
   margin-right: 10px;
-  /* Reduce space between icon and text */
 }
 
 .dms-notification-list li small {
@@ -305,18 +295,13 @@ ul, li{
 @media (max-width: 576px) {
   .dms-notification-list {
     width: 75vw;
-    /* Adjusts width based on screen */
     max-width: 75vw;
     top: 50px;
     font-size: 14px;
     overflow-y: auto;
-    /* Enables scrolling for many notifications */
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-    /* Ensure shadow */
     left: 50%;
-    /* Center it horizontally */
     transform: translateX(-50%);
-    /* Corrects the position to truly center */
   }
 
   .dms-notification-list ul {
@@ -329,7 +314,6 @@ ul, li{
     padding: 8px;
     word-wrap: break-word;
     white-space: normal;
-    /* Ensures text wraps properly */
   }
 
   .dms-notification-list ul li div {
@@ -603,7 +587,6 @@ ul, li{
   overflow-y: auto;
 }
 
-/* Optional: Scrollbar for sub-submenus */
 .dms-sidebar.open .submenu .submenu::-webkit-scrollbar {
   width: 6px;
 }
@@ -644,7 +627,6 @@ ul, li{
 .dms-main-content {
   flex-grow: 1;
   margin-left: 250px;
-  /* Default sidebar open width */
   transition: margin-left 0.3s ease;
   display: flex;
   flex-direction: column;
@@ -653,12 +635,10 @@ ul, li{
 /* Adjust when sidebar is closed */
 .dms-main-content.sidebar-closed {
   margin-left: 120px;
-  /* Sidebar collapsed width */
 }
 
 .dms-page-content {
   flex: 1;
-  /* Ensures content grows properly */
   padding: 20px;
   overflow: auto;
 }
@@ -667,16 +647,13 @@ ul, li{
 @media (max-width: 768px) {
   .dms-main-content.sidebar-closed {
     margin-left: 0;
-    /* Sidebar completely disappears */
   }
 
   /* Keep main content fixed */
   .dms-main-content {
     margin-left: 0 !important;
     width: 100%;
-    /* Ensure full width */
     transition: none;
-    /* No shifting effect */
   }
 
   /* Dim background when sidebar is open */
@@ -692,7 +669,6 @@ ul, li{
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.5);
-    /* Dark overlay */
     z-index: 900;
   }
 }
@@ -701,7 +677,6 @@ ul, li{
 /* Cards */
 .card {
   height: 100px;
-  /* Fixed height */
   width: 100%;
   border: none;
   border-radius: 20px;
@@ -712,7 +687,6 @@ ul, li{
 
 .card-body-custom p {
   margin-bottom: 0.25rem;
-  /* Adjust this value as needed */
 }
 
 .card:hover {
@@ -723,16 +697,13 @@ ul, li{
 @media (max-width: 768px) {
   .card {
     max-width: 90%;
-    /* Makes the card adapt to smaller screens */
     min-height: auto;
-    /* Allows flexibility */
   }
 }
 
 @media (max-width: 480px) {
   .card {
     max-width: 100%;
-    /* Uses full width on very small screens */
     padding: 0.8rem;
   }
 }
@@ -765,20 +736,16 @@ ul, li{
 .stat-item {
   display: flex;
   justify-content: space-between;
-  /* Ensures even spacing */
   align-items: center;
-  /* Aligns items vertically */
   border: 1px solid #ddd;
   border-radius: 4px;
   font-weight: bold;
   width: 100%;
-  /* Ensures full width */
   padding: 0 8px;
 }
 
 .stat-title {
   flex-grow: 1;
-  /* Takes available space */
   font-weight: bold;
   display: flex;
   align-items: center;
@@ -787,9 +754,7 @@ ul, li{
 
 .stat-value {
   min-width: 80px;
-  /* Ensures the values align properly */
   text-align: right;
-  /* Right aligns numbers */
   font-size: 1.1rem;
   color: #333;
   margin-top: 20px;
@@ -857,6 +822,12 @@ table {
   border: 1px solid #ccc ;
 }
 
+.table-description {
+  max-width: 200px;   
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 .table tbody tr:hover {
   background-color: var(--light-background);

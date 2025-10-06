@@ -27,8 +27,8 @@ export const AllDrivers = () => {
     const [totalRecords, setTotalRecords] = useState(0);
     const [allCities, setAllCities] = useState([]);
     const userData = JSON.parse(localStorage.getItem("userData"));
-    const moduleId = getModuleId("driver"); // 🔹 dynamic module ID
-    const token = getToken();               // 🔹 dynamic token
+    const moduleId = getModuleId("driver"); 
+    const token = getToken();          
     let permissions = [];
 
     if (Array.isArray(userData?.employeeRole)) {
@@ -99,7 +99,7 @@ export const AllDrivers = () => {
         try {
             const res = await axios.delete(`${API_BASE_URL}/deleteDriverProfile/${driverToDelete.id}`, {
                 headers: { Authorization: `Bearer ${token}` },
-                params: { module_id: moduleId }, // 🔹 dynamic module_id
+                params: { module_id: moduleId }, 
             });
 
             if (res.status === 200) {
@@ -179,7 +179,7 @@ export const AllDrivers = () => {
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (actionMenuRef.current && !actionMenuRef.current.contains(event.target)) {
-                setShowActions(null); // Close menu if clicked outside
+                setShowActions(null); 
             }
         };
 
@@ -291,7 +291,7 @@ export const AllDrivers = () => {
                                         <td>{driver.updatedAt ? new Date(driver.updatedAt).toLocaleDateString() : 'NA'}</td>
                                         <td className="action">
                                             {permissions.length === 0 ? (
-                                                <span>-</span> // Show hyphen if no permissions at all
+                                                <span>-</span> 
                                             ) : (
                                                 <>
                                                     <span

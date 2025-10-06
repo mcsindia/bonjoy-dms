@@ -191,7 +191,7 @@ export const CompanyModuleList = () => {
                         <td>{module.moduleName}</td>
                         <td>{module.parentMenuName || '—'}</td>
                         <td>{module.childMenuName || '—'}</td>
-                        <td>{stripHtmlTags(module.description) || 'NA'}</td>
+                        <td className='table-description'>{stripHtmlTags(module.description) || 'NA'}</td>
                         <td>{module.moduleUrl || '—'}</td>
                         <td>
                           {permissions.includes("edit") || permissions.includes("delete") ? (

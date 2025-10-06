@@ -115,7 +115,7 @@ export const PaymentRefundIssuesList = () => {
                                     <td>{issue.reported_at}</td>
                                     <td>₹{issue.refund_amount.toFixed(2)}</td>
                                     <td>{issue.payment_method}</td>
-                                    <td>{issue.issue_description}</td>
+                                    <td className='table-description'>{issue.issue_description}</td>
                                     <td>{issue.support_status}</td>
                                     <td>{issue.resolved_at || 'N/A'}</td>
                                     <td>

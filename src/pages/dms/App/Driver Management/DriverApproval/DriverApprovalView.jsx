@@ -127,10 +127,11 @@ export const DriverApprovalView = () => {
         }
     };
 
-    const handleRemarkAction = (doc, docName, type) => {
-        setSelectedResubmitDoc({ ...doc, type }); // type 'driver' | 'vehicle' | 'bank'
-        setShowResubmitModal(true);
-    };
+   const handleRemarkAction = (doc, docName, type) => {
+    console.log("Remark on Document ID:", doc.id, "| Type:", type);
+    setSelectedResubmitDoc({ ...doc, type });
+    setShowResubmitModal(true);
+};
 
     const getActionsByStatus = (status, docName, doc, type = 'driver') => {
         const actions = [

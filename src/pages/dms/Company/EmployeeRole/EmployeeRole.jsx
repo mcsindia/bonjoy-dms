@@ -205,7 +205,7 @@ export const EmployeeRole = () => {
                       <tr key={role.id}>
                         <td>{index + 1}</td>
                         <td>{role.role}</td>
-                        <td>{stripHtmlTags(role.responsibility)}</td>
+                        <td className='table-description'>{stripHtmlTags(role.responsibility)}</td>
                         <td>{new Date(role.createdAt).toLocaleString()}</td>
                         <td>{new Date(role.updatedAt).toLocaleString()}</td>
                         <td>

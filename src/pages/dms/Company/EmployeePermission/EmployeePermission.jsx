@@ -180,7 +180,7 @@ export const EmployeePermission = () => {
                   <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
                   <td>{permission.module?.moduleName || 'N/A'}</td>
                   <td>{permission.permission_name}</td>
-                  <td>{stripHtmlTags(permission.description)}</td>
+                  <td className='table-description'>{stripHtmlTags(permission.description)}</td>
                   <td>{new Date(permission.createdAt).toLocaleString()}</td>
                   <td>{new Date(permission.updatedAt).toLocaleString()}</td>
                   <td>
@@ -205,8 +205,6 @@ export const EmployeePermission = () => {
                         onClick={() => handleDelete(permission.id)}
                       />
                     )}
-
-                    {/* If no actions allowed → show hyphen */}
                     {!allowedPermissions.includes("view") &&
                       !allowedPermissions.includes("edit") &&
                       !allowedPermissions.includes("delete") && (

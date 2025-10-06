@@ -96,7 +96,7 @@ export const ComplaintsResolutionList = () => {
                   <td>{complaint.against_id}</td>
                   <td>{complaint.against_type}</td>
                   <td>{complaint.complaint_category}</td>
-                  <td>{complaint.complaint_description}</td>
+                  <td className='table-description'>{complaint.complaint_description}</td>
                   <td>{complaint.filed_at}</td>
                   <td>{complaint.support_agent_id}</td>
                   <td>{complaint.resolution_status}</td>

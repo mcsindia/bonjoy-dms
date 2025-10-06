@@ -10,45 +10,64 @@ import blog3_img from '../../../../assets/images/blog3-img.avif'
 export const BlogList = () => {
   const navigate = useNavigate();
   const [itemsPerPage, setItemsPerPage] = useState(10);
+
   const initialBlogs = [
-  {
-    id: 1,
-    title: 'Top Safety Tips for Riders and Drivers',
-    content: 'Explore essential safety practices for both riders and drivers to ensure a secure trip every time.',
-    author_id: 1,
-    publish_date: '2025-05-10',
-    status: 'Published',
-    image: blog1_img,
-  },
-  {
-    id: 2,
-    title: 'How to Maximize Your Earnings as a Driver',
-    content: 'Learn the best strategies to boost your income while driving with our platform.',
-    author_id: 2,
-    publish_date: '2025-04-20',
-    status: 'Draft',
-    image: blog2_img,
-  },
-  {
-    id: 3,
-    title: 'What’s New in the Ride-Sharing App: May 2025 Update',
-    content: 'Check out the latest features and improvements in our app to enhance your ride experience.',
-    author_id: 3,
-    publish_date: '2025-05-01',
-    status: 'Published',
-    image: blog3_img,
-  },
-];
+    {
+      id: 1,
+      title: 'Top Safety Tips for Riders and Drivers',
+      content: 'Explore essential safety practices for both riders and drivers to ensure a secure trip every time.',
+      author_id: 1,
+      publish_date: '2025-05-10',
+      status: 'Published',
+      image: blog1_img,
+    },
+    {
+      id: 2,
+      title: 'How to Maximize Your Earnings as a Driver',
+      content: 'Learn the best strategies to boost your income while driving with our platform.',
+      author_id: 2,
+      publish_date: '2025-04-20',
+      status: 'Draft',
+      image: blog2_img,
+    },
+    {
+      id: 3,
+      title: 'What’s New in the Ride-Sharing App: May 2025 Update',
+      content: 'Check out the latest features and improvements in our app to enhance your ride experience.',
+      author_id: 3,
+      publish_date: '2025-05-01',
+      status: 'Published',
+      image: blog3_img,
+    },
+  ];
 
   const [blogs, setBlogs] = useState(initialBlogs);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
+  const userData = JSON.parse(localStorage.getItem("userData"));
+  let permissions = [];
+
+  if (Array.isArray(userData?.employeeRole)) {
+    for (const role of userData.employeeRole) {
+      for (const child of role.childMenus || []) {
+        for (const mod of child.modules || []) {
+          if (mod.moduleUrl?.toLowerCase() === "blog") {
+            permissions = mod.permission
+              ?.toLowerCase()
+              .split(',')
+              .map(p => p.trim()) || [];
+          }
+        }
+      }
+    }
+  }
+
   // Search Functionality
   const handleSearch = (e) => setSearch(e.target.value);
 
-  // Filtered Blogs
+  // Filter Blogs
   const filteredBlogs = blogs.filter((item) => {
     const matchesSearch = item.title.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = filterStatus ? item.status === filterStatus : true;
@@ -80,7 +99,7 @@ export const BlogList = () => {
         {/* Header Options */}
         <div className="dms-pages-header sticky-header ">
           <h3>Blog List</h3>
-         <div className="export-import-container">
+          <div className="export-import-container">
             <DropdownButton variant="primary" title={<><FaFileExport /> Export</>} className="me-2">
               <Dropdown.Item><FaFileExcel className="icon-green" /> Export to Excel</Dropdown.Item>
               <Dropdown.Item><FaFilePdf className="icon-red" /> Export to PDF</Dropdown.Item>
@@ -89,9 +108,11 @@ export const BlogList = () => {
               <Dropdown.Item><FaFileExcel className="icon-green" /> Import from Excel</Dropdown.Item>
               <Dropdown.Item><FaFilePdf className="icon-red" /> Import from PDF</Dropdown.Item>
             </DropdownButton>
-            <Button variant="primary" onClick={() => navigate('/dms/blog/add')}>
-              <FaPlus /> Add Blog
-            </Button>
+            {permissions.includes("add") && (
+              <Button variant="primary" onClick={() => navigate('/dms/blog/add')}>
+                <FaPlus /> Add Blog
+              </Button>
+            )}
           </div>
         </div>
 
@@ -149,9 +170,27 @@ export const BlogList = () => {
                     <td>{item.publish_date}</td>
                     <td>{item.status}</td>
                     <td>
-                      <FaEye title="View" className="icon-blue me-2" onClick={() => navigate('/dms/blog/view', { state: { blog: item } })} />
-                      <FaEdit title="Edit" className="icon-green me-2" onClick={() => handleEdit(item)} />
-                      <FaTrash title="Delete" className="icon-red" onClick={() => handleDelete(item.id)} />
+                      {permissions.includes("view") && (
+                        <FaEye
+                          title="View"
+                          className="icon-blue me-2"
+                          onClick={() => navigate('/dms/blog/view', { state: { blog: item } })}
+                        />
+                      )}
+                      {permissions.includes("edit") && (
+                        <FaEdit
+                          title="Edit"
+                          className="icon-green me-2"
+                          onClick={() => handleEdit(item)}
+                        />
+                      )}
+                      {permissions.includes("delete") && (
+                        <FaTrash
+                          title="Delete"
+                          className="icon-red"
+                          onClick={() => handleDelete(item.id)}
+                        />
+                      )}
                     </td>
                   </tr>
                 ))
@@ -166,41 +205,41 @@ export const BlogList = () => {
 
         {/* Pagination */}
         <div className="pagination-container">
-                     <Pagination className="mb-0">
-                       <Pagination.Prev
-                         onClick={() => handlePageChange(currentPage - 1)}
-                         disabled={currentPage === 1}
-                       />
-                       {[...Array(totalPages)].map((_, index) => (
-                         <Pagination.Item
-                           key={index + 1}
-                           active={index + 1 === currentPage}
-                           onClick={() => handlePageChange(index + 1)}
-                         >
-                           {index + 1}
-                         </Pagination.Item>
-                       ))}
-                       <Pagination.Next
-                         onClick={() => handlePageChange(currentPage + 1)}
-                         disabled={currentPage === totalPages}
-                       />
-                     </Pagination>
-       
-                     <Form.Select
-                       value={itemsPerPage}
-                       onChange={(e) => {
-                         setItemsPerPage(Number(e.target.value));
-                         setCurrentPage(1);
-                       }}
-                       className='pagination-option w-auto'
-                     >
-                       <option value="5">Show 5</option>
-                       <option value="10">Show 10</option>
-                       <option value="20">Show 20</option>
-                       <option value="30">Show 30</option>
-                       <option value="50">Show 50</option>
-                     </Form.Select>
-                   </div>
+          <Pagination className="mb-0">
+            <Pagination.Prev
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+            />
+            {[...Array(totalPages)].map((_, index) => (
+              <Pagination.Item
+                key={index + 1}
+                active={index + 1 === currentPage}
+                onClick={() => handlePageChange(index + 1)}
+              >
+                {index + 1}
+              </Pagination.Item>
+            ))}
+            <Pagination.Next
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            />
+          </Pagination>
+
+          <Form.Select
+            value={itemsPerPage}
+            onChange={(e) => {
+              setItemsPerPage(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+            className='pagination-option w-auto'
+          >
+            <option value="5">Show 5</option>
+            <option value="10">Show 10</option>
+            <option value="20">Show 20</option>
+            <option value="30">Show 30</option>
+            <option value="50">Show 50</option>
+          </Form.Select>
+        </div>
       </div>
     </AdminLayout>
   );

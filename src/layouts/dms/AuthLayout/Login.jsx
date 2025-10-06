@@ -74,8 +74,6 @@ export const Login = () => {
 
       const user = response?.data?.user;
       if (user && user.token) {
-        // Flatten all module IDs
-        // 🔑 saare modules ko ek flat array bana lo
         const allModules = user.employeeRole.flatMap(role =>
           role.childMenus.flatMap(child => child.modules)
         );
@@ -83,11 +81,13 @@ export const Login = () => {
         const userData = {
           ...user,
           token: user.token,
-          modules: allModules,   // ✅ ab id, url, permission sab save ho jayega
+          modules: allModules,
           expiryTime: Date.now() + 5 * 60 * 60 * 1000,
         };
 
         localStorage.setItem("userData", JSON.stringify(userData));
+        console.log("expiryTime:", new Date(userData.expiryTime).toLocaleTimeString());
+        console.log("currentTime:", new Date().toLocaleTimeString());
 
         // navigation logic
         const userType = user?.userType;

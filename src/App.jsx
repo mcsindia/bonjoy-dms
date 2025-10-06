@@ -11,6 +11,10 @@ function App() {
     return (
         <BrowserRouter>
             <Routes>
+                {/* Authentication */}
+                <Route path='/dms' element={<Login />} />
+                <Route path='/dms/forget-password' element={<ForgetPassword />} />
+                <Route path='/dms/new-password' element={<NewPassword />} />
                 <Route
                     path="/*"
                     element={
@@ -19,10 +23,6 @@ function App() {
                             </ProtectedRoute>
                     }
                 />
-                {/* Authentication */}
-                <Route path='/dms' element={<Login />} />
-                <Route path='/dms/forget-password' element={<ForgetPassword />} />
-                <Route path='/dms/new-password' element={<NewPassword />} />
             </Routes>
         </BrowserRouter>
     );

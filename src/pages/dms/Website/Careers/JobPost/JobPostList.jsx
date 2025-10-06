@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import {
-    Button, Table, InputGroup, Form, Dropdown, DropdownButton, Pagination, Modal
+  Button, Table, InputGroup, Form, Dropdown, DropdownButton, Pagination, Modal
 } from 'react-bootstrap';
-import { FaEdit, FaTrash, FaFileExport, FaPlus, FaFileExcel, FaFilePdf, FaEye } from 'react-icons/fa';
+import {
+  FaEdit, FaTrash, FaFileExport, FaPlus,
+  FaFileExcel, FaFilePdf, FaEye
+} from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from '../../../../../layouts/dms/AdminLayout/AdminLayout';
 
@@ -154,173 +157,229 @@ const dummyCareers = [
 ];
 
 export const JobPostList = () => {
-    const navigate = useNavigate();
-    const [careers, setCareers] = useState(dummyCareers);
-    const [search, setSearch] = useState('');
-    const [statusFilter, setStatusFilter] = useState('All');
-    const [currentPage, setCurrentPage] = useState(1);
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [careerToDelete, setCareerToDelete] = useState(null);
-     const [itemsPerPage, setItemsPerPage] = useState(10);
+  const navigate = useNavigate();
+  const [careers, setCareers] = useState(dummyCareers);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [careerToDelete, setCareerToDelete] = useState(null);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
-    const filteredCareers = careers.filter(career => {
-        const matchesSearch =
-            career.title.toLowerCase().includes(search.toLowerCase()) ||
-            career.department.toLowerCase().includes(search.toLowerCase());
-        const matchesStatus =
-            statusFilter === 'All' || career.status === statusFilter;
-        return matchesSearch && matchesStatus;
-    });
+  // ✅ Permission extraction
+  const userData = JSON.parse(localStorage.getItem('userData'));
+  let permissions = [];
 
-    const totalPages = Math.ceil(filteredCareers.length / itemsPerPage);
-    const paginatedCareers = filteredCareers.slice(
-        (currentPage - 1) * itemsPerPage,
-        currentPage * itemsPerPage
-    );
+  if (Array.isArray(userData?.employeeRole)) {
+    for (const role of userData.employeeRole) {
+      for (const child of role.childMenus || []) {
+        for (const mod of child.modules || []) {
+          if (mod.moduleUrl?.toLowerCase() === 'job-post') {
+            permissions =
+              mod.permission?.toLowerCase().split(',').map((p) => p.trim()) || [];
+          }
+        }
+      }
+    }
+  }
 
-    const handleDelete = (career) => {
-        setCareerToDelete(career);
-        setShowDeleteModal(true);
-    };
+  const filteredCareers = careers.filter(career => {
+    const matchesSearch =
+      career.title.toLowerCase().includes(search.toLowerCase()) ||
+      career.department.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus =
+      statusFilter === 'All' || career.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
-    const confirmDelete = () => {
-        setCareers(prev => prev.filter(c => c.id !== careerToDelete.id));
-        setShowDeleteModal(false);
-        setCareerToDelete(null);
-    };
+  const totalPages = Math.ceil(filteredCareers.length / itemsPerPage);
+  const paginatedCareers = filteredCareers.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
-    const handleExport = (format) => {
-        alert(`Exporting careers to ${format.toUpperCase()} (simulate only).`);
-    };
+  const handleDelete = (career) => {
+    setCareerToDelete(career);
+    setShowDeleteModal(true);
+  };
 
-    return (
-        <AdminLayout>
-            <div className="dms-pages-header sticky-header">
-                <h3 className="mb-0">Career List</h3>
-                <div className="export-import-container">
-                    <DropdownButton title={<><FaFileExport /> Export</>} className="me-2">
-                        <Dropdown.Item onClick={() => handleExport('excel')}>
-                            <FaFileExcel className="icon-green" /> Export to Excel
-                        </Dropdown.Item>
-                        <Dropdown.Item onClick={() => handleExport('pdf')}>
-                            <FaFilePdf className="icon-red" /> Export to PDF
-                        </Dropdown.Item>
-                    </DropdownButton>
-                    <DropdownButton title={<><FaFileExcel /> Import</>} className="me-2">
-                        <Dropdown.Item onClick={() => handleImport('excel')}><FaFileExcel className="icon-green" /> Import from Excel</Dropdown.Item>
-                        <Dropdown.Item ><FaFilePdf className="icon-red" />  Import from PDF</Dropdown.Item>
-                    </DropdownButton>
-                    <Button onClick={() => navigate('/dms/job-post/add')}>
-                        <FaPlus /> Add Career
-                    </Button>
-                </div>
-            </div>
+  const confirmDelete = () => {
+    setCareers(prev => prev.filter(c => c.id !== careerToDelete.id));
+    setShowDeleteModal(false);
+    setCareerToDelete(null);
+  };
 
-            <div className="filter-search-container">
-                <DropdownButton title={`Status: ${statusFilter}`} onSelect={(val) => { setStatusFilter(val); setCurrentPage(1); }}>
-                    <Dropdown.Item eventKey="All">All</Dropdown.Item>
-                    <Dropdown.Item eventKey="Open">Open</Dropdown.Item>
-                    <Dropdown.Item eventKey="Closed">Closed</Dropdown.Item>
-                </DropdownButton>
+  const handleExport = (format) => {
+    alert(`Exporting careers to ${format.toUpperCase()} (simulate only).`);
+  };
 
-                <InputGroup className="dms-custom-width">
-                    <Form.Control
-                        placeholder="Search by Job Title or Department"
-                        value={search}
-                        onChange={(e) => {
-                            setSearch(e.target.value);
-                            setCurrentPage(1);
-                        }}
-                    />
-                </InputGroup>
-            </div>
+  const handleImport = (format) => {
+    alert(`Importing careers from ${format.toUpperCase()} (simulate only).`);
+  };
 
-            <div className="dms-table-container">
-                <Table striped bordered hover responsive>
-                    <thead>
-                        <tr>
-                            <th>S.No</th>
-                            <th>Job Title</th>
-                            <th>Department</th>
-                            <th>Location</th>
-                            <th>Status</th>
-                            <th>No. of Positions</th>
-                            <th>Posted On</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {paginatedCareers.length > 0 ? paginatedCareers.map((career, index) => (
-                            <tr key={career.id}>
-                                <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
-                                <td>{career.title}</td>
-                                <td>{career.department}</td>
-                                <td>{career.location}</td>
-                                <td>{career.status}</td>
-                                <td>{career.positions}</td>
-                                <td>{new Date(career.createdAt).toLocaleDateString()}</td>
-                                <td>
-                                    <FaEye className="icon-blue me-2" onClick={() => navigate("/dms/job-post/view", { state: { career } })} />
-                                    <FaEdit className="icon-green me-2" onClick={() => navigate("/dms/job-post/edit", { state: { career } })} />
-                                    <FaTrash className="icon-red" onClick={() => handleDelete(career)} />
-                                </td>
-                            </tr>
-                        )) : (
-                            <tr><td colSpan="8" className="text-center">No careers found.</td></tr>
-                        )}
-                    </tbody>
-                </Table>
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
 
-                 <div className="pagination-container">
-                             <Pagination className="mb-0">
-                               <Pagination.Prev
-                                 onClick={() => handlePageChange(currentPage - 1)}
-                                 disabled={currentPage === 1}
-                               />
-                               {[...Array(totalPages)].map((_, index) => (
-                                 <Pagination.Item
-                                   key={index + 1}
-                                   active={index + 1 === currentPage}
-                                   onClick={() => handlePageChange(index + 1)}
-                                 >
-                                   {index + 1}
-                                 </Pagination.Item>
-                               ))}
-                               <Pagination.Next
-                                 onClick={() => handlePageChange(currentPage + 1)}
-                                 disabled={currentPage === totalPages}
-                               />
-                             </Pagination>
-               
-                             <Form.Select
-                               value={itemsPerPage}
-                               onChange={(e) => {
-                                 setItemsPerPage(Number(e.target.value));
-                                 setCurrentPage(1);
-                               }}
-                               className='pagination-option w-auto'
-                             >
-                               <option value="5">Show 5</option>
-                               <option value="10">Show 10</option>
-                               <option value="20">Show 20</option>
-                               <option value="30">Show 30</option>
-                               <option value="50">Show 50</option>
-                             </Form.Select>
-                           </div>
-            </div>
+  return (
+    <AdminLayout>
+      <div className="dms-pages-header sticky-header">
+        <h3 className="mb-0">Career List</h3>
+        <div className="export-import-container">
+            <DropdownButton title={<><FaFileExport /> Export</>} className="me-2">
+              <Dropdown.Item onClick={() => handleExport('excel')}>
+                <FaFileExcel className="icon-green" /> Export to Excel
+              </Dropdown.Item>
+              <Dropdown.Item onClick={() => handleExport('pdf')}>
+                <FaFilePdf className="icon-red" /> Export to PDF
+              </Dropdown.Item>
+            </DropdownButton>
+            <DropdownButton title={<><FaFileExcel /> Import</>} className="me-2">
+              <Dropdown.Item onClick={() => handleImport('excel')}>
+                <FaFileExcel className="icon-green" /> Import from Excel
+              </Dropdown.Item>
+              <Dropdown.Item>
+                <FaFilePdf className="icon-red" /> Import from PDF
+              </Dropdown.Item>
+            </DropdownButton>
 
-            <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
-                <Modal.Header closeButton>
-                    <Modal.Title>Confirm Deletion</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    Are you sure you want to delete <strong>{careerToDelete?.title}</strong>?
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
-                    <Button variant="danger" onClick={confirmDelete}>Delete</Button>
-                </Modal.Footer>
-            </Modal>
-        </AdminLayout>
-    );
+          {permissions.includes('add') && (
+            <Button onClick={() => navigate('/dms/job-post/add')}>
+              <FaPlus /> Add Career
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <div className="filter-search-container">
+        <DropdownButton
+          title={`Status: ${statusFilter}`}
+          onSelect={(val) => { setStatusFilter(val); setCurrentPage(1); }}
+        >
+          <Dropdown.Item eventKey="All">All</Dropdown.Item>
+          <Dropdown.Item eventKey="Open">Open</Dropdown.Item>
+          <Dropdown.Item eventKey="Closed">Closed</Dropdown.Item>
+        </DropdownButton>
+
+        <InputGroup className="dms-custom-width">
+          <Form.Control
+            placeholder="Search by Job Title or Department"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setCurrentPage(1);
+            }}
+          />
+        </InputGroup>
+      </div>
+
+      <div className="dms-table-container">
+        <Table striped bordered hover responsive>
+          <thead>
+            <tr>
+              <th>S.No</th>
+              <th>Job Title</th>
+              <th>Department</th>
+              <th>Location</th>
+              <th>Status</th>
+              <th>No. of Positions</th>
+              <th>Posted On</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {paginatedCareers.length > 0 ? paginatedCareers.map((career, index) => (
+              <tr key={career.id}>
+                <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                <td>{career.title}</td>
+                <td>{career.department}</td>
+                <td>{career.location}</td>
+                <td>{career.status}</td>
+                <td>{career.positions}</td>
+                <td>{new Date(career.createdAt).toLocaleDateString()}</td>
+                {(permissions.includes('view') ||
+                  permissions.includes('edit') ||
+                  permissions.includes('delete')) && (
+                  <td>
+                    {permissions.includes('view') && (
+                      <FaEye
+                        className="icon-blue me-2"
+                        onClick={() => navigate("/dms/job-post/view", { state: { career } })}
+                      />
+                    )}
+                    {permissions.includes('edit') && (
+                      <FaEdit
+                        className="icon-green me-2"
+                        onClick={() => navigate("/dms/job-post/edit", { state: { career } })}
+                      />
+                    )}
+                    {permissions.includes('delete') && (
+                      <FaTrash
+                        className="icon-red"
+                        onClick={() => handleDelete(career)}
+                      />
+                    )}
+                  </td>
+                )}
+              </tr>
+            )) : (
+              <tr><td colSpan="8" className="text-center">No careers found.</td></tr>
+            )}
+          </tbody>
+        </Table>
+
+        <div className="pagination-container">
+          <Pagination className="mb-0">
+            <Pagination.Prev
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+            />
+            {[...Array(totalPages)].map((_, index) => (
+              <Pagination.Item
+                key={index + 1}
+                active={index + 1 === currentPage}
+                onClick={() => handlePageChange(index + 1)}
+              >
+                {index + 1}
+              </Pagination.Item>
+            ))}
+            <Pagination.Next
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+            />
+          </Pagination>
+
+          <Form.Select
+            value={itemsPerPage}
+            onChange={(e) => {
+              setItemsPerPage(Number(e.target.value));
+              setCurrentPage(1);
+            }}
+            className='pagination-option w-auto'
+          >
+            <option value="5">Show 5</option>
+            <option value="10">Show 10</option>
+            <option value="20">Show 20</option>
+            <option value="30">Show 30</option>
+            <option value="50">Show 50</option>
+          </Form.Select>
+        </div>
+      </div>
+
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Confirm Deletion</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Are you sure you want to delete <strong>{careerToDelete?.title}</strong>?
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>Cancel</Button>
+          <Button variant="danger" onClick={confirmDelete}>Delete</Button>
+        </Modal.Footer>
+      </Modal>
+    </AdminLayout>
+  );
 };

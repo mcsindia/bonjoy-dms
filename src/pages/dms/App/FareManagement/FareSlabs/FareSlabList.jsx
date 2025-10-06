@@ -41,8 +41,7 @@ export const FareSlabList = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedSlab, setSelectedSlab] = useState(null);
 
-  // 🔹 Mock permissions like RideFareSetting
-  let permissions = ["add", "edit", "delete"]; // ✅ Replace with real role logic
+  let permissions = ["add", "edit", "delete"]; 
 
   // Pagination logic
   const totalPages = Math.ceil(fareSlabs.length / itemsPerPage);

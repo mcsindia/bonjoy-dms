@@ -141,9 +141,9 @@ export const RideFareSetting = () => {
               <th>Night Fare /km</th>
               <th>Night Time</th>
               <th>Waiting Charge</th>
-              <th>Grace Period (min)</th> {/* NEW */}
-              <th>Cancel Fee (Normal)</th> {/* NEW */}
-              <th>Cancel Fee (Emergency Cap)</th> {/* NEW */}
+              <th>Grace Period (min)</th> 
+              <th>Cancel Fee (Normal)</th>
+              <th>Cancel Fee (Emergency Cap)</th> 
               <th>Emergency Bonus</th>
               <th>First Ride Bonus</th>
               <th>Effective From</th>

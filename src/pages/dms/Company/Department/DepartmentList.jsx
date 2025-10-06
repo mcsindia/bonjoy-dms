@@ -186,7 +186,7 @@ export const DepartmentList = () => {
                           <span className="badge badge-warning">Has Related Designations</span>
                         )}
                       </td>
-                      <td>{stripHtmlTags(department.description)}</td>
+                      <td className='table-description'>{stripHtmlTags(department.description)}</td>
                       <td>{new Date(department.createdAt).toLocaleString()}</td>
                       <td>{new Date(department.updatedAt).toLocaleString()}</td>
                       <td className="actions">

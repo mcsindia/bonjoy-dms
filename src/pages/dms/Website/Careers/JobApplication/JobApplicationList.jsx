@@ -1,7 +1,20 @@
 import React, { useState } from 'react';
-import { Table,  InputGroup, Form, Pagination, Dropdown, DropdownButton } from 'react-bootstrap';
+import {
+  Table,
+  InputGroup,
+  Form,
+  Pagination,
+  Dropdown,
+  DropdownButton,
+} from 'react-bootstrap';
 import { AdminLayout } from '../../../../../layouts/dms/AdminLayout/AdminLayout';
-import { FaEye, FaTrash, FaFileExcel, FaFilePdf, FaFileExport } from 'react-icons/fa';
+import {
+  FaEye,
+  FaTrash,
+  FaFileExcel,
+  FaFilePdf,
+  FaFileExport,
+} from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
 export const JobApplicationList = () => {
@@ -47,14 +60,39 @@ export const JobApplicationList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
+  // ✅ Permission extraction
+  const userData = JSON.parse(localStorage.getItem('userData'));
+  let permissions = [];
+
+  if (Array.isArray(userData?.employeeRole)) {
+    for (const role of userData.employeeRole) {
+      for (const child of role.childMenus || []) {
+        for (const mod of child.modules || []) {
+          if (mod.moduleUrl?.toLowerCase() === 'job-application') {
+            permissions =
+              mod.permission?.toLowerCase().split(',').map((p) => p.trim()) ||
+              [];
+          }
+        }
+      }
+    }
+  }
+
   const handleDelete = (id) => {
-    const updated = applications.filter(app => app.id !== id);
+    const updated = applications.filter((app) => app.id !== id);
     setApplications(updated);
   };
 
-  const filteredApps = applications.filter(app =>
-    app.fullName.toLowerCase().includes(search.toLowerCase()) ||
-    app.email.toLowerCase().includes(search.toLowerCase())
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
+
+  const filteredApps = applications.filter(
+    (app) =>
+      app.fullName.toLowerCase().includes(search.toLowerCase()) ||
+      app.email.toLowerCase().includes(search.toLowerCase())
   );
 
   const indexOfLast = currentPage * itemsPerPage;
@@ -68,9 +106,20 @@ export const JobApplicationList = () => {
         <div className="dms-pages-header sticky-header ">
           <h3>Job Applications</h3>
           <div className="export-import-container">
-            <DropdownButton title={<><FaFileExport /> Export</>} variant="primary">
-              <Dropdown.Item><FaFileExcel className="icon-green" /> Excel</Dropdown.Item>
-              <Dropdown.Item><FaFilePdf className="icon-red" /> PDF</Dropdown.Item>
+            <DropdownButton
+              title={
+                <>
+                  <FaFileExport /> Export
+                </>
+              }
+              variant="primary"
+            >
+              <Dropdown.Item>
+                <FaFileExcel className="icon-green" /> Excel
+              </Dropdown.Item>
+              <Dropdown.Item>
+                <FaFilePdf className="icon-red" /> PDF
+              </Dropdown.Item>
             </DropdownButton>
           </div>
         </div>
@@ -100,28 +149,47 @@ export const JobApplicationList = () => {
             </tr>
           </thead>
           <tbody>
-            {currentApps.length > 0 ? currentApps.map(app => (
-              <tr key={app.id}>
-                <td>{app.id}</td>
-                <td>{app.fullName}</td>
-                <td>{app.email}</td>
-                <td>{app.phone}</td>
-                <td>{app.experience}</td>
-                <td>{app.expectedSalary}</td>
-                <td>{app.createdAt}</td>
-                <td>{app.status}</td>
-                <td>
-                  <FaEye
-                    title="View"
-                    className="me-2 icon-blue"
-                    onClick={() => navigate('/dms/job-application/view', { state: { application: app } })}
-                  />
-                  <FaTrash title="Delete" className="icon-red" onClick={() => handleDelete(app.id)} />
-                </td>
-              </tr>
-            )) : (
+            {currentApps.length > 0 ? (
+              currentApps.map((app) => (
+                <tr key={app.id}>
+                  <td>{app.id}</td>
+                  <td>{app.fullName}</td>
+                  <td>{app.email}</td>
+                  <td>{app.phone}</td>
+                  <td>{app.experience}</td>
+                  <td>{app.expectedSalary}</td>
+                  <td>{app.createdAt}</td>
+                  <td>{app.status}</td>
+                  {(permissions.includes('view') ||
+                    permissions.includes('delete')) && (
+                      <td>
+                        {permissions.includes('view') && (
+                          <FaEye
+                            title="View"
+                            className="me-2 icon-blue"
+                            onClick={() =>
+                              navigate('/dms/job-application/view', {
+                                state: { application: app },
+                              })
+                            }
+                          />
+                        )}
+                        {permissions.includes('delete') && (
+                          <FaTrash
+                            title="Delete"
+                            className="icon-red"
+                            onClick={() => handleDelete(app.id)}
+                          />
+                        )}
+                      </td>
+                    )}
+                </tr>
+              ))
+            ) : (
               <tr>
-                <td colSpan="9" className="text-center">No applications found.</td>
+                <td colSpan="9" className="text-center">
+                  No applications found.
+                </td>
               </tr>
             )}
           </tbody>
@@ -154,7 +222,7 @@ export const JobApplicationList = () => {
               setItemsPerPage(Number(e.target.value));
               setCurrentPage(1);
             }}
-            className='pagination-option w-auto'
+            className="pagination-option w-auto"
           >
             <option value="5">Show 5</option>
             <option value="10">Show 10</option>

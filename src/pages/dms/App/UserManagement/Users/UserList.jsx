@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Button, Table, InputGroup, Form, Dropdown, DropdownButton, Pagination, Modal
+  Button, Table, InputGroup, Form, Dropdown, DropdownButton, Pagination
 } from 'react-bootstrap';
-import { FaEdit, FaTrash, FaFileExport, FaFileExcel, FaFilePdf, FaEye } from 'react-icons/fa';
+import { FaEdit, FaFileExport, FaFileExcel, FaFilePdf, FaEye } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from '../../../../../layouts/dms/AdminLayout/AdminLayout';
 import axios from "axios";
@@ -21,8 +21,6 @@ export const UserList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [userTypeFilter, setUserTypeFilter] = useState('Both');
   const [statusFilter, setStatusFilter] = useState('All');
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [userToDelete, setUserToDelete] = useState(null);
   const [totalRiders, setTotalRiders] = useState(0);
   const [totalDrivers, setTotalDrivers] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(10);

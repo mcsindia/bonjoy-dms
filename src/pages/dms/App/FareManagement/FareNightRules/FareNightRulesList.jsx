@@ -6,8 +6,6 @@ import {
   Pagination,
   Modal,
   InputGroup,
-  Dropdown,
-  DropdownButton,
 } from "react-bootstrap";
 import { FaEdit, FaTrash, FaPlus } from "react-icons/fa";
 import { AdminLayout } from "../../../../../layouts/dms/AdminLayout/AdminLayout";

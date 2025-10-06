@@ -239,7 +239,7 @@ export const DesignationList = () => {
                       <td>{idx + 1}</td>
                       <td>{designation.designation}</td>
                       <td>{designation.departmentId?.departmentName || '-'}</td>
-                      <td>{stripHtmlTags(designation.description)}</td>
+                      <td className='table-description'>{stripHtmlTags(designation.description)}</td>
                       <td>{new Date(designation.createdAt).toLocaleString()}</td>
                       <td>{new Date(designation.updatedAt).toLocaleString()}</td>
                       <td className="actions">
