@@ -1,17 +1,17 @@
-import React, { useState } from "react";
-import { Button, Container, Form, Alert, Row, Col } from "react-bootstrap";
+import React, { useState, useEffect } from "react";
+import { Button, Container, Form, Alert, Row, Col, Spinner } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "../../../../../layouts/dms/AdminLayout/AdminLayout";
+import axios from "axios";
+import { getModuleId, getToken } from "../../../../../utils/authhelper";
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const FareDynamicRuleAdd = () => {
   const navigate = useNavigate();
 
-  // Dummy regions
-  const dummyRegions = [
-    { region_id: "Reg001", city: "Mumbai", state: "Maharashtra" },
-    { region_id: "Reg002", city: "Delhi", state: "Delhi" },
-    { region_id: "Reg003", city: "Bengaluru", state: "Karnataka" },
-  ];
+  const [regions, setRegions] = useState([]);
+  const [loadingRegions, setLoadingRegions] = useState(true);
 
   const [formData, setFormData] = useState({
     region_id: "",
@@ -25,12 +25,46 @@ export const FareDynamicRuleAdd = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // Fetch regions from API
+  useEffect(() => {
+    const fetchRegions = async () => {
+      try {
+        const token = getToken();
+        const moduleId = getModuleId("faredynamicrules"); // module_id = 84 for example
+
+        const response = await axios.get(`${API_BASE_URL}/getAllFareRegionSetting`, {
+          params: { module_id: moduleId },
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.data?.success) {
+          // Map API response to dropdown format
+          const regionOptions = response.data.data.models.map((r) => ({
+            region_id: r.id,
+            city: r.city,
+            state: r.state,
+          }));
+          setRegions(regionOptions);
+        } else {
+          setError("Failed to fetch regions.");
+        }
+      } catch (err) {
+        console.error("Error fetching regions:", err);
+        setError("Failed to fetch regions. Please try again later.");
+      } finally {
+        setLoadingRegions(false);
+      }
+    };
+
+    fetchRegions();
+  }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!formData.region_id || !formData.multiplier || !formData.start_time || !formData.end_time) {
@@ -38,28 +72,53 @@ export const FareDynamicRuleAdd = () => {
       return;
     }
 
-    setIsLoading(true);
-    setError("");
-    setSuccessMessage("");
+    try {
+      setIsLoading(true);
+      setError("");
 
-    // Simulate API delay
-    setTimeout(() => {
+      const token = getToken();
+      const moduleId = getModuleId("faredynamicrules");
+
+      const payload = {
+        regionId: formData.region_id,
+        rule_type: formData.rule_type,
+        multiplier: parseFloat(formData.multiplier),
+        start_time: formData.start_time,
+        end_time: formData.end_time,
+        module_id: moduleId,
+      };
+
+      const response = await axios.post(
+        `${API_BASE_URL}/createfareDynamicRule`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.data?.success) {
+        setSuccessMessage(response.data.message || "Dynamic rule added successfully!");
+        setFormData({
+          region_id: "",
+          rule_type: "peak",
+          multiplier: "",
+          start_time: "",
+          end_time: "",
+        });
+
+        setTimeout(() => navigate("/dms/faredynamicrules"), 2000);
+      } else {
+        setError(response.data?.message || "Failed to add dynamic rule.");
+      }
+    } catch (err) {
+      console.error("Error adding dynamic rule:", err);
+      setError("Failed to add dynamic rule. Please try again later.");
+    } finally {
       setIsLoading(false);
-      setSuccessMessage("Dynamic rule added successfully!");
-      console.log("Submitted Rule:", formData);
-
-      // Reset form
-      setFormData({
-        region_id: "",
-        rule_type: "peak",
-        multiplier: "",
-        start_time: "",
-        end_time: "",
-      });
-
-      // Navigate back after short delay
-      setTimeout(() => navigate("/dms/faredynamicrules"), 1500);
-    }, 1000);
+    }
   };
 
   return (
@@ -83,19 +142,23 @@ export const FareDynamicRuleAdd = () => {
               <Col md={6}>
                 <Form.Group className="dms-form-group">
                   <Form.Label>Region</Form.Label>
-                  <Form.Select
-                    name="region_id"
-                    value={formData.region_id}
-                    onChange={handleChange}
-                    required
-                  >
-                    <option value="">Select Region</option>
-                    {dummyRegions.map((r) => (
-                      <option key={r.region_id} value={r.region_id}>
-                        {r.city} ({r.state})
-                      </option>
-                    ))}
-                  </Form.Select>
+                  {loadingRegions ? (
+                    <div><Spinner animation="border" size="sm" /> Loading regions...</div>
+                  ) : (
+                    <Form.Select
+                      name="region_id"
+                      value={formData.region_id}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="">Select Region</option>
+                      {regions.map((r) => (
+                        <option key={r.region_id} value={r.region_id}>
+                          {r.city} ({r.state})
+                        </option>
+                      ))}
+                    </Form.Select>
+                  )}
                 </Form.Group>
               </Col>
 

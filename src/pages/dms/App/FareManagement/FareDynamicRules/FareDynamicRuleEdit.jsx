@@ -2,19 +2,17 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button, Container, Form, Alert, Row, Col } from "react-bootstrap";
 import { AdminLayout } from "../../../../../layouts/dms/AdminLayout/AdminLayout";
+import axios from "axios";
+import { getModuleId, getToken } from "../../../../../utils/authhelper";
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const FareDynamicRuleEdit = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { rule } = location.state || {}; 
+  const { rule } = location.state || {};
 
-  // Dummy regions
-  const dummyRegions = [
-    { region_id: "Reg001", city: "Mumbai", state: "Maharashtra" },
-    { region_id: "Reg002", city: "Delhi", state: "Delhi" },
-    { region_id: "Reg003", city: "Bengaluru", state: "Karnataka" },
-  ];
-
+  const [regions, setRegions] = useState([]);
   const [formData, setFormData] = useState({
     rule_id: "",
     region_id: "",
@@ -29,16 +27,35 @@ export const FareDynamicRuleEdit = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
 
+  // Fetch all regions
+  const fetchRegions = async () => {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/getAllFareRegionSetting`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+        params: { module_id: getModuleId("faredynamicrules") },
+      });
+      const data = response.data?.data?.models || [];
+      setRegions(data);
+    } catch (err) {
+      console.error("Error fetching regions:", err);
+      setRegions([]);
+    }
+  };
+
+  useEffect(() => {
+    fetchRegions();
+  }, []);
+
   // Prefill form on edit
   useEffect(() => {
     if (rule && !hasInitialized) {
       setFormData({
-        rule_id: rule.rule_id || "",
-        region_id: rule.region_id || "",
+        rule_id: rule.id || "",
+        region_id: rule.FareRegionSetting?.id || "",
         rule_type: rule.rule_type || "peak",
         multiplier: rule.multiplier || "",
-        start_time: rule.start_time || "",
-        end_time: rule.end_time || "",
+        start_time: rule.start_time ? rule.start_time.slice(0, 16) : "",
+        end_time: rule.end_time ? rule.end_time.slice(0, 16) : "",
       });
       setHasInitialized(true);
     }
@@ -49,27 +66,56 @@ export const FareDynamicRuleEdit = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!formData.region_id || !formData.multiplier || !formData.start_time || !formData.end_time) {
-      setError("Region, Multiplier, Start Time and End Time are required!");
+      setError("Region, Multiplier, Start Time, and End Time are required!");
       return;
     }
 
-    setIsLoading(true);
-    setError("");
-    setSuccess("");
+    try {
+      setIsLoading(true);
+      setError("");
+      setSuccess("");
 
-    // Simulate saving
-    setTimeout(() => {
+      const token = getToken();
+      const moduleId = getModuleId("faredynamicrules");
+
+      // Payload exactly like Postman
+      const payload = {
+        regionId: formData.region_id,
+        rule_type: formData.rule_type,
+        multiplier: parseFloat(formData.multiplier),
+        start_time: formData.start_time,
+        end_time: formData.end_time,
+        module_id: moduleId, // module id sent
+      };
+
+      const response = await axios.put(
+        `${API_BASE_URL}/updateFareDynamicRule/${formData.rule_id}`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.data?.success) {
+        setSuccess(response.data.message || "Dynamic rule updated successfully!");
+        setTimeout(() => navigate("/dms/faredynamicrules"), 1500);
+      } else {
+        setError(response.data?.message || "Failed to update dynamic rule.");
+      }
+    } catch (err) {
+      console.error("Error updating dynamic rule:", err);
+      const backendMsg = err.response?.data?.message;
+      setError(backendMsg || "Failed to update dynamic rule. Please try again.");
+    } finally {
       setIsLoading(false);
-      setSuccess("Dynamic rule updated successfully!");
-      console.log("Updated Rule:", formData);
-
-      // Navigate back after short delay
-      setTimeout(() => navigate("/dms/faredynamicrules"), 1500);
-    }, 1000);
+    }
   };
 
   return (
@@ -77,16 +123,8 @@ export const FareDynamicRuleEdit = () => {
       <Container className="dms-container">
         <h4>Edit Dynamic Rule</h4>
         <div className="dms-form-container">
-          {error && (
-            <Alert variant="danger" onClose={() => setError("")} dismissible>
-              {error}
-            </Alert>
-          )}
-          {success && (
-            <Alert variant="success" onClose={() => setSuccess("")} dismissible>
-              {success}
-            </Alert>
-          )}
+          {error && <Alert variant="danger" onClose={() => setError("")} dismissible>{error}</Alert>}
+          {success && <Alert variant="success" onClose={() => setSuccess("")} dismissible>{success}</Alert>}
 
           <Form onSubmit={handleSubmit}>
             <Row>
@@ -100,8 +138,8 @@ export const FareDynamicRuleEdit = () => {
                     required
                   >
                     <option value="">Select Region</option>
-                    {dummyRegions.map((r) => (
-                      <option key={r.region_id} value={r.region_id}>
+                    {regions.map((r) => (
+                      <option key={r.id} value={r.id}>
                         {r.city} ({r.state})
                       </option>
                     ))}
@@ -134,8 +172,8 @@ export const FareDynamicRuleEdit = () => {
                     name="multiplier"
                     value={formData.multiplier}
                     onChange={handleChange}
-                    placeholder="Enter multiplier (e.g. 1.2)"
                     step="0.01"
+                    placeholder="Enter multiplier"
                     required
                   />
                 </Form.Group>
@@ -174,10 +212,7 @@ export const FareDynamicRuleEdit = () => {
               <Button type="submit" className="me-2" disabled={isLoading}>
                 {isLoading ? "Saving..." : "Save Changes"}
               </Button>
-              <Button
-                variant="secondary"
-                onClick={() => navigate("/dms/faredynamicrules")}
-              >
+              <Button variant="secondary" onClick={() => navigate("/dms/faredynamicrules")}>
                 Cancel
               </Button>
             </div>

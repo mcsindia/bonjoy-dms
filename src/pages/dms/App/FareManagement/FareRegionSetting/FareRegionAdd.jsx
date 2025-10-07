@@ -13,14 +13,14 @@ export const FareRegionAdd = () => {
   const [formData, setFormData] = useState({
     city: "",
     state: "",
-    tier: "tier1",
+    tier: "",
     base_fare: "",
     per_km_fare: "",
     per_km_fare_night: "",
     waiting_charge_per_min: "",
-    fuel_type: "", // nullable
-    peak_multiplier: 1, // default 1
-    effective_from: "", // optional, default CURRENT_TIMESTAMP
+    fuel_type: "", 
+    peak_multiplier: "", 
+    effective_from: "", 
   });
 
   const [error, setError] = useState("");
@@ -41,9 +41,25 @@ export const FareRegionAdd = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.city || !formData.state || !formData.base_fare) {
-      setError("City, State, and Base Fare are required.");
-      return;
+    // Check that all fields are filled
+    const requiredFields = [
+      "city",
+      "state",
+      "tier",
+      "base_fare",
+      "per_km_fare",
+      "per_km_fare_night",
+      "waiting_charge_per_min",
+      "fuel_type",
+      "peak_multiplier",
+      "effective_from",
+    ];
+
+    for (let field of requiredFields) {
+      if (!formData[field]) {
+        setError(`Field "${field.replace("_", " ")}" is required.`);
+        return;
+      }
     }
 
     try {
@@ -53,19 +69,23 @@ export const FareRegionAdd = () => {
       const payload = {
         city: formData.city,
         state: formData.state,
-        tier: formData.tier,
-        base_fare: formData.base_fare,
-        per_km_fare: formData.per_km_fare || null,
-        per_km_fare_night: formData.per_km_fare_night || null,
-        waiting_charge_per_min: formData.waiting_charge_per_min || null,
-        fuel_type: formData.fuel_type || null,
-        peak_multiplier: formData.peak_multiplier || 1,
-        effective_from: formData.effective_from || null,
+        tier: formData.tier.toString(),
+        base_fare: formData.base_fare.toString(),
+        per_km_fare: formData.per_km_fare.toString(),
+        per_km_fare_night: formData.per_km_fare_night.toString(),
+        waiting_charge_per_min: formData.waiting_charge_per_min.toString(),
+        fuel_type: formData.fuel_type,
+        peak_multiplier: formData.peak_multiplier.toString(),
+        effective_from: formData.effective_from,
+        isActive: "1",
         module_id: moduleId,
       };
 
+      console.log("🚀 Final Payload Sent:", payload);
+      console.log("🔗 API Endpoint:", `${API_BASE_URL}/createFareRegionSetting`);
+
       const response = await axios.post(
-        `${API_BASE_URL}/createFareRegion`,
+        `${API_BASE_URL}/createFareRegionSetting`,
         payload,
         {
           headers: {
@@ -79,13 +99,13 @@ export const FareRegionAdd = () => {
         setFormData({
           city: "",
           state: "",
-          tier: "tier1",
+          tier: "",
           base_fare: "",
           per_km_fare: "",
           per_km_fare_night: "",
           waiting_charge_per_min: "",
           fuel_type: "",
-          peak_multiplier: 1,
+          peak_multiplier: "",
           effective_from: "",
         });
 
@@ -156,27 +176,29 @@ export const FareRegionAdd = () => {
               <Col md={6}>
                 <Form.Group className="dms-form-group">
                   <Form.Label>Tier</Form.Label>
-                  <Form.Select
+                  <Form.Control
+                    type="number"
                     name="tier"
                     value={formData.tier}
                     onChange={handleChange}
-                  >
-                    <option value="tier1">Tier 1</option>
-                    <option value="tier2">Tier 2</option>
-                    <option value="tier3">Tier 3</option>
-                  </Form.Select>
+                    min={1}
+                    step={1}
+                    placeholder="Enter tier"
+                    required
+                  />
                 </Form.Group>
               </Col>
 
               <Col md={6}>
                 <Form.Group className="dms-form-group">
-                  <Form.Label>Fuel Type (Optional)</Form.Label>
+                  <Form.Label>Fuel Type</Form.Label>
                   <Form.Select
                     name="fuel_type"
                     value={formData.fuel_type}
                     onChange={handleChange}
+                    required
                   >
-                    <option value="">None</option>
+                    <option value="">Select</option>
                     <option value="petrol">Petrol</option>
                     <option value="cng">CNG</option>
                     <option value="ev">EV</option>
@@ -208,6 +230,7 @@ export const FareRegionAdd = () => {
                     value={formData.per_km_fare}
                     onChange={handleChange}
                     placeholder="Enter per km fare"
+                    required
                   />
                 </Form.Group>
               </Col>
@@ -220,6 +243,7 @@ export const FareRegionAdd = () => {
                     value={formData.per_km_fare_night}
                     onChange={handleChange}
                     placeholder="Enter night per km fare"
+                    required
                   />
                 </Form.Group>
               </Col>
@@ -235,6 +259,7 @@ export const FareRegionAdd = () => {
                     value={formData.waiting_charge_per_min}
                     onChange={handleChange}
                     placeholder="Enter waiting charge"
+                    required
                   />
                 </Form.Group>
               </Col>
@@ -247,7 +272,8 @@ export const FareRegionAdd = () => {
                     name="peak_multiplier"
                     value={formData.peak_multiplier}
                     onChange={handleChange}
-                    placeholder="Default 1"
+                    placeholder="Enter peak multiplier"
+                    required
                   />
                 </Form.Group>
               </Col>
@@ -259,6 +285,7 @@ export const FareRegionAdd = () => {
                     name="effective_from"
                     value={formData.effective_from}
                     onChange={handleChange}
+                    required
                   />
                 </Form.Group>
               </Col>

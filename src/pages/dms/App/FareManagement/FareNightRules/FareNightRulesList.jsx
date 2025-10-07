@@ -1,93 +1,93 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Button,
   Table,
   Form,
   Pagination,
   Modal,
-  InputGroup,
 } from "react-bootstrap";
 import { FaEdit, FaTrash, FaPlus } from "react-icons/fa";
 import { AdminLayout } from "../../../../../layouts/dms/AdminLayout/AdminLayout";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { getModuleId, getToken } from "../../../../../utils/authhelper";
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const FareNightRulesList = () => {
   const navigate = useNavigate();
-
-  // 🔹 Dummy regions
-  const dummyRegions = [
-    { region_id: "1", city: "Mumbai", state: "Maharashtra" },
-    { region_id: "2", city: "Delhi", state: "Delhi" },
-    { region_id: "3", city: "Bengaluru", state: "Karnataka" },
-  ];
-
-  // 🔹 Dummy night rules
-  const dummyNightRules = [
-    {
-      night_rule_id: "201",
-      region_id: "1",
-      night_start_time: "22:00",
-      night_end_time: "05:00",
-      effective_from: "2025-09-01T00:00:00Z",
-      created_at: "2025-09-01T12:00:00Z",
-    },
-    {
-      night_rule_id: "202",
-      region_id: "2",
-      night_start_time: "23:00",
-      night_end_time: "06:00",
-      effective_from: "2025-09-02T00:00:00Z",
-      created_at: "2025-09-02T12:00:00Z",
-    },
-    {
-      night_rule_id: "203",
-      region_id: "3",
-      night_start_time: "21:30",
-      night_end_time: "04:30",
-      effective_from: "2025-09-05T00:00:00Z",
-      created_at: "2025-09-05T12:00:00Z",
-    },
-  ];
-
-  const [nightRules, setNightRules] = useState(dummyNightRules);
+  const [nightRules, setNightRules] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [itemsPerPage, setItemsPerPage] = useState(10); // default 10
+  const [totalPages, setTotalPages] = useState(1);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedRule, setSelectedRule] = useState(null);
   const [searchText, setSearchText] = useState("");
-
+  const [dateFilter, setDateFilter] = useState("");
   const permissions = ["add", "edit", "delete"];
+
+  const fetchNightRules = async () => {
+    try {
+      const token = getToken();
+      const moduleId = getModuleId("farenightrules");
+      const params = { module_id: moduleId, page: currentPage, limit: itemsPerPage };
+      if (dateFilter) params.date = dateFilter;
+
+      const response = await axios.get(`${API_BASE_URL}/getAllFareNightRule`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params,
+      });
+
+      const data = response.data?.data || {};
+      setNightRules(data.models || []);
+      setTotalPages(data.totalPages || 1);
+    } catch (error) {
+      console.error("Error fetching fare night rules:", error);
+      setNightRules([]);
+      setTotalPages(1);
+    }
+  };
+
+  useEffect(() => {
+    fetchNightRules();
+  }, [dateFilter, currentPage, itemsPerPage]);
 
   const handleDelete = (rule) => {
     setSelectedRule(rule);
     setShowDeleteModal(true);
   };
 
-  const confirmDelete = () => {
-    setNightRules(
-      nightRules.filter((r) => r.night_rule_id !== selectedRule.night_rule_id)
-    );
-    setShowDeleteModal(false);
-    setSelectedRule(null);
+  const confirmDelete = async () => {
+    if (!selectedRule) return;
+    try {
+      const token = getToken();
+      const moduleId = getModuleId("farenightrules");
+      await axios.delete(`${API_BASE_URL}/deleteFareNightRule/${selectedRule.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { module_id: moduleId },
+      });
+      fetchNightRules();
+      setShowDeleteModal(false);
+      setSelectedRule(null);
+    } catch (error) {
+      console.error("Error deleting night rule:", error);
+      alert("Failed to delete the rule. Please try again.");
+    }
   };
 
-  // 🔹 Helper: get region name from region_id
-  const getRegionName = (region_id) => {
-    const region = dummyRegions.find((r) => r.region_id === region_id);
-    return region ? `${region.city} (${region.state})` : region_id;
+  const getRegionName = (rule) => {
+    if (!rule || !rule.FareRegionSetting) return "Unknown Region";
+    const { city, state } = rule.FareRegionSetting;
+    return `${city} (${state})`;
   };
 
-  // 🔹 Filter & Search
-  const filteredRules = nightRules.filter((rule) => {
-    const regionName = getRegionName(rule.region_id).toLowerCase();
-    return regionName.includes(searchText.toLowerCase());
-  });
+  const filteredRules = nightRules.filter((rule) =>
+    getRegionName(rule).toLowerCase().includes(searchText.toLowerCase())
+  );
 
-  // Pagination
-  const totalPages = Math.ceil(filteredRules.length / itemsPerPage);
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentRules = filteredRules.slice(indexOfFirstItem, indexOfLastItem);
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+  };
 
   return (
     <AdminLayout>
@@ -103,18 +103,16 @@ export const FareNightRulesList = () => {
         )}
       </div>
 
-      {/* Filter & Search */}
-      <div className="filter-search-container d-flex align-items-center mb-3">
-        <InputGroup className="dms-custom-width">
+      {/* Filter */}
+      <div className="filter-container">
+        <p className="btn btn-primary">Filter by createdAt Date -</p>
+        <Form.Group>
           <Form.Control
-            placeholder="Search by Region"
-            value={searchText}
-            onChange={(e) => {
-              setSearchText(e.target.value);
-              setCurrentPage(1);
-            }}
+            type="date"
+            value={dateFilter}
+            onChange={(e) => { setDateFilter(e.target.value); setCurrentPage(1); }}
           />
-        </InputGroup>
+        </Form.Group>
       </div>
 
       {/* Table */}
@@ -132,38 +130,31 @@ export const FareNightRulesList = () => {
             </tr>
           </thead>
           <tbody>
-            {currentRules.length > 0 ? (
-              currentRules.map((rule, index) => (
-                <tr key={rule.night_rule_id}>
+            {filteredRules.length > 0 ? (
+              filteredRules.map((rule, index) => (
+                <tr key={rule.id}>
                   <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
-                  <td>{getRegionName(rule.region_id)}</td>
-                  <td>{rule.night_start_time}</td>
-                  <td>{rule.night_end_time}</td>
-                  <td>{new Date(rule.effective_from).toLocaleString()}</td>
-                  <td>{new Date(rule.created_at).toLocaleString()}</td>
+                  <td>{getRegionName(rule)}</td>
+                  <td>{new Date(rule.night_start_time).toLocaleString()}</td>
+                  <td>{new Date(rule.night_end_time).toLocaleString()}</td>
+                  <td>{new Date(rule.effective_from).toLocaleDateString()}</td>
+                  <td>{new Date(rule.createdAt).toLocaleString()}</td>
                   <td>
-                    {(!permissions.includes("edit") &&
-                    !permissions.includes("delete")) ? (
-                      <span>-</span>
-                    ) : (
-                      <>
-                        {permissions.includes("edit") && (
-                          <FaEdit
-                            className="icon icon-green me-2"
-                            title="Edit"
-                            onClick={() =>
-                              navigate("/dms/farenightrules/edit", { state: { rule } })
-                            }
-                          />
-                        )}
-                        {permissions.includes("delete") && (
-                          <FaTrash
-                            className="icon icon-red"
-                            title="Delete"
-                            onClick={() => handleDelete(rule)}
-                          />
-                        )}
-                      </>
+                    {permissions.includes("edit") && (
+                      <FaEdit
+                        className="icon icon-green me-2"
+                        title="Edit"
+                        onClick={() =>
+                          navigate("/dms/farenightrules/edit", { state: { rule } })
+                        }
+                      />
+                    )}
+                    {permissions.includes("delete") && (
+                      <FaTrash
+                        className="icon icon-red"
+                        title="Delete"
+                        onClick={() => handleDelete(rule)}
+                      />
                     )}
                   </td>
                 </tr>
@@ -179,38 +170,37 @@ export const FareNightRulesList = () => {
         </Table>
 
         {/* Pagination */}
-        <div className="pagination-container d-flex align-items-center">
-          <Pagination className="mb-0 me-2">
+        <div className="pagination-container">
+          <Pagination className="mb-0">
             <Pagination.Prev
-              onClick={() => setCurrentPage(currentPage - 1)}
+              onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
             />
             {[...Array(totalPages)].map((_, i) => (
               <Pagination.Item
                 key={i + 1}
                 active={i + 1 === currentPage}
-                onClick={() => setCurrentPage(i + 1)}
+                onClick={() => handlePageChange(i + 1)}
               >
                 {i + 1}
               </Pagination.Item>
             ))}
             <Pagination.Next
-              onClick={() => setCurrentPage(currentPage + 1)}
+              onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
             />
           </Pagination>
 
           <Form.Select
             value={itemsPerPage}
-            onChange={(e) => {
-              setItemsPerPage(Number(e.target.value));
-              setCurrentPage(1);
-            }}
+            onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
             className="pagination-option w-auto"
           >
             <option value="5">Show 5</option>
             <option value="10">Show 10</option>
             <option value="20">Show 20</option>
+            <option value="30">Show 30</option>
+            <option value="50">Show 50</option>
           </Form.Select>
         </div>
       </div>
@@ -225,9 +215,9 @@ export const FareNightRulesList = () => {
           <Modal.Title>Delete Night Rule</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          Are you sure you want to delete the night rule <br />
-          <strong>ID: {selectedRule?.night_rule_id}</strong> <br />
-          for Region <strong>{getRegionName(selectedRule?.region_id)}</strong>?
+          Are you sure you want to delete this night rule for
+          <br />
+          <strong>{getRegionName(selectedRule)}</strong>?
         </Modal.Body>
         <Modal.Footer>
           <Button

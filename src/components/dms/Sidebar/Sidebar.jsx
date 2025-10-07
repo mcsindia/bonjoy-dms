@@ -149,7 +149,7 @@ export const Sidebar = ({ isOpen, setIsOpen }) => {
                 >
                   <div className="d-flex align-items-center">
                     <Icon />
-                    {isOpen && <span className="ms-2">{mod.moduleName}</span>}
+                    {isOpen && <span className="ms-3">{mod.moduleName}</span>}
                   </div>
                 </a>
               </li>
@@ -204,10 +204,10 @@ export const Sidebar = ({ isOpen, setIsOpen }) => {
                           const isActive = location.pathname.includes(key);
 
                           return (
-                            <li key={key} className="dms-nav-item ps-3">
+                            <li key={key} className="dms-nav-item">
                               <a
                                 href={`/dms/${key}`}
-                                className={`dms-nav-link text-white ps-4 ${
+                                className={`dms-nav-link text-white ${
                                   isActive ? "active" : ""
                                 }`}
                               >

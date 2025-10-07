@@ -16,14 +16,15 @@ export const FareRegionEdit = () => {
     region_id: "",
     city: "",
     state: "",
-    tier: "tier1",
+    tier: 1,
     base_fare: "",
     per_km_fare: "",
     per_km_fare_night: "",
     waiting_charge_per_min: "",
-    fuel_type: "", // nullable
-    peak_multiplier: "1", // default 1
-    effective_from: "", // timestamp
+    fuel_type: "",
+    peak_multiplier: 1,
+    effective_from: "",
+    isActive: 1,
   });
 
   const [error, setError] = useState("");
@@ -32,24 +33,25 @@ export const FareRegionEdit = () => {
   const [hasInitialized, setHasInitialized] = useState(false);
 
   const token = getToken();
-  const moduleId = getModuleId("fareregion");
+  const moduleId = getModuleId("fareregion"); 
 
-  // Prefill form with selected region data
   useEffect(() => {
     if (region && !hasInitialized) {
       setFormData({
-        region_id: region.region_id || "",
+        region_id: region.region_id || region.id || "", 
         city: region.city || "",
         state: region.state || "",
-        tier: region.tier || "tier1",
+        tier: region.tier ? parseInt(region.tier) : 1,
         base_fare: region.base_fare || "",
         per_km_fare: region.per_km_fare || "",
         per_km_fare_night: region.per_km_fare_night || "",
         waiting_charge_per_min: region.waiting_charge_per_min || "",
-        fuel_type: region.fuel_type || "", // can be null
-        peak_multiplier: region.peak_multiplier || "1",
+        fuel_type: region.fuel_type || "",
+        peak_multiplier: region.peak_multiplier
+          ? parseFloat(region.peak_multiplier)
+          : 1,
         effective_from: region.effective_from
-          ? region.effective_from.split("T")[0] // handle timestamp → date
+          ? region.effective_from.split("T")[0]
           : "",
       });
       setHasInitialized(true);
@@ -60,7 +62,6 @@ export const FareRegionEdit = () => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -75,27 +76,41 @@ export const FareRegionEdit = () => {
       setSuccess("");
 
       const payload = {
-        ...formData,
-        fuel_type: formData.fuel_type || null, // allow null
-        peak_multiplier: formData.peak_multiplier || "1",
+        city: formData.city,
+        state: formData.state,
+        tier: parseInt(formData.tier),
+        base_fare: parseFloat(formData.base_fare),
+        per_km_fare: parseFloat(formData.per_km_fare) || 0,
+        per_km_fare_night: parseFloat(formData.per_km_fare_night) || 0,
+        waiting_charge_per_min: parseFloat(formData.waiting_charge_per_min) || 0,
+        fuel_type: formData.fuel_type || null,
+        peak_multiplier: parseFloat(formData.peak_multiplier),
+        effective_from: formData.effective_from,
+        isActive: parseInt(formData.isActive),
         module_id: moduleId,
       };
 
       const response = await axios.put(
-        `${API_BASE_URL}/updateFareRegion/${formData.region_id}`,
+        `${API_BASE_URL}/updateFareRegionSetting/${formData.region_id}`,
         payload,
-        { headers: { Authorization: `Bearer ${token}` } }
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
       );
 
       if (response.data?.success) {
-        setSuccess("Fare region updated successfully!");
+        setSuccess(response.data.message || "Fare region updated successfully!");
         setTimeout(() => navigate("/dms/fareregion"), 1500);
       } else {
         setError(response.data?.message || "Failed to update fare region.");
       }
     } catch (err) {
       console.error("Error updating fare region:", err);
-      setError("Failed to update fare region. Please try again.");
+      const backendMsg = err.response?.data?.message;
+      setError(backendMsg || "Failed to update fare region. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -106,43 +121,21 @@ export const FareRegionEdit = () => {
       <Container className="dms-container">
         <h4>Edit Fare Region</h4>
         <div className="dms-form-container">
-          {error && (
-            <Alert variant="danger" onClose={() => setError("")} dismissible>
-              {error}
-            </Alert>
-          )}
-          {success && (
-            <Alert variant="success" onClose={() => setSuccess("")} dismissible>
-              {success}
-            </Alert>
-          )}
+          {error && <Alert variant="danger" onClose={() => setError("")} dismissible>{error}</Alert>}
+          {success && <Alert variant="success" onClose={() => setSuccess("")} dismissible>{success}</Alert>}
 
           <Form onSubmit={handleSubmit}>
             <Row>
               <Col md={6}>
                 <Form.Group className="dms-form-group">
                   <Form.Label>City</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleChange}
-                    placeholder="Enter city"
-                    required
-                  />
+                  <Form.Control type="text" name="city" value={formData.city} onChange={handleChange} required />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group className="dms-form-group">
                   <Form.Label>State</Form.Label>
-                  <Form.Control
-                    type="text"
-                    name="state"
-                    value={formData.state}
-                    onChange={handleChange}
-                    placeholder="Enter state"
-                    required
-                  />
+                  <Form.Control type="text" name="state" value={formData.state} onChange={handleChange} required />
                 </Form.Group>
               </Col>
             </Row>
@@ -151,26 +144,23 @@ export const FareRegionEdit = () => {
               <Col md={6}>
                 <Form.Group className="dms-form-group">
                   <Form.Label>Tier</Form.Label>
-                  <Form.Select
+                  <Form.Control
+                    type="number"
                     name="tier"
                     value={formData.tier}
                     onChange={handleChange}
-                  >
-                    <option value="tier1">Tier 1</option>
-                    <option value="tier2">Tier 2</option>
-                    <option value="tier3">Tier 3</option>
-                  </Form.Select>
+                    min={1}
+                    step={1}
+                    required
+                    placeholder="Enter tier (e.g., 1,2,3)"
+                  />
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group className="dms-form-group">
-                  <Form.Label>Fuel Type (optional)</Form.Label>
-                  <Form.Select
-                    name="fuel_type"
-                    value={formData.fuel_type || ""}
-                    onChange={handleChange}
-                  >
-                    <option value="">-- None --</option>
+                  <Form.Label>Fuel Type</Form.Label>
+                  <Form.Select name="fuel_type" value={formData.fuel_type || ""} onChange={handleChange}>
+                    <option value="">-- Select --</option>
                     <option value="petrol">Petrol</option>
                     <option value="cng">CNG</option>
                     <option value="ev">EV</option>
@@ -183,38 +173,19 @@ export const FareRegionEdit = () => {
               <Col md={4}>
                 <Form.Group className="dms-form-group">
                   <Form.Label>Base Fare</Form.Label>
-                  <Form.Control
-                    type="number"
-                    name="base_fare"
-                    value={formData.base_fare}
-                    onChange={handleChange}
-                    placeholder="Enter base fare"
-                    required
-                  />
+                  <Form.Control type="number" name="base_fare" value={formData.base_fare} onChange={handleChange} required />
                 </Form.Group>
               </Col>
               <Col md={4}>
                 <Form.Group className="dms-form-group">
                   <Form.Label>Per KM Fare (Day)</Form.Label>
-                  <Form.Control
-                    type="number"
-                    name="per_km_fare"
-                    value={formData.per_km_fare}
-                    onChange={handleChange}
-                    placeholder="Enter per km fare"
-                  />
+                  <Form.Control type="number" name="per_km_fare" value={formData.per_km_fare} onChange={handleChange} />
                 </Form.Group>
               </Col>
               <Col md={4}>
                 <Form.Group className="dms-form-group">
                   <Form.Label>Per KM Fare (Night)</Form.Label>
-                  <Form.Control
-                    type="number"
-                    name="per_km_fare_night"
-                    value={formData.per_km_fare_night}
-                    onChange={handleChange}
-                    placeholder="Enter night per km fare"
-                  />
+                  <Form.Control type="number" name="per_km_fare_night" value={formData.per_km_fare_night} onChange={handleChange} />
                 </Form.Group>
               </Col>
             </Row>
@@ -223,37 +194,19 @@ export const FareRegionEdit = () => {
               <Col md={4}>
                 <Form.Group className="dms-form-group">
                   <Form.Label>Waiting Charge / Min</Form.Label>
-                  <Form.Control
-                    type="number"
-                    name="waiting_charge_per_min"
-                    value={formData.waiting_charge_per_min}
-                    onChange={handleChange}
-                    placeholder="Enter waiting charge"
-                  />
+                  <Form.Control type="number" name="waiting_charge_per_min" value={formData.waiting_charge_per_min} onChange={handleChange} />
                 </Form.Group>
               </Col>
               <Col md={4}>
                 <Form.Group className="dms-form-group">
                   <Form.Label>Peak Multiplier</Form.Label>
-                  <Form.Control
-                    type="number"
-                    step="0.1"
-                    name="peak_multiplier"
-                    value={formData.peak_multiplier}
-                    onChange={handleChange}
-                    placeholder="Default = 1"
-                  />
+                  <Form.Control type="number" step="0.1" name="peak_multiplier" value={formData.peak_multiplier} onChange={handleChange} />
                 </Form.Group>
               </Col>
               <Col md={4}>
                 <Form.Group className="dms-form-group">
                   <Form.Label>Effective From</Form.Label>
-                  <Form.Control
-                    type="date"
-                    name="effective_from"
-                    value={formData.effective_from}
-                    onChange={handleChange}
-                  />
+                  <Form.Control type="date" name="effective_from" value={formData.effective_from} onChange={handleChange} />
                 </Form.Group>
               </Col>
             </Row>
@@ -262,10 +215,7 @@ export const FareRegionEdit = () => {
               <Button type="submit" className="me-2" disabled={isLoading}>
                 {isLoading ? "Saving..." : "Save Changes"}
               </Button>
-              <Button
-                variant="secondary"
-                onClick={() => navigate("/dms/fareregion")}
-              >
+              <Button variant="secondary" onClick={() => navigate("/dms/fareregion")}>
                 Cancel
               </Button>
             </div>

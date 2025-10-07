@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Button,
   Table,
@@ -12,84 +12,87 @@ import {
 import { FaEdit, FaTrash, FaPlus } from "react-icons/fa";
 import { AdminLayout } from "../../../../../layouts/dms/AdminLayout/AdminLayout";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import { getModuleId, getToken } from "../../../../../utils/authhelper";
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const FareDynamicRuleList = () => {
   const navigate = useNavigate();
-
-  // 🔹 Dummy regions
-  const dummyRegions = [
-    { region_id: "1", city: "Mumbai", state: "Maharashtra" },
-    { region_id: "2", city: "Delhi", state: "Delhi" },
-    { region_id: "3", city: "Bengaluru", state: "Karnataka" },
-  ];
-
-  // 🔹 Dummy rules
-  const dummyRules = [
-    {
-      rule_id: "101",
-      region_id: "1",
-      rule_type: "peak",
-      multiplier: 1.25,
-      start_time: "2025-09-25T08:00:00Z",
-      end_time: "2025-09-25T10:00:00Z",
-      created_at: "2025-09-01T12:00:00Z",
-    },
-    {
-      rule_id: "102",
-      region_id: "2",
-      rule_type: "weather",
-      multiplier: 1.50,
-      start_time: "2025-09-25T14:00:00Z",
-      end_time: "2025-09-25T16:00:00Z",
-      created_at: "2025-09-02T12:00:00Z",
-    },
-    {
-      rule_id: "103",
-      region_id: "3",
-      rule_type: "special_event",
-      multiplier: 2.00,
-      start_time: "2025-09-26T18:00:00Z",
-      end_time: "2025-09-26T21:00:00Z",
-      created_at: "2025-09-05T12:00:00Z",
-    },
-  ];
-
-  const [rules, setRules] = useState(dummyRules);
+  const [rules, setRules] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedRule, setSelectedRule] = useState(null);
   const [searchText, setSearchText] = useState("");
   const [ruleTypeFilter, setRuleTypeFilter] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
 
   const permissions = ["add", "edit", "delete"];
+
+  const fetchRules = async () => {
+    try {
+      const params = { module_id: getModuleId("faredynamicrules") };
+      if (dateFilter) params.date = dateFilter;
+
+      const response = await axios.get(`${API_BASE_URL}/getAllFareDynamicRule`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
+        params,
+      });
+      const data = response.data?.data?.models || [];
+      setRules(data);
+    } catch (error) {
+      console.error("Error fetching fare dynamic rules:", error);
+      setRules([]);
+    }
+  };
+
+  useEffect(() => {
+    fetchRules();
+  }, [dateFilter]);
 
   const handleDelete = (rule) => {
     setSelectedRule(rule);
     setShowDeleteModal(true);
   };
 
-  const confirmDelete = () => {
-    setRules(rules.filter((r) => r.rule_id !== selectedRule.rule_id));
-    setShowDeleteModal(false);
-    setSelectedRule(null);
+  const confirmDelete = async () => {
+    if (!selectedRule) return;
+
+    try {
+      const token = getToken();
+      const url = `${API_BASE_URL}/deleteFareDynamicRule/${selectedRule.id}`;
+
+      await axios.delete(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        params: { module_id: getModuleId("faredynamicrules") },
+      });
+
+      // Remove from UI after success
+      setRules((prev) => prev.filter((r) => r.id !== selectedRule.id));
+      setShowDeleteModal(false);
+      setSelectedRule(null);
+    } catch (error) {
+      console.error("Error deleting rule:", error);
+      alert("Failed to delete the rule. Please try again.");
+    }
   };
 
-  // 🔹 Helper: get region name from region_id
-  const getRegionName = (region_id) => {
-    const region = dummyRegions.find((r) => r.region_id === region_id);
-    return region ? `${region.city} (${region.state})` : region_id;
+  // Safe helper to get region name
+  const getRegionName = (rule) => {
+    if (!rule || !rule.FareRegionSetting) return "Unknown Region";
+    return `${rule.FareRegionSetting.city} (${rule.FareRegionSetting.state})`;
   };
 
-  // 🔹 Filter & Search
+  // Filter & Search
   const filteredRules = rules.filter((rule) => {
-    const regionName = getRegionName(rule.region_id).toLowerCase();
+    const regionName = getRegionName(rule).toLowerCase();
     const matchesSearch =
       regionName.includes(searchText.toLowerCase()) ||
       rule.rule_type.toLowerCase().includes(searchText.toLowerCase());
-    const matchesRuleType = ruleTypeFilter
-      ? rule.rule_type === ruleTypeFilter
-      : true;
+    const matchesRuleType = ruleTypeFilter ? rule.rule_type === ruleTypeFilter : true;
     return matchesSearch && matchesRuleType;
   });
 
@@ -114,24 +117,16 @@ export const FareDynamicRuleList = () => {
       </div>
 
       {/* Filter & Search */}
-      <div className="filter-search-container d-flex align-items-center mb-3">
-        <DropdownButton
-          title={ruleTypeFilter ? `Rule: ${ruleTypeFilter}` : "Filter by Rule Type"}
-          className="me-2"
-        >
-          <Dropdown.Item onClick={() => { setRuleTypeFilter(""); setCurrentPage(1); }}>All</Dropdown.Item>
-          <Dropdown.Item onClick={() => { setRuleTypeFilter("peak"); setCurrentPage(1); }}>Peak</Dropdown.Item>
-          <Dropdown.Item onClick={() => { setRuleTypeFilter("weather"); setCurrentPage(1); }}>Weather</Dropdown.Item>
-          <Dropdown.Item onClick={() => { setRuleTypeFilter("special_event"); setCurrentPage(1); }}>Special Event</Dropdown.Item>
-        </DropdownButton>
-
-        <InputGroup className="dms-custom-width">
+      <div className='filter-container'>
+        {/* Date Filter */}
+        <p className="btn btn-primary">Filter by createdAt Date -</p>
+        <Form.Group>
           <Form.Control
-            placeholder="Search by Region or Rule Type"
-            value={searchText}
-            onChange={(e) => { setSearchText(e.target.value); setCurrentPage(1); }}
+            type="date"
+            value={dateFilter}
+            onChange={(e) => { setDateFilter(e.target.value); setCurrentPage(1); }}
           />
-        </InputGroup>
+        </Form.Group>
       </div>
 
       {/* Table */}
@@ -152,14 +147,14 @@ export const FareDynamicRuleList = () => {
           <tbody>
             {currentRules.length > 0 ? (
               currentRules.map((rule, index) => (
-                <tr key={rule.rule_id}>
+                <tr key={rule.id}>
                   <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
-                  <td>{getRegionName(rule.region_id)}</td>
+                  <td>{getRegionName(rule)}</td>
                   <td>{rule.rule_type}</td>
                   <td>{rule.multiplier.toFixed(2)}</td>
                   <td>{new Date(rule.start_time).toLocaleString()}</td>
                   <td>{new Date(rule.end_time).toLocaleString()}</td>
-                  <td>{new Date(rule.created_at).toLocaleString()}</td>
+                  <td>{new Date(rule.createdAt).toLocaleString()}</td>
                   <td>
                     {(!permissions.includes("edit") && !permissions.includes("delete")) ? (
                       <span>-</span>
@@ -197,35 +192,40 @@ export const FareDynamicRuleList = () => {
         </Table>
 
         {/* Pagination */}
-        <div className="pagination-container d-flex align-items-center">
-          <Pagination className="mb-0 me-2">
+        <div className="pagination-container">
+          <Pagination className="mb-0">
             <Pagination.Prev
-              onClick={() => setCurrentPage(currentPage - 1)}
+              onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
             />
-            {[...Array(totalPages)].map((_, i) => (
+            {[...Array(totalPages)].map((_, index) => (
               <Pagination.Item
-                key={i + 1}
-                active={i + 1 === currentPage}
-                onClick={() => setCurrentPage(i + 1)}
+                key={index + 1}
+                active={index + 1 === currentPage}
+                onClick={() => handlePageChange(index + 1)}
               >
-                {i + 1}
+                {index + 1}
               </Pagination.Item>
             ))}
             <Pagination.Next
-              onClick={() => setCurrentPage(currentPage + 1)}
+              onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
             />
           </Pagination>
 
           <Form.Select
             value={itemsPerPage}
-            onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+            onChange={(e) => {
+              setItemsPerPage(Number(e.target.value));
+              setCurrentPage(1);
+            }}
             className="pagination-option w-auto"
           >
             <option value="5">Show 5</option>
             <option value="10">Show 10</option>
             <option value="20">Show 20</option>
+            <option value="30">Show 30</option>
+            <option value="50">Show 50</option>
           </Form.Select>
         </div>
       </div>
@@ -240,10 +240,7 @@ export const FareDynamicRuleList = () => {
           <Modal.Title>Delete Dynamic Rule</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          Are you sure you want to delete the rule <br />
-          <strong>ID: {selectedRule?.rule_id}</strong> <br />
-          for Region <strong>{getRegionName(selectedRule?.region_id)}</strong> <br />
-          of type <strong>{selectedRule?.rule_type}</strong>?
+          Are you sure you want to delete the rule..
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>

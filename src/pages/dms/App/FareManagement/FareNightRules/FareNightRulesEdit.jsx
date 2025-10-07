@@ -2,22 +2,20 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button, Container, Form, Alert, Row, Col } from "react-bootstrap";
 import { AdminLayout } from "../../../../../layouts/dms/AdminLayout/AdminLayout";
+import axios from "axios";
+import { getModuleId, getToken } from "../../../../../utils/authhelper";
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const FareNightRulesEdit = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { rule } = location.state || {}; // rule passed from list
+  const { rule } = location.state || {}; 
 
-  // Dummy regions
-  const dummyRegions = [
-    { region_id: "Reg001", city: "Mumbai", state: "Maharashtra" },
-    { region_id: "Reg002", city: "Delhi", state: "Delhi" },
-    { region_id: "Reg003", city: "Bengaluru", state: "Karnataka" },
-  ];
-
+  const [regions, setRegions] = useState([]);
   const [formData, setFormData] = useState({
     night_rule_id: "",
-    region_id: "",
+    regionId: "",
     night_start_time: "",
     night_end_time: "",
     effective_from: "",
@@ -28,15 +26,48 @@ export const FareNightRulesEdit = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
 
-  // Prefill form on edit
+  // ✅ Fetch region list from API
+  useEffect(() => {
+    const fetchRegions = async () => {
+      try {
+        const token = getToken();
+        const moduleId = getModuleId("farenightrules");
+        const response = await axios.get(
+          `${API_BASE_URL}/getAllFareRegionSetting?module_id=${moduleId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        if (response.data?.success) {
+          setRegions(response.data.data.models || []);
+        } else {
+          setError("Failed to fetch regions.");
+        }
+      } catch (err) {
+        console.error("Error fetching regions:", err);
+        setError("Failed to fetch regions. Please try again later.");
+      }
+    };
+
+    fetchRegions();
+  }, []);
+
+  // ✅ Prefill form on edit
   useEffect(() => {
     if (rule && !hasInitialized) {
       setFormData({
-        night_rule_id: rule.night_rule_id || "",
-        region_id: rule.region_id || "",
-        night_start_time: rule.night_start_time || "",
-        night_end_time: rule.night_end_time || "",
-        effective_from: rule.effective_from || "",
+        night_rule_id: rule.night_rule_id || rule.id || "",
+        regionId: rule.regionId || rule.region_id || "",
+        night_start_time: rule.night_start_time
+          ? rule.night_start_time.replace(" ", "T").slice(0, 16)
+          : "",
+        night_end_time: rule.night_end_time
+          ? rule.night_end_time.replace(" ", "T").slice(0, 16)
+          : "",
+        effective_from: rule.effective_from
+          ? rule.effective_from.split("T")[0]
+          : "",
       });
       setHasInitialized(true);
     }
@@ -47,27 +78,56 @@ export const FareNightRulesEdit = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  // ✅ Handle update API call
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!formData.region_id || !formData.night_start_time || !formData.night_end_time) {
+    if (!formData.regionId || !formData.night_start_time || !formData.night_end_time) {
       setError("Region, Night Start Time, and Night End Time are required!");
       return;
     }
 
-    setIsLoading(true);
-    setError("");
-    setSuccess("");
+    try {
+      setIsLoading(true);
+      setError("");
+      setSuccess("");
 
-    // Simulate API delay
-    setTimeout(() => {
+      const token = getToken();
+      const moduleId = getModuleId("farenightrules");
+
+      // Convert datetime-local → "YYYY-MM-DD HH:mm:ss"
+      const payload = {
+        regionId: Number(formData.regionId),
+        night_start_time: formData.night_start_time.replace("T", " ") + ":00",
+        night_end_time: formData.night_end_time.replace("T", " ") + ":00",
+        effective_from: formData.effective_from,
+        module_id: moduleId,
+      };
+
+      const response = await axios.put(
+        `${API_BASE_URL}/updateFareNightRule/${formData.night_rule_id}`,
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.data?.success) {
+        setSuccess(response.data.message || "Fare night rule updated successfully!");
+        setTimeout(() => navigate("/dms/farenightrules"), 1500);
+      } else {
+        setError(response.data?.message || "Failed to update fare night rule.");
+      }
+    } catch (err) {
+      console.error("Error updating fare night rule:", err);
+      const backendMsg = err.response?.data?.message;
+      setError(backendMsg || "Failed to update fare night rule. Please try again later.");
+    } finally {
       setIsLoading(false);
-      setSuccess("Night rule updated successfully!");
-      console.log("Updated Night Rule:", formData);
-
-      // Navigate back after short delay
-      setTimeout(() => navigate("/dms/farenightrules"), 1500);
-    }, 1000);
+    }
   };
 
   return (
@@ -92,14 +152,14 @@ export const FareNightRulesEdit = () => {
                 <Form.Group className="dms-form-group">
                   <Form.Label>Region</Form.Label>
                   <Form.Select
-                    name="region_id"
-                    value={formData.region_id}
+                    name="regionId"
+                    value={formData.regionId}
                     onChange={handleChange}
                     required
                   >
                     <option value="">Select Region</option>
-                    {dummyRegions.map((r) => (
-                      <option key={r.region_id} value={r.region_id}>
+                    {regions.map((r) => (
+                      <option key={r.id} value={r.id}>
                         {r.city} ({r.state})
                       </option>
                     ))}
@@ -111,7 +171,7 @@ export const FareNightRulesEdit = () => {
                 <Form.Group className="dms-form-group">
                   <Form.Label>Effective From</Form.Label>
                   <Form.Control
-                    type="datetime-local"
+                    type="date"
                     name="effective_from"
                     value={formData.effective_from}
                     onChange={handleChange}
@@ -125,7 +185,7 @@ export const FareNightRulesEdit = () => {
                 <Form.Group className="dms-form-group">
                   <Form.Label>Night Start Time</Form.Label>
                   <Form.Control
-                    type="time"
+                    type="datetime-local"
                     name="night_start_time"
                     value={formData.night_start_time}
                     onChange={handleChange}
@@ -138,7 +198,7 @@ export const FareNightRulesEdit = () => {
                 <Form.Group className="dms-form-group">
                   <Form.Label>Night End Time</Form.Label>
                   <Form.Control
-                    type="time"
+                    type="datetime-local"
                     name="night_end_time"
                     value={formData.night_end_time}
                     onChange={handleChange}

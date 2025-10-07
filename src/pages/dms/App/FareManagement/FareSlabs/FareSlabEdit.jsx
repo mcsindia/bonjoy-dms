@@ -17,10 +17,12 @@ export const FareSlabEdit = () => {
     fare_id: "",
     start_km: "",
     end_km: "",
-    rate_type: "per_km", // default ENUM
+    rate_type: "per_km",
     rate: "",
+    status: "1",
   });
 
+  const [fareSettings, setFareSettings] = useState([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -29,31 +31,51 @@ export const FareSlabEdit = () => {
   const token = getToken();
   const moduleId = getModuleId("fareslab");
 
-  // ✅ Prefill values when editing
+  // Prefill form data
   useEffect(() => {
     if (slab && !hasInitialized) {
       setFormData({
-        slab_id: slab.slab_id || "",
-        fare_id: slab.fare_id || "",
+        slab_id: slab.id || "",
+        fare_id: slab.fareId || "",
         start_km: slab.start_km || "",
         end_km: slab.end_km ?? "",
         rate_type: slab.rate_type || "per_km",
         rate: slab.rate || "",
+        status: slab.isActive ? "1" : "0",
       });
       setHasInitialized(true);
     }
   }, [slab, hasInitialized]);
 
+  // Fetch fare settings for dropdown
+  useEffect(() => {
+    const fetchFareSettings = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/getAllFareSetting`, {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { module_id: getModuleId("faresettings") },
+        });
+        if (response.data?.success) {
+          setFareSettings(response.data.data.models || []);
+        } else {
+          console.error("Failed to fetch fare settings", response.data);
+        }
+      } catch (err) {
+        console.error("Error fetching fare settings:", err);
+      }
+    };
+    fetchFareSettings();
+  }, [token]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!formData.start_km || !formData.rate || !formData.fare_id) {
-      setError("Start KM, Rate and Fare ID are required!");
+      setError("Start KM, Rate, and Fare Setting are required!");
       return;
     }
 
@@ -68,15 +90,14 @@ export const FareSlabEdit = () => {
         end_km: formData.end_km === "" ? null : formData.end_km,
         rate_type: formData.rate_type,
         rate: formData.rate,
+        isActive: formData.status === "1",
         module_id: moduleId,
       };
 
       const response = await axios.put(
         `${API_BASE_URL}/updateFareSlab/${formData.slab_id}`,
         payload,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       if (response.data?.success) {
@@ -87,7 +108,7 @@ export const FareSlabEdit = () => {
       }
     } catch (err) {
       console.error("Error updating fare slab:", err);
-      setError("Failed to update fare slab. Please try again.");
+      setError(err.response?.data?.message || "Failed to update fare slab. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -98,16 +119,8 @@ export const FareSlabEdit = () => {
       <Container className="dms-container">
         <h4>Edit Fare Slab</h4>
         <div className="dms-form-container">
-          {error && (
-            <Alert variant="danger" onClose={() => setError("")} dismissible>
-              {error}
-            </Alert>
-          )}
-          {success && (
-            <Alert variant="success" onClose={() => setSuccess("")} dismissible>
-              {success}
-            </Alert>
-          )}
+          {error && <Alert variant="danger" onClose={() => setError("")} dismissible>{error}</Alert>}
+          {success && <Alert variant="success" onClose={() => setSuccess("")} dismissible>{success}</Alert>}
 
           <Form onSubmit={handleSubmit}>
             <Row>
@@ -143,11 +156,7 @@ export const FareSlabEdit = () => {
               <Col md={6}>
                 <Form.Group className="dms-form-group">
                   <Form.Label>Rate Type</Form.Label>
-                  <Form.Select
-                    name="rate_type"
-                    value={formData.rate_type}
-                    onChange={handleChange}
-                  >
+                  <Form.Select name="rate_type" value={formData.rate_type} onChange={handleChange}>
                     <option value="per_km">Per KM</option>
                     <option value="flat">Flat</option>
                   </Form.Select>
@@ -170,26 +179,23 @@ export const FareSlabEdit = () => {
               </Col>
             </Row>
 
-            <Form.Group className="dms-form-group">
-              <Form.Label>Fare ID</Form.Label>
-              <Form.Control
-                type="text"
-                name="fare_id"
-                value={formData.fare_id}
-                onChange={handleChange}
-                placeholder="Enter fare ID"
-                required
-              />
+            <Form.Group className="dms-form-group mt-3">
+              <Form.Label>Fare Setting</Form.Label>
+              <Form.Select name="fare_id" value={formData.fare_id} onChange={handleChange} required>
+                <option value="">-- Select Fare Setting --</option>
+                {fareSettings.map(f => (
+                  <option key={f.id} value={f.id}>
+                    {f.base_fare} | {f.effective_from?.split("T")[0]}
+                  </option>
+                ))}
+              </Form.Select>
             </Form.Group>
-
+            
             <div className="save-and-cancel-btn mt-4">
               <Button type="submit" className="me-2" disabled={isLoading}>
                 {isLoading ? "Saving..." : "Save Changes"}
               </Button>
-              <Button
-                variant="secondary"
-                onClick={() => navigate("/dms/fareslab")}
-              >
+              <Button variant="secondary" onClick={() => navigate("/dms/fareslab")}>
                 Cancel
               </Button>
             </div>

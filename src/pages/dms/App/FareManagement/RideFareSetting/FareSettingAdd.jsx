@@ -16,12 +16,12 @@ export const FareSettingAdd = () => {
     per_km_fare_night: "",
     night_start_time: "",
     night_end_time: "",
-    waiting_charge_per_min: 0,
-    waiting_grace_period: 3,
-    cancellation_normal: 25,
-    cancellation_emergency_cap: 100,
-    emergency_bonus: 20,
-    first_ride_bonus: 50,
+    waiting_charge_per_min: "",
+    waiting_grace_period: "",
+    cancellation_normal: "",
+    cancellation_emergency_cap: "",
+    emergency_bonus: "",
+    first_ride_bonus: "",
     effective_from: "",
     isActive: "1",
   });
@@ -29,9 +29,6 @@ export const FareSettingAdd = () => {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-
-  const token = getToken();
-  const moduleId = getModuleId("faresettings");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -50,9 +47,12 @@ export const FareSettingAdd = () => {
       setIsLoading(true);
       setError("");
 
+      const token = getToken(); // ✅ get token
+      const moduleId = getModuleId("faresettings"); // ✅ dynamic module id
+
       const payload = {
         ...formData,
-        module_id: moduleId, // ✅ include dynamic module_id
+        module_id: moduleId, // include module_id in body
       };
 
       const response = await axios.post(
@@ -61,12 +61,13 @@ export const FareSettingAdd = () => {
         {
           headers: {
             Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
         }
       );
 
       if (response.data?.success) {
-        setSuccessMessage("Fare setting saved successfully!");
+        setSuccessMessage(response.data.message || "Fare setting saved successfully!");
         setFormData({
           base_fare: "",
           per_km_fare: "",
@@ -83,13 +84,13 @@ export const FareSettingAdd = () => {
           isActive: "1",
         });
 
-        setTimeout(() => navigate("/dms/faresettings"), 1500);
+        setTimeout(() => navigate("/dms/faresettings"), 2000);
       } else {
         setError(response.data?.message || "Failed to add fare setting.");
       }
     } catch (err) {
       console.error("Error adding fare setting:", err);
-      setError("Failed to add fare setting. Please try again.");
+      setError("Failed to add fare setting. Please try again later.");
     } finally {
       setIsLoading(false);
     }
@@ -100,21 +101,8 @@ export const FareSettingAdd = () => {
       <Container className="dms-container">
         <h4>Add New Fare Setting</h4>
         <div className="dms-form-container">
-          {error && (
-            <Alert variant="danger" onClose={() => setError("")} dismissible>
-              {error}
-            </Alert>
-          )}
-
-          {successMessage && (
-            <Alert
-              variant="success"
-              onClose={() => setSuccessMessage("")}
-              dismissible
-            >
-              {successMessage}
-            </Alert>
-          )}
+          {error && <Alert variant="danger" onClose={() => setError("")} dismissible>{error}</Alert>}
+          {successMessage && <Alert variant="success" onClose={() => setSuccessMessage("")} dismissible>{successMessage}</Alert>}
 
           <Form onSubmit={handleSubmit}>
             <Row>
@@ -131,104 +119,121 @@ export const FareSettingAdd = () => {
                   />
                 </Form.Group>
               </Col>
+              <Col md={6}>
+                <Form.Group className="dms-form-group">
+                  <Form.Label>Per Km Fare</Form.Label>
+                  <Form.Control
+                    type="number"
+                    name="per_km_fare"
+                    value={formData.per_km_fare}
+                    onChange={handleChange}
+                    placeholder="Enter per km fare"
+                    required
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
 
+            <Row>
               <Col md={6}>
                 <Form.Group className="dms-form-group">
                   <Form.Label>Waiting Charge Per Min</Form.Label>
                   <Form.Control
                     type="number"
                     name="waiting_charge_per_min"
+                    value={formData.waiting_charge_per_min}
                     onChange={handleChange}
                     placeholder="Enter waiting charge per min"
                   />
                 </Form.Group>
               </Col>
-            </Row>
-
-            <Row>
               <Col md={6}>
                 <Form.Group className="dms-form-group">
                   <Form.Label>Waiting Grace Period (min)</Form.Label>
                   <Form.Control
                     type="number"
                     name="waiting_grace_period"
+                    value={formData.waiting_grace_period}
                     onChange={handleChange}
                     placeholder="Enter grace period"
                   />
                 </Form.Group>
               </Col>
+            </Row>
 
+            <Row>
               <Col md={6}>
                 <Form.Group className="dms-form-group">
                   <Form.Label>Cancellation Fee (Normal)</Form.Label>
                   <Form.Control
                     type="number"
                     name="cancellation_normal"
+                    value={formData.cancellation_normal}
                     onChange={handleChange}
                     placeholder="Enter normal cancellation fee"
                   />
                 </Form.Group>
               </Col>
-            </Row>
-
-            <Row>
               <Col md={6}>
                 <Form.Group className="dms-form-group">
                   <Form.Label>Cancellation Fee (Emergency Cap)</Form.Label>
                   <Form.Control
                     type="number"
                     name="cancellation_emergency_cap"
+                    value={formData.cancellation_emergency_cap}
                     onChange={handleChange}
                     placeholder="Enter emergency cancellation cap"
                   />
                 </Form.Group>
               </Col>
+            </Row>
 
+            <Row>
               <Col md={6}>
                 <Form.Group className="dms-form-group">
                   <Form.Label>Emergency Bonus</Form.Label>
                   <Form.Control
                     type="number"
                     name="emergency_bonus"
+                    value={formData.emergency_bonus}
                     onChange={handleChange}
                     placeholder="Enter emergency bonus"
                   />
                 </Form.Group>
               </Col>
-            </Row>
-            <Row>
               <Col md={6}>
                 <Form.Group className="dms-form-group">
                   <Form.Label>First Ride Bonus</Form.Label>
                   <Form.Control
                     type="number"
                     name="first_ride_bonus"
+                    value={formData.first_ride_bonus}
                     onChange={handleChange}
                     placeholder="Enter first ride bonus"
                   />
                 </Form.Group>
               </Col>
+            </Row>
+
+            <Row>
               <Col md={6}>
                 <Form.Group className="dms-form-group">
                   <Form.Label>Effective From</Form.Label>
                   <Form.Control
                     type="date"
                     name="effective_from"
+                    value={formData.effective_from}
                     onChange={handleChange}
                   />
                 </Form.Group>
               </Col>
             </Row>
 
-
             <div className="save-and-cancel-btn">
               <Button type="submit" className="me-2" disabled={isLoading}>
                 {isLoading ? "Saving..." : "Save changes"}
               </Button>
-              <Button
-                variant="secondary"
-                onClick={() => navigate("/dms/faresettings")}
-              >
+              <Button variant="secondary" onClick={() => navigate("/dms/faresettings")}>
                 Cancel
               </Button>
             </div>
