@@ -140,7 +140,7 @@ export const RideTypeList = () => {
             <Dropdown.Item eventKey="Inactive">Inactive</Dropdown.Item>
           </DropdownButton>
 
-          <p className="btn btn-primary">Filter by Date -</p>
+          <p className="btn btn-primary">Filter by CreatedAt Date -</p>
           <Form.Group>
             <Form.Control
               type="date"

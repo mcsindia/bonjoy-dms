@@ -225,7 +225,7 @@ export const AllDrivers = () => {
                         <Dropdown.Item onClick={() => handleFilterStatus("")}>All</Dropdown.Item>
                         <Dropdown.Item onClick={() => handleFilterStatus("Active")}>Active</Dropdown.Item>
                         <Dropdown.Item onClick={() => handleFilterStatus("Inactive")}>Inactive</Dropdown.Item>
-                        <Dropdown.Item onClick={() => handleFilterStatus("Pending")}></Dropdown.Item>
+                        <Dropdown.Item onClick={() => handleFilterStatus("Pending")}>Pending</Dropdown.Item>
                     </DropdownButton>
 
                     <DropdownButton title={`City: ${filterCity || "All"}`} className="me-2">

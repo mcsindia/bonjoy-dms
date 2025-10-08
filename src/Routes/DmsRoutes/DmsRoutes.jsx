@@ -10,8 +10,8 @@ import SessionWatcher from "../SessionWatcher/SessionWatcher";
 const DmsRoutes = () => {
   const userData = JSON.parse(localStorage.getItem("userData"));
   const employeeRole = Array.isArray(userData?.employeeRole) ? userData.employeeRole : [];
-  const isAdmin = userData?.userType === "Admin";
-  console.log("employeeRole in DmsRoutes:", employeeRole);
+  const isAdmin = userData?.userType === "Admin";/* 
+  console.log("employeeRole in DmsRoutes:", employeeRole); */
 
   const defaultPath = isAdmin
     ? "/dms/dashboard"

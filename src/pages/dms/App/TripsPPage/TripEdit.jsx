@@ -22,7 +22,6 @@ export const TripEdit = () => {
   const [initialized, setInitialized] = useState(false);
 
   // Fetch riders, drivers, ride types
-
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -32,13 +31,13 @@ export const TripEdit = () => {
         const [rideTypesRes, driversRes, ridersRes] = await Promise.all([
           axios.get(`${API_BASE_URL}/getAllRideType`, {
             ...config,
-            params: { module_id: getModuleId("ridetypes") }   
+            params: { module_id: getModuleId("ridetypes") }
           }),
           axios.get(`${API_BASE_URL}/getAllDriverProfiles`, {
             ...config,
             params: { module_id: getModuleId("driver") }
           }),
-          axios.get(`${API_BASE_URL}/getAllRiderProfiles`, config) // ❌ यहाँ module_id नहीं भेजना
+          axios.get(`${API_BASE_URL}/getAllRiderProfiles`, config)
         ]);
 
         setRideTypes(
@@ -57,7 +56,7 @@ export const TripEdit = () => {
 
         setRiders(
           ridersRes.data?.data?.data?.map(r => ({
-            value: r.id,
+            value: r.userId || r.id,
             label: r.fullName || r.mobile
           })) || []
         );
@@ -89,7 +88,7 @@ export const TripEdit = () => {
 
   // Initialize form values from trip
   useEffect(() => {
-    if (trip && !initialized) {
+    if (trip && riders.length && drivers.length && rideTypes.length && !initialized) {
       setFormValues({
         riderId: trip.rider_user_id,
         driverId: trip.driver_user_id,
@@ -114,7 +113,7 @@ export const TripEdit = () => {
       });
       setInitialized(true);
     }
-  }, [trip, initialized]);
+  }, [trip, riders, drivers, rideTypes, initialized]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -139,7 +138,7 @@ export const TripEdit = () => {
 
     try {
       const token = getToken();
-      const moduleId = getModuleId("trip"); // dynamic module ID
+      const moduleId = getModuleId("trip");
 
       const payload = {
         rider_id: formValues.riderId,
@@ -166,7 +165,7 @@ export const TripEdit = () => {
 
       const response = await axios.put(
         `${API_BASE_URL}/updateRide/${trip.id}`,
-        { ...payload, module_id: moduleId }, // 🔹 use dynamic moduleId
+        { ...payload, module_id: moduleId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 

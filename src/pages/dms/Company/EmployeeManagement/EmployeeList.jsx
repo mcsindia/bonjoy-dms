@@ -148,6 +148,7 @@ export const EmployeeList = () => {
     formPayload.append('userType', employee.userType || 'Employee');
     formPayload.append('hireDate', employee.hireDate || '');
     formPayload.append('remark', remark);
+    formPayload.append("module_id", getModuleId("employee"));
 
     if (Array.isArray(employee.employeeRole)) {
       employee.employeeRole.forEach((mod, index) => {
@@ -155,10 +156,6 @@ export const EmployeeList = () => {
         formPayload.append(`module[${index}]`, mod.moduleId);
         formPayload.append(`permission[${index}]`, permissions.join(','));
       });
-    }
-
-    for (let pair of formPayload.entries()) {
-      console.log(`${pair[0]}: ${pair[1]}`);
     }
 
     try {

@@ -112,54 +112,54 @@ export const RiderProfile = () => {
     }; */
 
   useEffect(() => {
-  const riderId = rider?.id;
-  if (!riderId) return;
+    const riderId = rider?.id;
+    if (!riderId) return;
 
-  const token = JSON.parse(localStorage.getItem("userData"))?.token;
+    const token = JSON.parse(localStorage.getItem("userData"))?.token;
 
-  const fetchRiderProfile = async () => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/getRiderProfileById/${riderId}`, {
-        params: {
-          module_id: 'rider', // 🔹 added module_id
-        },
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+    const fetchRiderProfile = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/getRiderProfileById/${riderId}`, {
+          params: {
+            module_id: 'rider',
+          },
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-      if (response.data.success && Array.isArray(response.data.data)) {
-        setRiderProfile(response.data.data[0]);
+        if (response.data.success && Array.isArray(response.data.data)) {
+          setRiderProfile(response.data.data[0]);
+        }
+      } catch (error) {
+        console.error("Error fetching rider profile:", error);
       }
-    } catch (error) {
-      console.error("Error fetching rider profile:", error);
-    }
-  };
+    };
 
-  const fetchRiderContacts = async () => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/getAllUserContacts`, {
-        params: {
-          module_id: 'rider', // 🔹 added module_id
-        },
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (response.data.success && Array.isArray(response.data.data)) {
-        const filteredContacts = response.data.data.filter(
-          (contact) => contact.userId === riderId && contact.userType === "Rider"
-        );
-        setRiderContacts(filteredContacts);
+    const fetchRiderContacts = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/getAllUserContacts`, {
+          params: {
+            module_id: 'rider',
+          },
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (response.data.success && Array.isArray(response.data.data)) {
+          const filteredContacts = response.data.data.filter(
+            (contact) => contact.userId === riderId && contact.userType === "Rider"
+          );
+          setRiderContacts(filteredContacts);
+        }
+      } catch (error) {
+        console.error("Error fetching rider contacts:", error);
       }
-    } catch (error) {
-      console.error("Error fetching rider contacts:", error);
-    }
-  };
+    };
 
-  fetchRiderProfile();
-  fetchRiderContacts();
-}, [rider?.id]);
+    fetchRiderProfile();
+    fetchRiderContacts();
+  }, [rider?.id]);
 
   return (
     <AdminLayout>
@@ -199,8 +199,15 @@ export const RiderProfile = () => {
               <p><strong>Preferred Payment:</strong> {displayRider?.preferredPaymentMethod || preferred_payment_method || 'N/A'}</p>
               <p>
                 <strong>Status:</strong>{' '}
-                <span className={`badge ${displayRider?.status === 'Active' ? 'bg-success' : 'bg-danger'}`}>
-                  {displayRider?.status === 'Active' ? 'Active' : 'Inactive'}
+                <span
+                  className={`badge ${(displayRider?.User?.status || displayRider?.status) === 'Active'
+                      ? 'bg-success'
+                      : 'bg-danger'
+                    }`}
+                >
+                  {(displayRider?.User?.status || displayRider?.status) === 'Active'
+                    ? 'Active'
+                    : 'Inactive'}
                 </span>
               </p>
             </div>

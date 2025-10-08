@@ -100,6 +100,12 @@ import { FareSlabEdit } from '../pages/dms/App/FareManagement/FareSlabs/FareSlab
 import { FareNightRulesList } from '../pages/dms/App/FareManagement/FareNightRules/FareNightRulesList';
 import { FareNightRulesAdd } from '../pages/dms/App/FareManagement/FareNightRules/FareNightRulesAdd';
 import { FareNightRulesEdit } from '../pages/dms/App/FareManagement/FareNightRules/FareNightRulesEdit';
+import { RideFeedback } from '../pages/dms/App/RatingsAndFeedback/RideFeedback/RideFeedback';
+import { UserRatingSummery } from '../pages/dms/App/RatingsAndFeedback/UserRatingSummary/UserRatingSummery';
+import { DriverPerformanceMetrics } from '../pages/dms/App/RatingsAndFeedback/DriverPerformanceMetrics/DriverPerformanceMetrics';
+import { ComplaintLogs } from '../pages/dms/App/RatingsAndFeedback/ComplaintLogs/ComplaintLogs';
+import { RideFeedbackView } from '../pages/dms/App/RatingsAndFeedback/RideFeedback/RideFeedbackView';
+import { CompalintLogsView } from '../pages/dms/App/RatingsAndFeedback/ComplaintLogs/CompalintLogsView';
 
 export const moduleComponentMap = {
   dashboard: {
@@ -239,5 +245,19 @@ export const moduleComponentMap = {
    view: FareNightRulesList,
    add: FareNightRulesAdd,
    edit: FareNightRulesEdit,
+  },
+  ridefeedback:{
+    view: RideFeedback,
+    viewDetails: RideFeedbackView,
+  },
+  userratingsummary:{
+    view: UserRatingSummery,
+  },
+  driverperformancemetrics:{
+    view: DriverPerformanceMetrics,
+  },
+  complaintlogs:{
+    view: ComplaintLogs,
+    viewDetails: CompalintLogsView,
   }
 };

@@ -163,7 +163,7 @@ export const RidersList = () => {
             {/* Search and Filter */}
             <div className="filter-search-container">
                 {/* Filter Dropdown */}
-                <DropdownButton variant="primary" title="Filter" id="filter-dropdown">
+                <DropdownButton variant="primary" title="Filter by Prefered Payment" id="filter-dropdown">
                     <Dropdown.Item onClick={() => handleFilter('')}>All</Dropdown.Item>
                     <Dropdown.Item onClick={() => handleFilter('Card')}>Card</Dropdown.Item>
                     <Dropdown.Item onClick={() => handleFilter('Cash')}>Cash</Dropdown.Item>

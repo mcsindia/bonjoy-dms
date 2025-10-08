@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import {
   FaUsers,
   FaCubes,
@@ -9,7 +9,7 @@ import {
   FaAppStore,
 } from "react-icons/fa";
 import { moduleComponentMap } from "../../../utils/ModuleComponentMap";
-import logo from '../../../assets/images/logo-img.png'
+import logo from '../../../assets/images/logo-img.png';
 
 export const Sidebar = ({ isOpen, setIsOpen }) => {
   const location = useLocation();
@@ -117,15 +117,16 @@ export const Sidebar = ({ isOpen, setIsOpen }) => {
       className={`dms-sidebar bg-color text-white ${isOpen ? "open" : "closed"}`}
       ref={sidebarRef}
     >
-     <div className="p-3 d-flex align-items-center sidebar-title">
-             <a
-               href="/dms/dashboard"
-               className="d-flex align-items-center text-white text-decoration-none"
-             >
-               <img src={logo} alt="Bonjoy Logo" height="30" />
-               {isOpen && <h4 className="mb-0 ms-2">Bonjoy</h4>}
-             </a>
-           </div>
+      {/* Logo */}
+      <div className="p-3 d-flex align-items-center sidebar-title">
+        <Link
+          to="/dms/dashboard"
+          className="d-flex align-items-center text-white text-decoration-none"
+        >
+          <img src={logo} alt="Bonjoy Logo" height="30" />
+          {isOpen && <h4 className="mb-0 ms-2">Bonjoy</h4>}
+        </Link>
+      </div>
       <hr />
 
       <ul className="nav flex-column">
@@ -143,15 +144,15 @@ export const Sidebar = ({ isOpen, setIsOpen }) => {
 
             return (
               <li key={key} className="dms-nav-item">
-                <a
-                  href={`/dms/${key}`}
+                <Link
+                  to={`/dms/${key}`}
                   className={`dms-nav-link text-white ${isActive ? "active" : ""}`}
                 >
                   <div className="d-flex align-items-center">
                     <Icon />
                     {isOpen && <span className="ms-3">{mod.moduleName}</span>}
                   </div>
-                </a>
+                </Link>
               </li>
             );
           })}
@@ -205,17 +206,15 @@ export const Sidebar = ({ isOpen, setIsOpen }) => {
 
                           return (
                             <li key={key} className="dms-nav-item">
-                              <a
-                                href={`/dms/${key}`}
-                                className={`dms-nav-link text-white ${
-                                  isActive ? "active" : ""
-                                }`}
+                              <Link
+                                to={`/dms/${key}`}
+                                className={`dms-nav-link text-white ${isActive ? "active" : ""}`}
                               >
                                 <div className="d-flex align-items-center">
                                   <Icon />
                                   <span className="ms-2">{mod.moduleName}</span>
                                 </div>
-                              </a>
+                              </Link>
                             </li>
                           );
                         })}
@@ -231,15 +230,16 @@ export const Sidebar = ({ isOpen, setIsOpen }) => {
                   if (!map || map.hidden) return null;
                   const isActive = location.pathname.includes(moduleKey);
                   const Icon = map?.icon || <FaCaretRight />;
+
                   return (
                     <li key={moduleKey} className="dms-nav-item">
-                      <a
-                        href={`/dms/${moduleKey}`}
+                      <Link
+                        to={`/dms/${moduleKey}`}
                         className={`dms-nav-link text-white ${isActive ? "active" : ""}`}
                       >
                         {Icon}
                         <span className="ms-2">{mod.moduleName?.trim() || "Untitled"}</span>
-                      </a>
+                      </Link>
                     </li>
                   );
                 })}

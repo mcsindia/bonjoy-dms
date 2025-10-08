@@ -217,8 +217,8 @@ export const TripList = () => {
                                 trips.map((trip, idx) => (
                                     <tr key={trip.id}>
                                         <td>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
-                                        <td>{trip.rider_name}</td>
-                                        <td>{trip.driver_name}</td>
+                                        <td>{trip.rider_name || '-'}</td>
+                                        <td>{trip.driver_name || '-'}</td>
                                         <td>{trip.ride_type}</td>
                                         <td>{trip.pickup_address}</td>
                                         <td>{trip.drop_address}</td>
