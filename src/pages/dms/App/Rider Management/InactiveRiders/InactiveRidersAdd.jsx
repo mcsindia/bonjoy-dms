@@ -33,8 +33,6 @@ export const InactiveRidersAdd = () => {
       setError('All fields are required.');
       return;
     }
-
-    console.log('Blocked Rider Added', formData);
     navigate('/dms/inactive-riders');
   };
 

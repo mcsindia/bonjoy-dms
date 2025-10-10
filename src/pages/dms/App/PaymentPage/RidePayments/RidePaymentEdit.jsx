@@ -28,7 +28,6 @@ export const RidePaymentEdit = () => {
 
     // Simulate a save operation
     try {
-      console.log("Updated Payment Data:", paymentData);
       setShowSuccess(true);
       setShowError(false);
     } catch (error) {

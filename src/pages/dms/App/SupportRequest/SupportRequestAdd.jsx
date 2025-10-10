@@ -35,8 +35,6 @@ export const SupportRequestAdd = () => {
       return;
     }
 
-    console.log('Form Submitted', formData);
-
     // Simulate saving the data and navigating back
     navigate('/dms/support'); // Redirect back to Support Request List
   };

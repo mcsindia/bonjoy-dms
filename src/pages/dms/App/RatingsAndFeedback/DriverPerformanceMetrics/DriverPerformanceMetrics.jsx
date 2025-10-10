@@ -4,12 +4,12 @@ import {
   Form,
   InputGroup,
   Pagination,
-  Button,
 } from "react-bootstrap";
 import { FaEye, FaStar } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "../../../../../layouts/dms/AdminLayout/AdminLayout";
 
-// Dummy driver performance data
+// Dummy driver performance data with trip details
 const dummyDrivers = [
   {
     performance_id: "P001",
@@ -23,6 +23,13 @@ const dummyDrivers = [
     average_rating: 4.6,
     last_reviewed: "2025-10-08T10:00:00Z",
     performance_flag: "excellent",
+    trip_details: {
+      last_trip_date: "2025-10-08",
+      last_trip_pickup: "MG Road, Bangalore",
+      last_trip_drop: "HSR Layout, Bangalore",
+      last_trip_fare: 450,
+      last_trip_distance: 12,
+    },
   },
   {
     performance_id: "P002",
@@ -36,6 +43,13 @@ const dummyDrivers = [
     average_rating: 4.2,
     last_reviewed: "2025-10-07T09:30:00Z",
     performance_flag: "average",
+    trip_details: {
+      last_trip_date: "2025-10-07",
+      last_trip_pickup: "Koramangala, Bangalore",
+      last_trip_drop: "Indiranagar, Bangalore",
+      last_trip_fare: 300,
+      last_trip_distance: 8,
+    },
   },
   {
     performance_id: "P003",
@@ -49,6 +63,13 @@ const dummyDrivers = [
     average_rating: 3.9,
     last_reviewed: "2025-10-06T12:15:00Z",
     performance_flag: "needs_review",
+    trip_details: {
+      last_trip_date: "2025-10-06",
+      last_trip_pickup: "Whitefield, Bangalore",
+      last_trip_drop: "Electronic City, Bangalore",
+      last_trip_fare: 600,
+      last_trip_distance: 18,
+    },
   },
 ];
 
@@ -58,7 +79,9 @@ export const DriverPerformanceMetrics = () => {
 
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     setLoading(true);
@@ -122,6 +145,8 @@ export const DriverPerformanceMetrics = () => {
                   <th>Average Rating</th>
                   <th>Last Reviewed</th>
                   <th>Performance Flag</th>
+                  <th>Last Trip Info</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -143,11 +168,27 @@ export const DriverPerformanceMetrics = () => {
                       </td>
                       <td>{new Date(driver.last_reviewed).toLocaleDateString()}</td>
                       <td>{driver.performance_flag}</td>
+                      <td>
+                        {driver.trip_details
+                          ? `${driver.trip_details.last_trip_date} | ${driver.trip_details.last_trip_pickup} → ${driver.trip_details.last_trip_drop} | ₹${driver.trip_details.last_trip_fare} | ${driver.trip_details.last_trip_distance}km`
+                          : "-"}
+                      </td>
+                      <td>
+                        <FaEye
+                          title="View Details"
+                          className="icon icon-blue"
+                          onClick={() =>
+                            navigate(`/dms/driverperformancemetrics/view/${driver.driver_id}`, {
+                              state: { driver },
+                            })
+                          }
+                        />
+                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="11" className="text-center">
+                    <td colSpan="12" className="text-center">
                       No drivers found.
                     </td>
                   </tr>

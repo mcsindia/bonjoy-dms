@@ -28,7 +28,6 @@ export const CurrencyList = () => {
     // Function to handle delete
     const handleDelete = (id) => {
         setCurrencies(currencies.filter(currency => currency.id !== id));
-        console.log(`Currency with id ${id} deleted`);
     };
 
     // Function to handle edit

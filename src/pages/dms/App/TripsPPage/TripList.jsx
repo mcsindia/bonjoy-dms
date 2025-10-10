@@ -173,7 +173,6 @@ export const TripList = () => {
                         />
                     </DropdownButton>
 
-                    {/* 🔄 Clear Filters */}
                     <Button
                         variant="secondary"
                         onClick={() => {
@@ -217,8 +216,50 @@ export const TripList = () => {
                                 trips.map((trip, idx) => (
                                     <tr key={trip.id}>
                                         <td>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
-                                        <td>{trip.rider_name || '-'}</td>
-                                        <td>{trip.driver_name || '-'}</td>
+
+                                        {/* Rider Name clickable */}
+                                        <td>
+                                            <span
+                                                className="rider-id-link "
+                                                onClick={() =>
+                                                    navigate(`/dms/rider/view/${trip.rider_id}`, {
+                                                        state: {
+                                                            rider: {
+                                                                id: trip.rider_id,
+                                                                userId: trip.rider_user_id,
+                                                                fullName: trip.rider_name,
+                                                                profileImage: trip.rider_profile_image
+                                                            }
+                                                        }
+                                                    })
+                                                }
+                                            >
+                                                {trip.rider_name || "-"}
+                                            </span>
+                                        </td>
+
+                                        {/* Driver Name clickable */}
+                                        <td>
+                                            <span
+                                                className="driver-id-link"
+                                                style={{ cursor: "pointer" }}
+                                                onClick={() =>
+                                                    navigate(`/dms/driver/view/${trip.driver_id}`, {
+                                                        state: {
+                                                            driver: {
+                                                                id: trip.driver_id,
+                                                                userId: trip.driver_user_id, // ensure this field exists
+                                                                fullName: trip.driver_name,
+                                                                profileImage: trip.driver_profile_image
+                                                            }
+                                                        }
+                                                    })
+                                                }
+                                            >
+                                                {trip.driver_name || "-"}
+                                            </span>
+                                        </td>
+
                                         <td>{trip.ride_type}</td>
                                         <td>{trip.pickup_address}</td>
                                         <td>{trip.drop_address}</td>

@@ -41,7 +41,6 @@ export const BlogEdit = () => {
   // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Blog updated:', blog);
     // TODO: Update blog API call here
     navigate('/dms/blog'); // Redirect to blog list after update
   };

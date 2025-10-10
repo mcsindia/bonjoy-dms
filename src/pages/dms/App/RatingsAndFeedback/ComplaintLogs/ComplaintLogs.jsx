@@ -4,12 +4,13 @@ import {
   Form,
   InputGroup,
   Pagination,
+  Button,
+  Modal,
 } from "react-bootstrap";
-import { FaEye } from "react-icons/fa";
+import { FaEye, FaEdit, FaPen } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "../../../../../layouts/dms/AdminLayout/AdminLayout";
 
-// Dummy complaint data
 const dummyComplaints = [
   {
     complaint_id: "C001",
@@ -20,9 +21,16 @@ const dummyComplaints = [
     against_user_name: "Jane Smith",
     category: "driver_behavior",
     description: "Driver was rude during the trip.",
-    status: "pending",
+    status: "Pending",
+    remark: "-",
     created_at: "2025-10-07T09:45:00Z",
     resolved_at: null,
+    pickup_location: "MG Road, Bangalore",
+    drop_location: "HSR Layout, Bangalore",
+    trip_date: "2025-10-07",
+    trip_time: "09:00 AM",
+    fare: "450",
+    distance: "12 km",
   },
   {
     complaint_id: "C002",
@@ -33,9 +41,16 @@ const dummyComplaints = [
     against_user_name: "Alice Williams",
     category: "fare_issue",
     description: "Fare was charged incorrectly.",
-    status: "resolved",
+    status: "Resolved",
+    remark: "Refund issued",
     created_at: "2025-10-05T14:20:00Z",
     resolved_at: "2025-10-06T10:00:00Z",
+    pickup_location: "Koramangala, Bangalore",
+    drop_location: "Indiranagar, Bangalore",
+    trip_date: "2025-10-05",
+    trip_time: "02:00 PM",
+    fare: "300",
+    distance: "8 km",
   },
   {
     complaint_id: "C003",
@@ -46,9 +61,16 @@ const dummyComplaints = [
     against_user_name: "Michael Lee",
     category: "delay",
     description: "Driver arrived 30 minutes late.",
-    status: "escalated",
+    status: "Escalated",
+    remark: "Forwarded to management",
     created_at: "2025-10-08T11:30:00Z",
     resolved_at: null,
+    pickup_location: "Whitefield, Bangalore",
+    drop_location: "Electronic City, Bangalore",
+    trip_date: "2025-10-08",
+    trip_time: "11:00 AM",
+    fare: "600",
+    distance: "18 km",
   },
 ];
 
@@ -59,6 +81,12 @@ export const ComplaintLogs = () => {
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // Modal States
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [selectedComplaint, setSelectedComplaint] = useState(null);
+  const [newStatus, setNewStatus] = useState("");
+  const [remark, setRemark] = useState("");
 
   useEffect(() => {
     setLoading(true);
@@ -81,7 +109,39 @@ export const ComplaintLogs = () => {
   const handlePageChange = (pageNumber) => {
     if (pageNumber >= 1 && pageNumber <= totalPages) setCurrentPage(pageNumber);
   };
-  
+
+  // 🔹 Handle status edit button click
+  const handleStatusEdit = (complaint) => {
+    setSelectedComplaint(complaint);
+    setNewStatus(complaint.status);
+    setRemark(complaint.remark || "");
+    setShowStatusModal(true);
+  };
+
+  // 🔹 Save updated status & remark
+  const handleStatusSubmit = () => {
+    if (!selectedComplaint) return;
+
+    const updated = complaints.map((c) =>
+      c.complaint_id === selectedComplaint.complaint_id
+        ? {
+          ...c,
+          status: newStatus,
+          remark: remark || "-",
+          resolved_at:
+            newStatus.toLowerCase() === "resolved"
+              ? new Date().toISOString()
+              : c.resolved_at,
+        }
+        : c
+    );
+
+    setComplaints(updated);
+    setShowStatusModal(false);
+    setSelectedComplaint(null);
+    setRemark("");
+  };
+
   return (
     <AdminLayout>
       <div className="dms-pages-header sticky-header">
@@ -117,6 +177,7 @@ export const ComplaintLogs = () => {
                   <th>Category</th>
                   <th>Description</th>
                   <th>Status</th>
+                  <th>Remark</th>
                   <th>Ride ID</th>
                   <th>Created At</th>
                   <th>Resolved At</th>
@@ -138,8 +199,18 @@ export const ComplaintLogs = () => {
                       </td>
                       <td>{c.category.replace("_", " ")}</td>
                       <td>{c.description}</td>
-                      <td> {c.status}
+                      <td>
+                        <span>
+                          {c.status}
+                        </span>
+                        <FaEdit
+                          title="Edit Status"
+                          className="icon icon-green ms-2"
+                          style={{ cursor: "pointer" }}
+                          onClick={() => handleStatusEdit(c)}
+                        />
                       </td>
+                      <td>{c.remark || "-"}</td>
                       <td>{c.ride_id || "-"}</td>
                       <td>{new Date(c.created_at).toLocaleString()}</td>
                       <td>
@@ -150,7 +221,7 @@ export const ComplaintLogs = () => {
                       <td>
                         <FaEye
                           title="View"
-                          className="icon icon-blue"
+                          className="icon icon-blue me-2"
                           style={{ cursor: "pointer" }}
                           onClick={() =>
                             navigate(`/dms/complaintlogs/view/${c.complaint_id}`, {
@@ -163,7 +234,7 @@ export const ComplaintLogs = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="10" className="text-center">
+                    <td colSpan="11" className="text-center">
                       No complaints found.
                     </td>
                   </tr>
@@ -204,13 +275,56 @@ export const ComplaintLogs = () => {
                 <option value="5">Show 5</option>
                 <option value="10">Show 10</option>
                 <option value="20">Show 20</option>
-                <option value="30">Show 30</option>
-                <option value="50">Show 50</option>
               </Form.Select>
             </div>
           </>
         )}
       </div>
+
+      {/* 🔹 Modal for Status Update */}
+      <Modal show={showStatusModal} onHide={() => setShowStatusModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Change Complaint Status</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>Select Status</Form.Label>
+              <Form.Select
+                value={newStatus}
+                onChange={(e) => setNewStatus(e.target.value)}
+              >
+                <option value="Pending">Pending</option>
+                <option value="Resolved">Resolved</option>
+                <option value="Escalated">Escalated</option>
+                <option value="Rejected">Rejected</option>
+              </Form.Select>
+            </Form.Group>
+            <Form.Group>
+              <Form.Label>Remark</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={3}
+                value={remark}
+                onChange={(e) => setRemark(e.target.value)}
+                placeholder="Enter your remark..."
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowStatusModal(false)}>
+            Cancel
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleStatusSubmit}
+            disabled={!newStatus || !remark.trim()}
+          >
+            Save Changes
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </AdminLayout>
   );
 };

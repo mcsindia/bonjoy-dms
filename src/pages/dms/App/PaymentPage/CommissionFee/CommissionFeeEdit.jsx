@@ -20,8 +20,6 @@ export const CommissionFeeEdit = () => {
   // Handle form submission (Update commission fee record)
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Updated commission fee record:", { paymentDate, rideId, driverName, totalCommission, platformFee });
-
     // Navigate back to the commission fee list page after updating
     navigate("/dms/commissionfee");
   };

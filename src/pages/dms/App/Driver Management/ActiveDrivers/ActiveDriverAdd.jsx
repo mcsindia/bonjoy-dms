@@ -34,7 +34,6 @@ export const ActiveDriverAdd = () => {
       setError('All fields except Trip ID are required.');
       return;
     }
-    console.log('Driver Added:', formData);
     navigate('/dms/active-drivers');
   };
 

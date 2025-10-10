@@ -72,7 +72,6 @@ export const VehicleEdit = () => {
       );
 
       if (response.data.success) {
-        console.log("Vehicle updated successfully:", response.data.message);
         navigate("/dms/vehicle/master");
       } else {
         console.error("Failed to update vehicle:", response.data.message);

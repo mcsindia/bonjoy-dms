@@ -43,8 +43,6 @@ export const DriverEarningAdd = () => {
       setError(`Please fill out all required fields.`);
       return;
     }
-
-    console.log('Earning Added:', formData);
     navigate('/dms/driver-earnings');
   };
 

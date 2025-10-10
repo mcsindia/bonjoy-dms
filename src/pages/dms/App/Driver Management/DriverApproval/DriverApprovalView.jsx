@@ -127,11 +127,10 @@ export const DriverApprovalView = () => {
         }
     };
 
-   const handleRemarkAction = (doc, docName, type) => {
-    console.log("Remark on Document ID:", doc.id, "| Type:", type);
-    setSelectedResubmitDoc({ ...doc, type });
-    setShowResubmitModal(true);
-};
+    const handleRemarkAction = (doc, docName, type) => {
+        setSelectedResubmitDoc({ ...doc, type });
+        setShowResubmitModal(true);
+    };
 
     const getActionsByStatus = (status, docName, doc, type = 'driver') => {
         const actions = [
@@ -212,7 +211,7 @@ export const DriverApprovalView = () => {
                         branchName: matchingBankDetail?.branchName || "N/A",
                         verificationStatus: doc.status?.trim() || matchingBankDetail?.verificationStatus || "N/A",
                         uploadetAt: doc.createdAt,
-                        docType: doc.file_label,
+                        docType: matchingBankDetail?.docType || "N/A",
                     },
                 };
             });
@@ -553,7 +552,7 @@ export const DriverApprovalView = () => {
                 <tbody>
                     {bankDocuments.map((doc) => (
                         <tr key={doc.id}>
-                            <td>{doc.fileLabel || "N/A"}</td>
+                           <td>{doc.details?.docType || "N/A"}</td>
                             <td>{doc.details?.accountNo || "N/A"}</td>
                             <td>{doc.details?.bankName || "N/A"}</td>
                             <td>{doc.details?.branchName || "N/A"}</td>

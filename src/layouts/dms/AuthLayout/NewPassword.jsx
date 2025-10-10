@@ -15,16 +15,8 @@ export const NewPassword = () => {
     const mobile = location.state?.mobile;
     const otp = location.state?.otp;
 
-    console.log("Mobile:", mobile, "OTP:", otp);
-
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        console.log("New Password:", newPassword);
-        console.log("Confirm Password:", confirmPassword);
-        console.log("State from location:", location.state); // Check if mobile and otp are coming
-        console.log("Mobile:", mobile);
-        console.log("OTP:", otp);
 
         if (newPassword !== confirmPassword) {
             alert("Passwords do not match!");
@@ -43,16 +35,12 @@ export const NewPassword = () => {
             mobile: String(mobile)
         };
 
-        console.log("Payload to send:", payload); // Debug payload
-
         setLoading(true);
 
         try {
             const response = await axios.post(`${API_BASE_URL}/resetPassword`, payload, {
                 headers: { "Content-Type": "application/json" }
             });
-
-            console.log("API response:", response.data); // Debug API response
 
             if (response.data.success) {
                 alert("Password reset successful. Please log in with your new password.");

@@ -36,7 +36,6 @@ export const CanceledTripAdd = () => {
       setError('All required fields must be filled.');
       return;
     }
-    console.log('Canceled Trip Added:', formData);
     navigate('/dms/canceled-trips');
   };
 

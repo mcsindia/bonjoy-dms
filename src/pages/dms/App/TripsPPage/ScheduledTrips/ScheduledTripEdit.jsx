@@ -34,7 +34,6 @@ export const ScheduledTripEdit = () => {
   // Handle Form Submission
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Updated Scheduled Trip:', formData);
     navigate('/dms/scheduled-trips'); // Redirect back to Scheduled Trips List
   };
 

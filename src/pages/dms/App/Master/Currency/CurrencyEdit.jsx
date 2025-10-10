@@ -29,7 +29,6 @@ export const CurrencyEdit = () => {
     // Handle form submission
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log('Currency updated:', currency);
         // Update logic (API call or state update)
         navigate('/dms/settings'); // Redirect to Currencies List after editing
     };

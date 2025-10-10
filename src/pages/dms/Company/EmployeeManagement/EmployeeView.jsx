@@ -56,9 +56,7 @@ export const EmployeeView = () => {
 
       setLoading(true);
       try {
-        const moduleId = getModuleId("employee"); // pass module_id
-        console.log("Fetching employee:", employeeId, "module_id:", moduleId, "token:", token);
-
+        const moduleId = getModuleId("employee"); 
         const res = await axios.get(`${API_BASE_URL}/getEmployeeById/${employeeId}`, {
           headers: { Authorization: `Bearer ${token}` },
           params: { module_id: moduleId } // include module_id in query

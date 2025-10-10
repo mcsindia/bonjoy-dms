@@ -50,7 +50,6 @@ export const NotificationSetting = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Notification Settings:', settings);
   };
 
   return (

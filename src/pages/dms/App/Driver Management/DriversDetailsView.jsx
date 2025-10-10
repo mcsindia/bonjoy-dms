@@ -11,7 +11,6 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const IMAGE_BASE_URL = import.meta.env.VITE_IMAGE_BASE_URL;
 
 export const DriversDetailsView = () => {
-
   const location = useLocation();
   const navigate = useNavigate();
   const driverId = location.state?.driver?.userId;
@@ -72,38 +71,38 @@ export const DriversDetailsView = () => {
   };
 
   const getActionsByStatus = (status, docName, doc, type = 'driver', expiryDate = null) => {
-  const actions = [
-    <li key="view" onClick={() => handlePermissionCheck("view", () => window.open(`${IMAGE_BASE_URL}${doc.file_url}`, '_blank'))}>
-      <FaEye className="dms-menu-icon" /> View
-    </li>,
-    <li key="download" onClick={() => handlePermissionCheck("view", () => handleDownload(`${IMAGE_BASE_URL}${doc.file_url}`))}>
-      <FaDownload className="dms-menu-icon" /> Download
-    </li>,
-    <li key="versions" onClick={() => handlePermissionCheck("view", () => handleViewVersions(doc, type))}>
-      <FaHistory className="dms-menu-icon" /> View Versions
-    </li>
-  ];
-
-  // Show Remark if status is pending
-  if (status?.toLowerCase() === "pending") {
-    actions.push(
-      <li key="remark" onClick={() => handlePermissionCheck("edit", () => handleRemarkAction(doc, docName, type))}>
-        <FaEdit className="dms-menu-icon" /> Remark
+    const actions = [
+      <li key="view" onClick={() => handlePermissionCheck("view", () => window.open(`${IMAGE_BASE_URL}${doc.file_url}`, '_blank'))}>
+        <FaEye className="dms-menu-icon" /> View
+      </li>,
+      <li key="download" onClick={() => handlePermissionCheck("view", () => handleDownload(`${IMAGE_BASE_URL}${doc.file_url}`))}>
+        <FaDownload className="dms-menu-icon" /> Download
+      </li>,
+      <li key="versions" onClick={() => handlePermissionCheck("view", () => handleViewVersions(doc, type))}>
+        <FaHistory className="dms-menu-icon" /> View Versions
       </li>
-    );
-  }
+    ];
 
-  // Show Reminder if document is not pending and expiring within 30 days
-  if (status?.toLowerCase() !== "pending" && isExpiringSoon(expiryDate)) {
-    actions.push(
-      <li key="reminder" onClick={() => handlePermissionCheck("edit", () => sendReminder(doc, type))}>
-        <FaBell className="dms-menu-icon" /> Reminder
-      </li>
-    );
-  }
+    // Show Remark if status is pending
+    if (status?.toLowerCase() === "pending") {
+      actions.push(
+        <li key="remark" onClick={() => handlePermissionCheck("edit", () => handleRemarkAction(doc, docName, type))}>
+          <FaEdit className="dms-menu-icon" /> Remark
+        </li>
+      );
+    }
 
-  return actions;
-};
+    // Show Reminder if document is not pending and expiring within 30 days
+    if (status?.toLowerCase() !== "pending" && isExpiringSoon(expiryDate)) {
+      actions.push(
+        <li key="reminder" onClick={() => handlePermissionCheck("edit", () => sendReminder(doc, type))}>
+          <FaBell className="dms-menu-icon" /> Reminder
+        </li>
+      );
+    }
+
+    return actions;
+  };
 
   const handleImageView = (doc) => {
     if (doc && doc.docFile) {
@@ -238,7 +237,7 @@ export const DriversDetailsView = () => {
   useEffect(() => {
     if (driverId) {
       axios.get(`${API_BASE_URL}/getDriverAllDocument/${driverId}`, {
-        params: { module_id: "driver" } // 🔹 added module_id
+        params: { module_id: "driver" }
       })
         .then(res => {
           if (res.data?.data) {
@@ -260,6 +259,7 @@ export const DriversDetailsView = () => {
               );
               return {
                 ...doc,
+                docType: matchingDetail?.docType || 'N/A',
                 account_number: matchingDetail?.accountNo || 'N/A',
                 ifsc_code: matchingDetail?.ifscCode || 'N/A',
               };
@@ -336,7 +336,7 @@ export const DriversDetailsView = () => {
             driverId,
             documentType,
             documentId: doc.id,
-            module_id: "driver" // 🔹 added module_id
+            module_id: "driver" 
           }
         }
       );
@@ -362,7 +362,7 @@ export const DriversDetailsView = () => {
         const token = JSON.parse(localStorage.getItem("userData"))?.token;
         const response = await axios.get(`${API_BASE_URL}/getAllUserContacts`, {
           headers: { Authorization: `Bearer ${token}` },
-          params: { module_id: "driver" } // 🔹 added module_id
+          params: { module_id: "driver" } 
         });
 
         if (response.data?.success) {
@@ -615,7 +615,7 @@ export const DriversDetailsView = () => {
                     <td>{doc.doc_type || 'NA'}</td>
                     <td>{doc.file_label || 'NA'}</td>
                     <td>{doc.status || 'NA'}</td>
-                    <td>{doc.expiryDate ? new Date(doc.expiryDate).toLocaleDateString() : 'NA'}</td>
+                    <td>{doc.expiry_date ? new Date(doc.expiry_date).toLocaleDateString() : 'NA'}</td>
                     <td>{doc.createdAt ? new Date(doc.createdAt).toLocaleDateString() : 'NA'}</td>
                     <td>
                       <span className="dms-span-action" onClick={() => handleDriverActionMenuToggle(doc.id)}>⋮</span>
@@ -634,7 +634,7 @@ export const DriversDetailsView = () => {
             <Table striped bordered hover>
               <thead>
                 <tr>
-                  <th>File Label</th>
+                  <th>Doc Type</th> {/* Changed from File Label */}
                   <th>Account Number</th>
                   <th>IFSC Code</th>
                   <th>Status</th>
@@ -646,7 +646,7 @@ export const DriversDetailsView = () => {
                 {bankDocs.length > 0 ? (
                   bankDocs.map((doc, idx) => (
                     <tr key={doc.id || idx}>
-                      <td>{doc.file_label || 'N/A'}</td>
+                      <td>{doc.docType || 'N/A'}</td> {/* ← here */}
                       <td>{doc.account_number || 'N/A'}</td>
                       <td>{doc.ifsc_code || 'N/A'}</td>
                       <td>{doc.status?.trim() || 'N/A'}</td>
@@ -655,7 +655,7 @@ export const DriversDetailsView = () => {
                         <span className="dms-span-action" onClick={() => handleDriverActionMenuToggle(doc.id)}>⋮</span>
                         {showDriverActions === doc.id && (
                           <div className="dms-show-actions-menu">
-                            <ul>{getActionsByStatus(doc.verificationStatus, doc.fileLabel, doc, 'driver')}</ul>
+                            <ul>{getActionsByStatus(doc.verificationStatus, doc.docType, doc, 'driver')}</ul>
                           </div>
                         )}
                       </td>

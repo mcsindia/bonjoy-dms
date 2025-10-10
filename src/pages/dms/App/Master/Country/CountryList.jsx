@@ -29,7 +29,6 @@ export const CountryList = () => {
 
     const handleDelete = (id) => {
         setCountries(countries.filter(country => country.id !== id));
-        console.log(`Country with id ${id} deleted`);
     };
 
     const handleEdit = (id) => {

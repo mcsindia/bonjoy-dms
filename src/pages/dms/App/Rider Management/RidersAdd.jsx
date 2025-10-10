@@ -24,7 +24,6 @@ export const RidersAdd = () => {
     // Handle form submission
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log('Rider added:', rider);
         navigate('/dms/riders'); // Redirect to Riders List after adding
     };
 

@@ -21,8 +21,6 @@ export const PendingPayoutEdit = () => {
   // Handle form submission (Update payout)
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Updated payout:", { pendingFor, name, profileId, pendingAmount, status, dateTime });
-
     // Navigate back to the pending payouts list page after updating
     navigate("/dms/pendingpayments");
   };

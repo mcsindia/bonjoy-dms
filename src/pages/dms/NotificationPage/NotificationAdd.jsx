@@ -37,8 +37,6 @@ export const NotificationAdd = () => {
       return;
     }
 
-    console.log('Form Submitted', formData);
-
     // Simulate saving the data and navigating back
     navigate('/dms/notifications'); // Redirect back to Notifications List
   };

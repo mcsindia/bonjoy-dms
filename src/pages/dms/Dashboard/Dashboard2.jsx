@@ -39,7 +39,6 @@ export const Dashboard2 = () => {
 
   const handleFilterChange = (selectedFilter) => {
     setFilter(selectedFilter);
-    console.log(`Filter changed to: ${selectedFilter}`);
   };
 
   const stats = [

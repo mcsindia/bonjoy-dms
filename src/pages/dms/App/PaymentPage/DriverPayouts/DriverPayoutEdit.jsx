@@ -22,8 +22,6 @@ export const DriverPayoutEdit = () => {
   // Handle form submission (Update payout)
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Updated payout:", { payoutDate, rideId, driverName, totalEarnings, commissionDeduction, payoutMethod, payoutStatus });
-
     // Navigate back to the driver payouts list page after updating
     navigate("/dms/driverpayout");
   };

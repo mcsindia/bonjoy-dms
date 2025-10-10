@@ -33,8 +33,6 @@ export const InactiveDriversEdit = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    console.log('Updated Suspended Driver:', formData);
-
     // Simulate updating the data and navigating back
     navigate('/dms/inactive-drivers'); // Redirect back to Suspended Drivers List
   };

@@ -37,8 +37,6 @@ export const DriverPayoutsAdd = () => {
       setError(`Please fill out all required fields.`);
       return;
     }
-
-    console.log('Payout Added:', formData);
     navigate('/dms/driver-payouts');
   };
 

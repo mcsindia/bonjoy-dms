@@ -34,8 +34,6 @@ export const InactiveRidersEdit = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    console.log('Updated Blocked Rider:', formData);
-
     // Simulate updating the data and navigating back
     navigate('/dms/inactive-riders'); // Redirect back to Blocked Riders List
   };

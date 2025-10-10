@@ -21,7 +21,6 @@ export const CurrencyAdd = () => {
   // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Currency added:', currency);
     // You can call an API or save the data here
     navigate('/dms/settings'); // Redirect to Currencies List after adding
   };

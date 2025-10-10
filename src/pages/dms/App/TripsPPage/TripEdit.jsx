@@ -35,7 +35,11 @@ export const TripEdit = () => {
           }),
           axios.get(`${API_BASE_URL}/getAllDriverProfiles`, {
             ...config,
-            params: { module_id: getModuleId("driver") }
+            params: {
+              module_id: getModuleId("driver"),
+              page: 1,
+              limit: 10000 
+            }
           }),
           axios.get(`${API_BASE_URL}/getAllRiderProfiles`, config)
         ]);
@@ -48,10 +52,12 @@ export const TripEdit = () => {
         );
 
         setDrivers(
-          driversRes.data?.data?.data?.map(d => ({
-            value: d.userId,
-            label: d.fullName || d.mobile
-          })) || []
+          (driversRes.data?.data?.data || [])
+            .filter(d => d.status?.toLowerCase() !== "pending")
+            .map(d => ({
+              value: d.userId,
+              label: d.fullName || d.mobile
+            }))
         );
 
         setRiders(

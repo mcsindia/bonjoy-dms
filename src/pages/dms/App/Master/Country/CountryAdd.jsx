@@ -21,7 +21,6 @@ export const CountryAdd = () => {
   // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Country added:', country);
     // You can call an API or save the data here
     navigate('/dms/settings'); // Redirect to Countries List after adding
   };

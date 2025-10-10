@@ -20,7 +20,6 @@ export const UpdateSetting = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Update settings updated:', updateSettings);
     setIsEditing(false);
     // Handle the update logic (API call or save to local storage)
   };

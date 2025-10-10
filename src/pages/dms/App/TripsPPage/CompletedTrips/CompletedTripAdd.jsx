@@ -36,7 +36,6 @@ export const CompletedTripAdd = () => {
       setError('All fields are required.');
       return;
     }
-    console.log('Completed Trip Added:', formData);
     navigate('/dms/completed-trips');
   };
 

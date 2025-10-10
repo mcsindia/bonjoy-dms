@@ -32,7 +32,6 @@ export const IdleDriverAdd = () => {
       setError('All fields are required.');
       return;
     }
-    console.log('Idle Driver Added:', formData);
     navigate('/dms/idle-drivers');
   };
 

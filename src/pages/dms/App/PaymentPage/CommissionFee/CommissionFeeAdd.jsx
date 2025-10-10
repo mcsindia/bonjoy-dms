@@ -23,7 +23,6 @@ export const CommissionFeeAdd = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
     navigate("/dms/commissionfee");
   };
 

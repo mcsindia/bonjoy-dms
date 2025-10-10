@@ -33,7 +33,6 @@ export const ScheduledTripAdd = () => {
       setError('All required fields must be filled.');
       return;
     }
-    console.log('Scheduled Trip Added:', formData);
     navigate('/dms/scheduled-trips');
   };
 

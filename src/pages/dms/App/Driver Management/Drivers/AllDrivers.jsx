@@ -4,7 +4,7 @@ import { Button, Table, InputGroup, Form, Pagination, Dropdown, DropdownButton, 
 import { FaEdit, FaEye, FaStar, FaFileExport, FaFileExcel, FaFilePdf, FaBell, FaHistory, FaSignInAlt } from 'react-icons/fa';
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { getModuleId, getToken, getModulePermissions } from '../../../../../utils/authhelper';
+import { getModuleId, getToken, } from '../../../../../utils/authhelper';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -27,8 +27,8 @@ export const AllDrivers = () => {
     const [totalRecords, setTotalRecords] = useState(0);
     const [allCities, setAllCities] = useState([]);
     const userData = JSON.parse(localStorage.getItem("userData"));
-    const moduleId = getModuleId("driver"); 
-    const token = getToken();          
+    const moduleId = getModuleId("driver");
+    const token = getToken();
     let permissions = [];
 
     if (Array.isArray(userData?.employeeRole)) {
@@ -72,7 +72,6 @@ export const AllDrivers = () => {
             });
 
             const result = res.data?.data;
-            console.log(result)
             if (result?.data) {
                 const sortedDrivers = result.data.sort((a, b) => parseInt(a.id) - parseInt(b.id));
                 setDriverData(sortedDrivers);
@@ -99,7 +98,7 @@ export const AllDrivers = () => {
         try {
             const res = await axios.delete(`${API_BASE_URL}/deleteDriverProfile/${driverToDelete.id}`, {
                 headers: { Authorization: `Bearer ${token}` },
-                params: { module_id: moduleId }, 
+                params: { module_id: moduleId },
             });
 
             if (res.status === 200) {
@@ -179,7 +178,7 @@ export const AllDrivers = () => {
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (actionMenuRef.current && !actionMenuRef.current.contains(event.target)) {
-                setShowActions(null); 
+                setShowActions(null);
             }
         };
 
@@ -278,7 +277,24 @@ export const AllDrivers = () => {
                                 driverData.map((driver, index) => (
                                     <tr key={driver.id}>
                                         <td>{index + 1}</td>
-                                        <td>{driver.fullName || 'NA'}</td>
+                                        <td>
+                                            <span
+                                                className="driver-id-link"
+                                                onClick={() => {
+                                                    if (driver.status?.toLowerCase() === "pending") {
+                                                        navigate(`/dms/driver-approval/view/${driver.id}`, {
+                                                            state: { driver }
+                                                        });
+                                                    } else {
+                                                         navigate(`/dms/driver/view/${driver.id}`, {
+                                                            state: { driver }
+                                                        });
+                                                    }
+                                                }}
+                                            >
+                                                {driver.fullName || "NA"}
+                                            </span>
+                                        </td>
                                         <td>
                                             <div className='d-flex'>
                                                 <FaStar className='icon star-icon' />
@@ -291,7 +307,7 @@ export const AllDrivers = () => {
                                         <td>{driver.updatedAt ? new Date(driver.updatedAt).toLocaleDateString() : 'NA'}</td>
                                         <td className="action">
                                             {permissions.length === 0 ? (
-                                                <span>-</span> 
+                                                <span>-</span>
                                             ) : (
                                                 <>
                                                     <span

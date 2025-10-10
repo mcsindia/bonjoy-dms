@@ -34,7 +34,6 @@ export const PaymentRefundIssueAdd = () => {
       setError('All required fields must be filled.');
       return;
     }
-    console.log('Payment Refund Issue Added:', formData);
     navigate('/dms/refund-issues');
   };
 

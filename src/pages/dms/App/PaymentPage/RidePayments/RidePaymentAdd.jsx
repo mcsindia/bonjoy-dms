@@ -22,7 +22,6 @@ export const RidePaymentAdd = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
 
     // Redirect to PaymentList after submission (replace this with actual API logic)
     navigate("/dms/trippayment");

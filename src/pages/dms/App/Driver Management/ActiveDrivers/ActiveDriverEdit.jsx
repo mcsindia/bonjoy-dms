@@ -36,8 +36,6 @@ export const ActiveDriverEdit = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    console.log('Updated Driver:', formData);
-
     // Simulate updating the data and navigating back
     navigate('/dms/active-drivers'); // Redirect back to Active Drivers List
   };

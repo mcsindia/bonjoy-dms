@@ -31,7 +31,6 @@ export const SecurityAuthenticationSetting = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Security & Authentication Settings:', settings);
     setIsEditing(false);
   };
 

@@ -31,7 +31,6 @@ export const InactiveDriversAdd = () => {
       setError('All fields are required except Suspension Type.');
       return;
     }
-    console.log('Suspended Driver Added:', formData);
     navigate('/dms/inactive-drivers');
   };
 

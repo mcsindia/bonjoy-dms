@@ -37,7 +37,6 @@ export const PerformanceReportAdd = () => {
             setError('All required fields must be filled.');
             return;
         }
-        console.log('Performance Report Added:', formData);
         navigate('/dms/performance-reports');
     };
 

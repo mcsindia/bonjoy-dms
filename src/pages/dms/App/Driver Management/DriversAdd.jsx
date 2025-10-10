@@ -107,7 +107,6 @@ export const DriversAdd = () => {
             const data = await response.json();
 
             if (response.ok) {
-                console.log('Driver created successfully:', data);
                 navigate('/dms/drivers');
             } else {
                 console.error('Error creating driver:', data.message || data);

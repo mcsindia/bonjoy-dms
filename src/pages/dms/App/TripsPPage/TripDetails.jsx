@@ -172,6 +172,7 @@ export const TripDetails = () => {
         </Card>
 
         {/* Rider Info */}
+        {/* Rider Info */}
         <Row>
           <Col md={6}>
             <Card className="p-4 mb-4 shadow-sm">
@@ -188,13 +189,33 @@ export const TripDetails = () => {
                   />
                 </Col>
                 <Col xs={8}>
-                  <p><strong>Name:</strong> {rider_name}</p>
+                  <p>
+                    <strong>Name:</strong>{" "}
+                    <span
+                      className="rider-id-link"
+                      onClick={() =>
+                        navigate(`/dms/rider/view/${trip.rider_id}`, {
+                          state: {
+                            rider: {
+                              id: trip.rider_id,
+                              userId: trip.rider_user_id,
+                              fullName: trip.rider_name,
+                              profileImage: trip.rider_profile_image,
+                            },
+                          },
+                        })
+                      }
+                    >
+                      {rider_name || "N/A"}
+                    </span>
+                  </p>
                   <p><strong>User ID:</strong> {rider_user_id}</p>
                 </Col>
               </Row>
             </Card>
           </Col>
 
+          {/* Driver Info */}
           <Col md={6}>
             <Card className="p-4 mb-4 shadow-sm">
               <h4>Driver Information</h4>
@@ -210,7 +231,26 @@ export const TripDetails = () => {
                   />
                 </Col>
                 <Col xs={8}>
-                  <p><strong>Name:</strong> {driver_name}</p>
+                  <p>
+                    <strong>Name:</strong>{" "}
+                    <span
+                      className="driver-id-link"
+                      onClick={() =>
+                        navigate(`/dms/driver/view/${trip.driver_id}`, {
+                          state: {
+                            driver: {
+                              id: trip.driver_id,
+                              userId: trip.driver_user_id,
+                              fullName: trip.driver_name,
+                              profileImage: trip.driver_profile_image,
+                            },
+                          },
+                        })
+                      }
+                    >
+                      {driver_name || "N/A"}
+                    </span>
+                  </p>
                   <p><strong>User ID:</strong> {driver_user_id}</p>
                 </Col>
               </Row>

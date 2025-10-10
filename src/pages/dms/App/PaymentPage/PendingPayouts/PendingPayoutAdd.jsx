@@ -24,7 +24,6 @@ export const PendingPayoutAdd = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
     navigate("/dms/pendingpayments");
   };
 

@@ -80,10 +80,7 @@ export const FareRegionAdd = () => {
         isActive: "1",
         module_id: moduleId,
       };
-
-      console.log("🚀 Final Payload Sent:", payload);
-      console.log("🔗 API Endpoint:", `${API_BASE_URL}/createFareRegionSetting`);
-
+      
       const response = await axios.post(
         `${API_BASE_URL}/createFareRegionSetting`,
         payload,

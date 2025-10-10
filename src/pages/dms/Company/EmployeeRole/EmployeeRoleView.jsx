@@ -56,9 +56,7 @@ export const EmployeeRoleView = () => {
 
       setLoading(true);
       try {
-        const moduleId = getModuleId("role"); // numeric or string depending on backend
-        console.log("Fetching role:", roleId, "module_id:", moduleId, "token:", token);
-
+        const moduleId = getModuleId("role"); 
         const res = await axios.get(`${API_BASE_URL}/getRoleById/${roleId}`, {
           headers: { Authorization: `Bearer ${token}` },
           params: { module_id: moduleId }

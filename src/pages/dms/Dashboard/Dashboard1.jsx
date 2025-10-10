@@ -204,7 +204,6 @@ export const Dashboard1 = () => {
 
   const handleFilterChange = (selectedFilter) => {
     setFilter(selectedFilter);
-    console.log(`Filter changed to: ${selectedFilter}`);
   };
 
   return (

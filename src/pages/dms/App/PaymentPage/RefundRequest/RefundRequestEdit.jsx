@@ -22,8 +22,6 @@ export const RefundRequestEdit = () => {
   // Handle form submission (Update refund request)
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Updated refund request:", { refundDate, rideId, userName, refundAmount, refundReason, paymentMethod, refundStatus });
-
     // Navigate back to the refund request list page after updating
     navigate("/dms/refundrequest");
   };

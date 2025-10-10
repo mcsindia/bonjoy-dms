@@ -67,7 +67,6 @@ export const Register = () => {
             const data = await response.json();
 
             if (response.ok) {
-                console.log("Registration successful:", data);
                 navigate("/dms");
             } else {
                 console.error("Registration failed:", data);

@@ -26,12 +26,10 @@ export const DefaultSetting = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Default settings updated:', settings);
     setIsEditing(false); // Exit edit mode after saving
   };
 
   const handleLogout = () => {
-    console.log('Admin logged out');
     // Implement logout functionality
   };
 

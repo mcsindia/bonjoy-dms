@@ -25,7 +25,6 @@ export const DriverPayoutAdd = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
     navigate("/dms/driverpayout");
   };
 

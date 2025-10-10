@@ -28,7 +28,6 @@ export const PaymentSettingEdit = () => {
     // Handle form submission
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log('Payment method updated:', payment);
         // Update logic (API call or state update)
         navigate('/dms/payment/settings'); // Redirect to Payment Settings List after editing
     };

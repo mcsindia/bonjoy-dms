@@ -31,7 +31,6 @@ export const RidersEdit = () => {
     // Handle form submission
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log('Rider updated:', rider);
         // Update logic (API call or state update)
         navigate('/dms/riders'); // Redirect to Riders List after editing
     };

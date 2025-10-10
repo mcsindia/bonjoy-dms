@@ -86,8 +86,6 @@ export const Login = () => {
         };
 
         localStorage.setItem("userData", JSON.stringify(userData));
-        console.log("expiryTime:", new Date(userData.expiryTime).toLocaleTimeString());
-        console.log("currentTime:", new Date().toLocaleTimeString());
 
         // navigation logic
         const userType = user?.userType;

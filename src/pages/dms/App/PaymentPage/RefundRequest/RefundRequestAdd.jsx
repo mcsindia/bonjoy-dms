@@ -25,7 +25,6 @@ export const RefundRequestAdd = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
     navigate("/dms/refundrequest");
   };
 

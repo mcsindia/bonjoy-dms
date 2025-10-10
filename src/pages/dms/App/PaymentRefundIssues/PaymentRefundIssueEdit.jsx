@@ -36,7 +36,6 @@ export const PaymentRefundIssueEdit = () => {
   // Handle Form Submission
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Updated Refund Issue:', formData);
     navigate('/dms/refund-payment-issue'); // Redirect back to Refund Issues List
   };
 

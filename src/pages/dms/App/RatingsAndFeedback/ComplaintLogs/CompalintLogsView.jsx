@@ -64,10 +64,7 @@ export const CompalintLogsView = () => {
               <p><strong>Description:</strong> {complaint.description}</p>
               <p>
                 <strong>Status:</strong>{" "}
-                <span
-                >
-                  {complaint.status}
-                </span>
+                <span>{complaint.status}</span>
               </p>
               <p><strong>Created At:</strong> {new Date(complaint.created_at).toLocaleString()}</p>
               <p>
@@ -76,6 +73,28 @@ export const CompalintLogsView = () => {
                   ? new Date(complaint.resolved_at).toLocaleString()
                   : "-"}
               </p>
+            </Card>
+          </Col>
+        </Row>
+
+        {/* Trip Details */}
+        <Row className="mb-4">
+          <Col md={12}>
+            <Card className="p-3">
+              <h5><strong>Trip Details</strong></h5>
+              <hr />
+                   <Row>
+                <Col md={6}>
+              <p><strong>Pickup Location:</strong> {complaint.pickup_location || "-"}</p>
+              <p><strong>Drop Location:</strong> {complaint.drop_location || "-"}</p>
+              <p><strong>Trip Date:</strong> {complaint.trip_date || "-"}</p>
+              <p><strong>Trip Time:</strong> {complaint.trip_time || "-"}</p>
+              </Col>
+               <Col md={6}>
+              <p><strong>Fare:</strong> ₹{complaint.fare || "-"}</p>
+              <p><strong>Distance:</strong> {complaint.distance || "-"} km</p>
+              </Col>
+              </Row>
             </Card>
           </Col>
         </Row>

@@ -34,8 +34,6 @@ export const IdleDriversEdit = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    console.log('Updated Idle Driver:', formData);
-
     // Simulate updating the data and navigating back
     navigate('/dms/idle-drivers'); // Redirect back to Idle Drivers List
   };

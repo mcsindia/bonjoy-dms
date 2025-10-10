@@ -29,7 +29,6 @@ export const PaymentSetting = () => {
     // Function to handle delete
     const handleDelete = (id) => {
         setPaymentMethods(paymentMethods.filter(payment => payment.id !== id));
-        console.log(`Payment method with id ${id} deleted`);
     };
 
     // Function to handle edit

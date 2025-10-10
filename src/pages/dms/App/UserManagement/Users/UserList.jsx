@@ -50,7 +50,7 @@ export const UserList = () => {
       const queryParams = new URLSearchParams({
         page: currentPage,
         limit: itemsPerPage,
-        module_id: getModuleId("user") 
+        module_id: getModuleId("user")
       });
 
       const isSearching = !!search;
@@ -128,7 +128,7 @@ export const UserList = () => {
 
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('module_id', getModuleId("user")); 
+      formData.append('module_id', getModuleId("user"));
 
       try {
         const token = getToken();
@@ -149,7 +149,7 @@ export const UserList = () => {
       }
     };
   };
-  
+
   return (
     <AdminLayout>
       <div className="dms-pages-header sticky-header">
@@ -236,7 +236,55 @@ export const UserList = () => {
                 {users.length > 0 ? users.map((user, index) => (
                   <tr key={user.id}>
                     <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
-                    <td>{user.fullName || `N/A`}</td>
+                    <td>
+                      <span
+                        className='driver-id-link rider-id-link'
+                        onClick={() => {
+                          if (user.userType === "Driver") {
+                            if (user.status?.toLowerCase() === "pending") {
+                              // 🔸 Pending → Go to approval page
+                              navigate(`/dms/driver-approval/view/${user.id}`, {
+                                state: {
+                                  driver: {
+                                    id: user.id,
+                                    userId: user.userId,
+                                    fullName: user.fullName,
+                                    profileImage: user.profileImage,
+                                    status: user.status,
+                                  },
+                                },
+                              });
+                            } else {
+                              // ✅ Approved / Active / Inactive → Go to normal driver view
+                              navigate(`/dms/driver/view/${user.id}`, {
+                                state: {
+                                  driver: {
+                                    id: user.id,
+                                    userId: user.userId,
+                                    fullName: user.fullName,
+                                    profileImage: user.profileImage,
+                                    status: user.status,
+                                  },
+                                },
+                              });
+                            }
+                          } else if (user.userType === "Rider") {
+                            navigate(`/dms/rider/view/${user.id}`, {
+                              state: {
+                                rider: {
+                                  id: user.id,
+                                  userId: user.userId,
+                                  fullName: user.fullName,
+                                  profileImage: user.profileImage,
+                                },
+                              },
+                            });
+                          }
+                        }}
+                      >
+                        {user.fullName || "N/A"}
+                      </span>
+                    </td>
                     <td>{user.mobile || 'N/A'}</td>
                     <td>{user.userType || 'N/A'}</td>
                     <td>{user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}</td>

@@ -20,7 +20,6 @@ export const PaymentSettingAdd = () => {
   // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Payment method added:', payment);
     // You can call an API or save the data here
     navigate('/dms/payment/settings'); // Redirect to Payment Settings List after adding
   };

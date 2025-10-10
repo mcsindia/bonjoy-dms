@@ -35,7 +35,6 @@ export const CanceledTripEdit = () => {
   // Handle Form Submission
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Updated Canceled Trip:', formData);
     navigate('/dms/canceled-trips'); // Redirect back to Canceled Trips List
   };
 

@@ -37,7 +37,6 @@ export const BlogAdd = () => {
   // Handle form submit
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Blog submitted:', blog);
     navigate('/dms/blog');
   };
 

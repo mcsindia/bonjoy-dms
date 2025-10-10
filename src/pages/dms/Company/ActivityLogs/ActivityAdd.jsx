@@ -37,8 +37,6 @@ export const ActivityAdd = () => {
       return;
     }
 
-    console.log('Activity Logged', formData);
-
     // Simulate saving the data and navigating back
     navigate('/dms/activity-log'); 
   };

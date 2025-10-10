@@ -27,7 +27,6 @@ export const ForgetPassword = () => {
             const data = await response.json();
 
             if (response.ok && data.success) {
-                console.log("OTP sent successfully:", data.otp);
                 setOtp(data.otp); // show OTP in modal
                 setShowModal(true);
             } else {

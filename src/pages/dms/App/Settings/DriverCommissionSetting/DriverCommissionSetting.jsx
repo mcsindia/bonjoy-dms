@@ -17,7 +17,6 @@ export const DriverCommissionSetting = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Driver Commission Settings:', commissionSettings);
     setIsEditing(false); // Save and switch back to view mode
   };
 

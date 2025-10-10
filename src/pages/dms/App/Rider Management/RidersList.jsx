@@ -206,13 +206,21 @@ export const RidersList = () => {
                                 {riders.length > 0 ? (
                                     riders.map((rider, index) => (
                                         <tr key={rider.id}>
+                                            <td>{index + 1}</td>
                                             <td>
-                                                {index + 1}
+                                                <span
+                                                    className="rider-id-link"
+                                                     onClick={() =>
+                                                        navigate(`/dms/rider/view/${rider.id}`, {
+                                                            state: { rider }
+                                                        })
+                                                    }
+                                                >
+                                                    {rider.fullName || 'NA'}
+                                                </span>
                                             </td>
-                                            <td>{rider.fullName || 'NA'}</td>
-                                            <td>
-                                                {rider.mobile || 'NA'}
-                                            </td>
+
+                                            <td>{rider.mobile || 'NA'}</td>
                                             <td>{rider.preferredPaymentMethod || 'NA'}</td>
                                             <td>
                                                 <div className='d-flex'>

@@ -44,9 +44,6 @@ export const VehicleTypeAdd = () => {
       setError('All fields are required.');
       return;
     }
-
-    console.log('Form Submitted', formData);
-
     // Simulate saving the data and navigating back
     navigate('/dms/vehicle/type'); // Redirect back to Vehicle Type List
   };

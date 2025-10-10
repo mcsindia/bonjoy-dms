@@ -37,7 +37,6 @@ export const CompletedTripEdit = () => {
   // Handle Form Submission
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Updated Trip:', formData);
     navigate('/dms/completed-trips'); // Redirect back to Completed Trips List
   };
 

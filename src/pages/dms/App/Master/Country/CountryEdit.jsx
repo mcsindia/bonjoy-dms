@@ -29,7 +29,6 @@ export const CountryEdit = () => {
     // Handle form submission
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log('Country updated:', country);
         // Update logic (API call or state update)
         navigate('/dms/settings'); // Redirect to Countries List after editing
     };
