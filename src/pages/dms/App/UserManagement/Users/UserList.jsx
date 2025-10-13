@@ -255,7 +255,7 @@ export const UserList = () => {
                                 },
                               });
                             } else {
-                              // ✅ Approved / Active / Inactive → Go to normal driver view
+                              //  Approved / Active / Inactive → Go to normal driver view
                               navigate(`/dms/driver/view/${user.id}`, {
                                 state: {
                                   driver: {

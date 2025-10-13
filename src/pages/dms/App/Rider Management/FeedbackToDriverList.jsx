@@ -68,14 +68,6 @@ export const FeedbackToDriverList = () => {
         }
     }
 
-    const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
-        if (permissions.includes(permissionType)) {
-            action(); // allowed, run the actual function
-        } else {
-            alert(fallbackMessage || `You don't have permission to ${permissionType} this employee.`);
-        }
-    };
-
     const handleSearch = (e) => {
         setSearchQuery(e.target.value);
         filterData(e.target.value, dateFrom, dateTo);

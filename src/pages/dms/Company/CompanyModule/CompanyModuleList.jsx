@@ -58,7 +58,7 @@ export const CompanyModuleList = () => {
           module_id: moduleId,
         },
         headers: {
-          Authorization: `Bearer ${token}`,   // ✅ attach token
+          Authorization: `Bearer ${token}`,   //  attach token
         },
       });
 
@@ -96,7 +96,7 @@ export const CompanyModuleList = () => {
         {
           params: { module_id: moduleId },
           headers: {
-            Authorization: `Bearer ${token}`,   // ✅ attach token
+            Authorization: `Bearer ${token}`,   //  attach token
           },
         }
       );

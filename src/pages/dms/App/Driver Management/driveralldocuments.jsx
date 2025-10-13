@@ -14,6 +14,25 @@ export const DriverAllDocuments = ({ driverId }) => {
   const [selectedResubmitDoc, setSelectedResubmitDoc] = useState(null);
   const [showActions, setShowActions] = useState(null);
 
+  // Extract permissions from userData
+  const userData = JSON.parse(localStorage.getItem("userData"));
+  let permissions = [];
+
+  if (Array.isArray(userData?.employeeRole)) {
+    for (const role of userData.employeeRole) {
+      for (const child of role.childMenus || []) {
+        for (const mod of child.modules || []) {
+          if (mod.moduleUrl?.toLowerCase() === "driveralldocuments") {
+            permissions = mod.permission
+              ?.toLowerCase()
+              .split(",")
+              .map((p) => p.trim()) || [];
+          }
+        }
+      }
+    }
+  }
+
   useEffect(() => {
     if (!driverId) return;
 
@@ -24,6 +43,7 @@ export const DriverAllDocuments = ({ driverId }) => {
         if (data) {
           setDriverDocs(data.Document || []);
           setVehicleDocs(data.VehicleDocument || []);
+
           const combinedBankDocs = (data.BankDocumentDetail || []).map((doc) => {
             const bankDetail = (data.BankDetail || []).find(
               (b) => b.driverId === doc.driverId
@@ -40,55 +60,22 @@ export const DriverAllDocuments = ({ driverId }) => {
       .catch((err) => console.error("Error fetching documents:", err));
   }, [driverId]);
 
- // Utility function to check expiry
-  const isExpiringSoon = (expiryDate) => {
-    if (!expiryDate) return false;
-    const today = new Date();
-    const expiry = new Date(expiryDate);
-    const diffTime = expiry - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays <= 30 && diffDays >= 0; // within 30 days
+  const handleAction = (actionType, docName, doc) => {
+    console.log(`Action: ${actionType}`, docName, doc);
+    // Implement logic: open viewer, download file, etc.
   };
 
-  const isExpired = (expiryDate) => {
-    if (!expiryDate) return false;
-    const today = new Date();
-    const expiry = new Date(expiryDate);
-    return today > expiry;
-  };
-
-  const getActionsByStatus = (status, docName, doc, type = 'driver') => {
-    const actions = [
-      <li key="view" onClick={() => handlePermissionCheck("view", () => handleAction("View", docName, doc))}>
-        <FaEye className="dms-menu-icon" /> View
-      </li>,
-      <li key="download" onClick={() => handlePermissionCheck("view", () => handleAction("Download", docName, doc))}>
-        <FaDownload className="dms-menu-icon" /> Download
-      </li>,
-      <li key="versions" onClick={() => handlePermissionCheck("view", () => handleViewVersions(doc, type))}>
-        <FaHistory className="dms-menu-icon" /> View Versions
-      </li>
-    ];
-
-    // Only show Remark for Pending/Rejected docs
-    if (status?.toLowerCase() === "pending" || status?.toLowerCase() === "rejected") {
-      actions.push(
-        <li key="remark" onClick={() => handlePermissionCheck("edit", () => handleRemarkAction(doc, docName, type))}>
-          <FaEdit className="dms-menu-icon" /> Remark
-        </li>
-      );
-    }
-
-    return actions;
+  const handleViewVersions = (doc, type) => {
+    console.log("Viewing versions for:", doc, type);
   };
 
   const handleRemarkAction = (doc, docName, type) => {
-    setSelectedResubmitDoc({ ...doc, type }); // type = 'driver' | 'vehicle' | 'bank'
+    setSelectedResubmitDoc({ ...doc, type });
     setShowResubmitModal(true);
   };
 
-  const handleDriverActionMenuToggle = (docId) => {
-    setShowDriverActions(prev => (prev === docId ? null : docId));
+  const handleActionMenuToggle = (docId) => {
+    setShowActions((prev) => (prev === docId ? null : docId));
   };
 
   const handleResubmit = async () => {
@@ -96,7 +83,7 @@ export const DriverAllDocuments = ({ driverId }) => {
 
     const formData = new FormData();
     formData.append("rejection_reason", resubmitReason);
-    formData.append("status", selectedResubmitDoc.remarkStatus.toLowerCase());
+    formData.append("status", selectedResubmitDoc.remarkStatus?.toLowerCase());
 
     try {
       let endpoint = "";
@@ -110,7 +97,7 @@ export const DriverAllDocuments = ({ driverId }) => {
       }
 
       const response = await axios.put(endpoint, formData, {
-        headers: { "Content-Type": "multipart/form-data" }
+        headers: { "Content-Type": "multipart/form-data" },
       });
 
       if (response.status === 200) {
@@ -118,10 +105,14 @@ export const DriverAllDocuments = ({ driverId }) => {
         setShowResubmitModal(false);
         setResubmitReason("");
         setSelectedResubmitDoc(null);
-        // Refresh the documents list
-        axios.get(`${API_BASE_URL}/getDriverAllDocument/${driverId}`)
-          .then(res => setDriverDocs(res.data?.data?.Document || []))
-          .catch(err => console.error(err));
+
+        // Refresh list
+        const res = await axios.get(`${API_BASE_URL}/getDriverAllDocument/${driverId}`);
+        const data = res.data?.data;
+        if (data) {
+          setDriverDocs(data.Document || []);
+          setVehicleDocs(data.VehicleDocument || []);
+        }
       } else {
         alert("Update failed.");
       }
@@ -129,6 +120,38 @@ export const DriverAllDocuments = ({ driverId }) => {
       console.error("Error during update:", error);
       alert("An error occurred while updating the document.");
     }
+  };
+
+  // ✅ Actions visible based on permissions
+  const getActionsByStatus = (status, docName, doc, type = "driver") => {
+    const actions = [];
+
+    if (permissions.includes("view")) {
+      actions.push(
+        <li key="view" onClick={() => handleAction("View", docName, doc)}>
+          <FaEye className="dms-menu-icon" /> View
+        </li>,
+        <li key="download" onClick={() => handleAction("Download", docName, doc)}>
+          <FaDownload className="dms-menu-icon" /> Download
+        </li>,
+        <li key="versions" onClick={() => handleViewVersions(doc, type)}>
+          <FaHistory className="dms-menu-icon" /> View Versions
+        </li>
+      );
+    }
+
+    if (
+      permissions.includes("edit") &&
+      (status?.toLowerCase() === "pending" || status?.toLowerCase() === "rejected")
+    ) {
+      actions.push(
+        <li key="remark" onClick={() => handleRemarkAction(doc, docName, type)}>
+          <FaEdit className="dms-menu-icon" /> Remark
+        </li>
+      );
+    }
+
+    return actions;
   };
 
   return (
@@ -154,7 +177,7 @@ export const DriverAllDocuments = ({ driverId }) => {
                   <td>
                     <span onClick={() => handleActionMenuToggle(doc.id)}>⋮</span>
                     {showActions === doc.id && (
-                      <ul>{getActionsByStatus(doc.verificationStatus, doc, "driver")}</ul>
+                      <ul>{getActionsByStatus(doc.verificationStatus, doc.file_label, doc, "driver")}</ul>
                     )}
                   </td>
                 </tr>
@@ -185,7 +208,7 @@ export const DriverAllDocuments = ({ driverId }) => {
                   <td>
                     <span onClick={() => handleActionMenuToggle(doc.id)}>⋮</span>
                     {showActions === doc.id && (
-                      <ul>{getActionsByStatus(doc.verificationStatus, doc, "vehicle")}</ul>
+                      <ul>{getActionsByStatus(doc.verificationStatus, doc.file_label, doc, "vehicle")}</ul>
                     )}
                   </td>
                 </tr>
@@ -219,7 +242,7 @@ export const DriverAllDocuments = ({ driverId }) => {
                     <td>
                       <span onClick={() => handleActionMenuToggle(doc.id)}>⋮</span>
                       {showActions === doc.id && (
-                        <ul>{getActionsByStatus(doc.verificationStatus, doc, "bank")}</ul>
+                        <ul>{getActionsByStatus(doc.verificationStatus, doc.file_label, doc, "bank")}</ul>
                       )}
                     </td>
                   </tr>

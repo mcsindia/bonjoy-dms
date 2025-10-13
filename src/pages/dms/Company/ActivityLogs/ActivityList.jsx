@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import {
   Table, InputGroup, Form, Pagination, Dropdown, DropdownButton
 } from 'react-bootstrap';
-import { FaEye, } from 'react-icons/fa';
+import { FaEye } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { AdminLayout } from '../../../../layouts/dms/AdminLayout/AdminLayout';
 import axios from 'axios';
@@ -20,35 +20,29 @@ export const ActivityList = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const userData = JSON.parse(localStorage.getItem("userData"));
-   let permissions = [];
 
-if (Array.isArray(userData?.employeeRole)) {
-  for (const role of userData.employeeRole) {
-    for (const child of role.childMenus || []) {
-      for (const mod of child.modules || []) {
-        if (mod.moduleUrl?.toLowerCase() === "activity") {
-          permissions = mod.permission
-            ?.toLowerCase()
-            .split(',')
-            .map(p => p.trim()) || [];
+  const userData = JSON.parse(localStorage.getItem("userData"));
+  let permissions = [];
+
+  // 🔹 Extract activity module permissions
+  if (Array.isArray(userData?.employeeRole)) {
+    for (const role of userData.employeeRole) {
+      for (const child of role.childMenus || []) {
+        for (const mod of child.modules || []) {
+          if (mod.moduleUrl?.toLowerCase() === "activity") {
+            permissions = mod.permission
+              ?.toLowerCase()
+              .split(',')
+              .map(p => p.trim()) || [];
+          }
         }
       }
     }
   }
-}
-
-    const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
-    if (permissions.includes(permissionType)) {
-      action(); // allowed, run the actual function
-    } else {
-      alert(fallbackMessage || `You don't have permission to ${permissionType} this employee.`);
-    }
-  };
 
   const fetchActivities = async () => {
     setLoading(true);
-    const token = JSON.parse(localStorage.getItem("userData"))?.token;
+    const token = userData?.token;
     const headers = { Authorization: `Bearer ${token}` };
     let url = '';
     let params = { page: currentPage, limit: itemsPerPage };
@@ -64,7 +58,7 @@ if (Array.isArray(userData?.employeeRole)) {
 
     try {
       const response = await axios.get(url, { headers, params });
-      setActivities(response.data.data.activities);
+      setActivities(response.data.data.activities || []);
       setTotalPages(response.data.data.totalPages || 1);
     } catch (error) {
       console.error('Error fetching activities:', error);
@@ -76,8 +70,8 @@ if (Array.isArray(userData?.employeeRole)) {
 
   const searchActivityById = async (id) => {
     setLoading(true);
-    const token = JSON.parse(localStorage.getItem("userData"))?.token;
-    const headers = { 'Authorization': `Bearer ${token}` };
+    const token = userData?.token;
+    const headers = { Authorization: `Bearer ${token}` };
 
     try {
       const response = await axios.get(`${API_BASE_URL}/searchActivityById/${id}`, { headers });
@@ -113,6 +107,7 @@ if (Array.isArray(userData?.employeeRole)) {
         <h3>Activity List</h3>
       </div>
 
+      {/* Filters */}
       <div className="filter-search-container">
         <div className='filter-container'>
           <DropdownButton variant="primary" title="Filter by status" id="filter-dropdown">
@@ -121,6 +116,7 @@ if (Array.isArray(userData?.employeeRole)) {
             <Dropdown.Item onClick={() => setFilter('Failed')}>Failed</Dropdown.Item>
             <Dropdown.Item onClick={() => setFilter('Pending')}>Pending</Dropdown.Item>
           </DropdownButton>
+
           <p className='btn btn-primary'>Filter by Date -</p>
           <Form.Group controlId="fromDate">
             <Form.Control type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} />
@@ -129,6 +125,7 @@ if (Array.isArray(userData?.employeeRole)) {
             <Form.Control type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} />
           </Form.Group>
         </div>
+
         <InputGroup className="dms-custom-width">
           <Form.Control
             placeholder="Search by Activity ID..."
@@ -138,6 +135,7 @@ if (Array.isArray(userData?.employeeRole)) {
         </InputGroup>
       </div>
 
+      {/* Table */}
       <div className="dms-table-container">
         {loading ? (
           <div className="text-center py-5 fs-4">Loading...</div>
@@ -146,7 +144,7 @@ if (Array.isArray(userData?.employeeRole)) {
             <Table striped bordered hover responsive>
               <thead>
                 <tr>
-                  <th>SNo</th>
+                  <th>S.No</th>
                   <th>Activity ID</th>
                   <th>Employee ID</th>
                   <th>Action</th>
@@ -161,13 +159,15 @@ if (Array.isArray(userData?.employeeRole)) {
                   activities.map((activity, index) => {
                     let details = {};
                     try {
-                      details = typeof activity.details === 'string' ? JSON.parse(activity.details) : activity.details;
-                    } catch (e) {
+                      details = typeof activity.details === 'string'
+                        ? JSON.parse(activity.details)
+                        : activity.details;
+                    } catch {
                       details = {};
                     }
 
                     return (
-                      <tr key={activity.activity_id}>
+                      <tr key={activity.id || index}>
                         <td>{(currentPage - 1) * itemsPerPage + index + 1}</td>
                         <td>{activity.id || 'NA'}</td>
                         <td>{activity.employee_id || 'NA'}</td>
@@ -177,18 +177,24 @@ if (Array.isArray(userData?.employeeRole)) {
                         <td>
                           {details ? (
                             Object.entries(details).map(([key, value]) => (
-                              <div key={key}><strong>{key}:</strong> {value}</div>
+                              <div key={key}>
+                                <strong>{key}:</strong> {value}
+                              </div>
                             ))
                           ) : (
                             'N/A'
                           )}
                         </td>
                         <td>
+                          {permissions.includes("view") ? (
                             <FaEye
                               title="View"
                               className="icon-blue me-2"
-                              onClick={() => handlePermissionCheck("view", () => navigate(`/dms/activity/view/${activity.id}`, { state: { activity } }))}
+                              onClick={() => navigate(`/dms/activity/view/${activity.id}`, { state: { activity } })}
                             />
+                          ) : (
+                            "-"
+                          )}
                         </td>
                       </tr>
                     );
@@ -201,6 +207,7 @@ if (Array.isArray(userData?.employeeRole)) {
               </tbody>
             </Table>
 
+            {/* Pagination */}
             {!search && (
               <div className="pagination-container">
                 <Pagination className="mb-0">

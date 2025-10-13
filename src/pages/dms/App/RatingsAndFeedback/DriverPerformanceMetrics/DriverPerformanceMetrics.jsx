@@ -1,101 +1,83 @@
 import React, { useState, useEffect } from "react";
-import {
-  Table,
-  Form,
-  InputGroup,
-  Pagination,
-} from "react-bootstrap";
-import { FaEye, FaStar } from "react-icons/fa";
+import { Table, Form, InputGroup, Pagination, Spinner } from "react-bootstrap";
+import { FaStar, FaEye } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "../../../../../layouts/dms/AdminLayout/AdminLayout";
+import axios from "axios";
+import { getModuleId, getToken } from "../../../../../utils/authhelper";
 
-// Dummy driver performance data with trip details
-const dummyDrivers = [
-  {
-    performance_id: "P001",
-    driver_id: "D001",
-    username: "John Doe",
-    total_rides: 120,
-    cancelled_rides: 5,
-    emergency_rides: 8,
-    late_pickups: 3,
-    complaints_received: 2,
-    average_rating: 4.6,
-    last_reviewed: "2025-10-08T10:00:00Z",
-    performance_flag: "excellent",
-    trip_details: {
-      last_trip_date: "2025-10-08",
-      last_trip_pickup: "MG Road, Bangalore",
-      last_trip_drop: "HSR Layout, Bangalore",
-      last_trip_fare: 450,
-      last_trip_distance: 12,
-    },
-  },
-  {
-    performance_id: "P002",
-    driver_id: "D002",
-    username: "Jane Smith",
-    total_rides: 90,
-    cancelled_rides: 10,
-    emergency_rides: 3,
-    late_pickups: 7,
-    complaints_received: 4,
-    average_rating: 4.2,
-    last_reviewed: "2025-10-07T09:30:00Z",
-    performance_flag: "average",
-    trip_details: {
-      last_trip_date: "2025-10-07",
-      last_trip_pickup: "Koramangala, Bangalore",
-      last_trip_drop: "Indiranagar, Bangalore",
-      last_trip_fare: 300,
-      last_trip_distance: 8,
-    },
-  },
-  {
-    performance_id: "P003",
-    driver_id: "D003",
-    username: "Robert Johnson",
-    total_rides: 60,
-    cancelled_rides: 8,
-    emergency_rides: 2,
-    late_pickups: 5,
-    complaints_received: 3,
-    average_rating: 3.9,
-    last_reviewed: "2025-10-06T12:15:00Z",
-    performance_flag: "needs_review",
-    trip_details: {
-      last_trip_date: "2025-10-06",
-      last_trip_pickup: "Whitefield, Bangalore",
-      last_trip_drop: "Electronic City, Bangalore",
-      last_trip_fare: 600,
-      last_trip_distance: 18,
-    },
-  },
-];
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+const getAuthHeaders = () => ({
+  Authorization: `Bearer ${getToken()}`,
+});
 
 export const DriverPerformanceMetrics = () => {
+  const navigate = useNavigate();
+
   const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
+  const [date, setDate] = useState("");
 
-  const navigate = useNavigate();
+  // 🔹 Fetch API Driver Performance
+  const fetchDrivers = async (page = 1) => {
+    setLoading(true);
+    try {
+      const params = {
+        page,
+        limit: itemsPerPage,
+        module_id: getModuleId("driverperformancemetrics"),
+      };
+
+      if (date) params.date = date;
+
+      const response = await axios.get(`${API_BASE_URL}/getAllDriverPerformance`, {
+        headers: getAuthHeaders(),
+        params,
+      });
+
+      const apiData = response.data?.data?.models || [];
+      const totalPageCount = response.data?.data?.totalPages || 1;
+
+      // Transform API to frontend-friendly structure
+      const formatted = apiData.map((item) => ({
+        performance_id: item.id,
+        driver_id: item.users?.id,
+        username: item.users?.fullName || "-",
+        total_rides: item.total_rides,
+        cancelled_rides: item.cancelled_rides,
+        emergency_rides: item.emergency_rides,
+        late_pickups: item.late_pickups,
+        complaints_received: item.complaints_received,
+        average_rating: item.average_rating,
+        last_reviewed: item.last_reviewed,
+        performance_flag: item.performance_flag,
+      }));
+
+      setDrivers(formatted);
+      setTotalPages(totalPageCount);
+      setCurrentPage(response.data?.data?.currentPage || 1);
+    } catch (err) {
+      console.error("Error fetching driver performance:", err);
+      setDrivers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    setLoading(true);
-    setTimeout(() => {
-      setDrivers(dummyDrivers);
-      setLoading(false);
-    }, 500);
-  }, []);
+    fetchDrivers(currentPage);
+  }, [currentPage, itemsPerPage, date]);
 
+  // Filtered & Paginated Drivers
   const filteredDrivers = drivers.filter((d) =>
     d.username.toLowerCase().includes(search.toLowerCase())
   );
-
-  const totalPages = Math.ceil(filteredDrivers.length / itemsPerPage);
 
   const displayedDrivers = filteredDrivers.slice(
     (currentPage - 1) * itemsPerPage,
@@ -112,8 +94,21 @@ export const DriverPerformanceMetrics = () => {
         <h3>Driver Performance Metrics</h3>
       </div>
 
-      {/* Search Filter */}
+      {/* Filters */}
       <div className="filter-search-container">
+        <div className="filter-container">
+          <p className="btn btn-primary mb-0">Filter by Date -</p>
+          <Form.Group className="me-3">
+            <Form.Control
+              type="date"
+              value={date}
+              onChange={(e) => {
+                setDate(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+          </Form.Group>
+        </div>
         <InputGroup className="dms-custom-width">
           <Form.Control
             placeholder="Search by driver username..."
@@ -129,7 +124,9 @@ export const DriverPerformanceMetrics = () => {
       {/* Table */}
       <div className="dms-table-container">
         {loading ? (
-          <div className="text-center py-5 fs-4">Loading...</div>
+          <div className="text-center py-5 fs-4">
+            <Spinner animation="border" size="sm" /> Loading...
+          </div>
         ) : (
           <>
             <Table striped bordered hover responsive>
@@ -145,7 +142,6 @@ export const DriverPerformanceMetrics = () => {
                   <th>Average Rating</th>
                   <th>Last Reviewed</th>
                   <th>Performance Flag</th>
-                  <th>Last Trip Info</th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -154,7 +150,25 @@ export const DriverPerformanceMetrics = () => {
                   displayedDrivers.map((driver, idx) => (
                     <tr key={driver.performance_id}>
                       <td>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
-                      <td>{driver.username}</td>
+                      <td>
+                        <span
+                          className="driver-id-link"
+                          onClick={() =>
+                            navigate(`/dms/driver/view/${driver.driver_id}`, {
+                              state: {
+                                driver: {
+                                  userId: driver.driver_id,  // <- use userId here
+                                  fullName: driver.username,
+                                  email: driver.email || null,
+                                  profileImage: driver.profileImage || null,
+                                }
+                              }
+                            })
+                          }
+                        >
+                          {driver.username}
+                        </span>
+                      </td>
                       <td>{driver.total_rides}</td>
                       <td>{driver.cancelled_rides}</td>
                       <td>{driver.emergency_rides}</td>
@@ -169,14 +183,10 @@ export const DriverPerformanceMetrics = () => {
                       <td>{new Date(driver.last_reviewed).toLocaleDateString()}</td>
                       <td>{driver.performance_flag}</td>
                       <td>
-                        {driver.trip_details
-                          ? `${driver.trip_details.last_trip_date} | ${driver.trip_details.last_trip_pickup} → ${driver.trip_details.last_trip_drop} | ₹${driver.trip_details.last_trip_fare} | ${driver.trip_details.last_trip_distance}km`
-                          : "-"}
-                      </td>
-                      <td>
                         <FaEye
                           title="View Details"
                           className="icon icon-blue"
+                          style={{ cursor: "pointer" }}
                           onClick={() =>
                             navigate(`/dms/driverperformancemetrics/view/${driver.driver_id}`, {
                               state: { driver },
@@ -188,7 +198,7 @@ export const DriverPerformanceMetrics = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="12" className="text-center">
+                    <td colSpan="11" className="text-center">
                       No drivers found.
                     </td>
                   </tr>

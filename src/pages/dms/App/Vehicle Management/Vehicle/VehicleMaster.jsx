@@ -1,7 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Table, Form, InputGroup, Dropdown, DropdownButton, Pagination, Button, Modal } from "react-bootstrap";
+import {
+  Table, Form, InputGroup, Dropdown, DropdownButton,
+  Pagination, Button, Modal
+} from "react-bootstrap";
 import { AdminLayout } from "../../../../../layouts/dms/AdminLayout/AdminLayout";
-import { FaEye, FaTrash, FaEdit, FaFolderOpen, FaUser, FaFile, FaPlus } from "react-icons/fa";
+import {
+  FaEye, FaTrash, FaEdit, FaFolderOpen, FaUser, FaFile
+} from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -21,6 +26,7 @@ export const VehicleMaster = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const navigate = useNavigate();
   const actionMenuRef = useRef(null);
+
   const userData = JSON.parse(localStorage.getItem("userData"));
   const isAdmin = userData?.userType === "Admin";
 
@@ -35,23 +41,15 @@ export const VehicleMaster = () => {
           if (mod.moduleUrl?.toLowerCase() === "vehicle") {
             permissions = mod.permission
               ?.toLowerCase()
-              .split(',')
-              .map(p => p.trim()) || [];
+              .split(",")
+              .map((p) => p.trim()) || [];
           }
         }
       }
     }
   }
 
-     const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
-    if (permissions.includes(permissionType)) {
-      action(); // allowed, run the actual function
-    } else {
-      alert(fallbackMessage || `You don't have permission to ${permissionType} this employee.`);
-    }
-  };
-
-  // Unified fetch function to handle pagination, search, and filter
+  // Fetch vehicle data
   const fetchData = async (page = 1, searchTerm = "", filter = "") => {
     setLoading(true);
     setError(null);
@@ -60,20 +58,17 @@ export const VehicleMaster = () => {
       if (filter) params.category = filter;
       if (searchTerm) params.category = searchTerm;
 
-      // Choose endpoint based on search/filter presence
       let url = `${API_BASE_URL}/getAllVehicles`;
       if (searchTerm) url = `/api/v1/searchVehicleDocuments`;
       else if (filter) url = `/api/v1/filterVehicleDocuments`;
 
       const response = await axios.get(url, { params });
-
       const vehicles = Array.isArray(response.data.data.data)
         ? response.data.data.data
         : response.data.data || [];
 
       setVehicleData(vehicles);
-      if (response.data.data.totalPages) setTotalPages(response.data.data.totalPages);
-      else setTotalPages(1);
+      setTotalPages(response.data.data.totalPages || 1);
     } catch (err) {
       setError("Error fetching vehicle data");
     } finally {
@@ -81,7 +76,6 @@ export const VehicleMaster = () => {
     }
   };
 
-  // Effect to refetch data on page, search, or filter changes
   useEffect(() => {
     fetchData(currentPage, search, filterType, itemsPerPage);
   }, [currentPage, search, filterType, itemsPerPage]);
@@ -96,13 +90,12 @@ export const VehicleMaster = () => {
     setCurrentPage(1);
   };
 
-  // Handle Delete Action
+  // Delete handler
   const handleDelete = async () => {
     if (vehicleToDelete) {
       try {
         await axios.delete(`/api/v1/deleteVehicle/${vehicleToDelete}`);
 
-        // Refresh current data after deletion
         const updatedResponse = await axios.get("/api/v1/getAllVehicles", {
           params: { page: currentPage, itemsPerPage },
         });
@@ -110,7 +103,6 @@ export const VehicleMaster = () => {
         const updatedVehicles = updatedResponse.data.data?.data || [];
         const newTotalPages = updatedResponse.data.data?.totalPages || 1;
 
-        // If current page becomes empty after deletion, go back one page
         if (updatedVehicles.length === 0 && currentPage > 1) {
           setCurrentPage(currentPage - 1);
         } else {
@@ -126,7 +118,6 @@ export const VehicleMaster = () => {
     }
   };
 
-  // Handle page change for pagination
   const handlePageChange = (pageNumber) => {
     if (pageNumber >= 1 && pageNumber <= totalPages) {
       setCurrentPage(pageNumber);
@@ -141,23 +132,23 @@ export const VehicleMaster = () => {
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   return (
     <AdminLayout>
       <div className="dms-pages-header sticky-header">
         <h3>Vehicle Master</h3>
-        {/*   <Button variant="primary" onClick={() => navigate('/dms/vehicle/master/add')}>
-          <FaPlus /> Add Vehicle
-        </Button> */}
+        {/* Add Button if permission allows */}
+        {permissions.includes("add") && (
+          <Button variant="primary" onClick={() => navigate("/dms/vehicle/master/add")}>
+            <FaPlus /> Add Vehicle
+          </Button>
+        )}
       </div>
 
-      {/* Search and Filter */}
+      {/* Search & Filter */}
       <div className="filter-search-container">
-        {/* Filter by Type */}
         <DropdownButton variant="primary" title={`Filter: ${filterType || "All"}`} id="filter-type-dropdown">
           <Dropdown.Item onClick={() => handleFilterType("")}>All</Dropdown.Item>
           {["SUV", "Sedan", "Hatchback"].map((type) => (
@@ -165,10 +156,11 @@ export const VehicleMaster = () => {
               {type}
             </Dropdown.Item>
           ))}
-          <Dropdown.Item className="text-custom-danger" onClick={() => handleFilterType("")}>Cancel</Dropdown.Item>
+          <Dropdown.Item className="text-custom-danger" onClick={() => handleFilterType("")}>
+            Cancel
+          </Dropdown.Item>
         </DropdownButton>
 
-        {/* Search Bar */}
         <InputGroup className="dms-custom-width">
           <Form.Control placeholder="Search vehicles..." value={search} onChange={handleSearch} />
         </InputGroup>
@@ -176,7 +168,6 @@ export const VehicleMaster = () => {
 
       {error && <div className="text-danger text-center">{error}</div>}
 
-      {/* Vehicle Table */}
       {loading ? (
         <div className="text-center py-5 fs-4">Loading...</div>
       ) : (
@@ -210,39 +201,47 @@ export const VehicleMaster = () => {
                     <td className="action">
                       <span
                         className="dms-span-action"
-                        onClick={() =>
-                          setShowActions(vehicle.id === showActions ? null : vehicle.id)
-                        }
+                        onClick={() => setShowActions(vehicle.id === showActions ? null : vehicle.id)}
                       >
                         ⋮
                       </span>
                       {showActions === vehicle.id && (
                         <div ref={actionMenuRef} className="dms-show-actions-menu">
                           <ul>
-                              <li onClick={() => handlePermissionCheck("view", () => navigate(`/dms/vehicle/view/${vehicle.id}`, { state: { vehicle } }))}>
+                            {permissions.includes("view") && (
+                              <li onClick={() => navigate(`/dms/vehicle/view/${vehicle.id}`, { state: { vehicle } })}>
                                 <FaEye className="dms-menu-icon" /> View
                               </li>
-                              <li onClick={() => handlePermissionCheck("edit", () => navigate("/dms/vehicle/details/edit", { state: { vehicle } }))}>
+                            )}
+                            {permissions.includes("edit") && (
+                              <li onClick={() => navigate("/dms/vehicle/details/edit", { state: { vehicle } })}>
                                 <FaEdit className="dms-menu-icon" /> Edit
                               </li>
-                            <li onClick={() => handlePermissionCheck("view", () => navigate("/dms/vehicle/document", { state: { vehicle } }))}>
-                              <FaFolderOpen className="dms-menu-icon" /> Vehicle Documents
-                            </li>
-                            <li onClick={() => handlePermissionCheck("view", () => navigate("/dms/vehicle/document/renewal", { state: { vehicle } }))}>
-                              <FaFile className="dms-menu-icon" /> Documents Renewal
-                            </li>
-                            <li onClick={() => handlePermissionCheck("view", () => navigate("/dms/drivers/details/view", { state: { driverId: vehicle.driverId?.id } }))}>
-                              <FaUser className="dms-menu-icon" /> Driver
-                            </li>
+                            )}
+                            {permissions.includes("view") && (
+                              <>
+                                <li onClick={() => navigate("/dms/vehicle/document", { state: { vehicle } })}>
+                                  <FaFolderOpen className="dms-menu-icon" /> Vehicle Documents
+                                </li>
+                                <li onClick={() => navigate("/dms/vehicle/document/renewal", { state: { vehicle } })}>
+                                  <FaFile className="dms-menu-icon" /> Documents Renewal
+                                </li>
+                                <li onClick={() => navigate("/dms/drivers/details/view", { state: { driverId: vehicle.driverId?.id } })}>
+                                  <FaUser className="dms-menu-icon" /> Driver
+                                </li>
+                              </>
+                            )}
+                            {permissions.includes("delete") && (
                               <li
                                 className="icon-red"
-                                onClick={() => handlePermissionCheck("delete", () => {
+                                onClick={() => {
                                   setVehicleToDelete(vehicle.id);
                                   setShowDeleteModal(true);
-                                })}
+                                }}
                               >
                                 <FaTrash className="dms-menu-icon" /> Delete
                               </li>
+                            )}
                           </ul>
                         </div>
                       )}
@@ -287,7 +286,7 @@ export const VehicleMaster = () => {
                 setItemsPerPage(Number(e.target.value));
                 setCurrentPage(1);
               }}
-              className='pagination-option w-auto'
+              className="pagination-option w-auto"
             >
               <option value="5">Show 5</option>
               <option value="10">Show 10</option>
@@ -299,7 +298,7 @@ export const VehicleMaster = () => {
         </>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Modal */}
       <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Confirm Deletion</Modal.Title>

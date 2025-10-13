@@ -39,14 +39,6 @@ export const EmployeeView = () => {
     }
   }
 
-  const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
-    if (permissions.includes(permissionType)) {
-      action(); // allowed, run the actual function
-    } else {
-      alert(fallbackMessage || `You don't have permission to ${permissionType} this employee.`);
-    }
-  };
-
     useEffect(() => {
     const fetchEmployee = async () => {
       if (!employeeId) {

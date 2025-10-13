@@ -6,80 +6,31 @@ import {
   Pagination,
   Button,
   Modal,
+  Spinner, DropdownButton, Dropdown
 } from "react-bootstrap";
-import { FaEye, FaEdit, FaPen } from "react-icons/fa";
+import { FaEye, FaEdit } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "../../../../../layouts/dms/AdminLayout/AdminLayout";
+import axios from "axios";
+import { getModuleId, getToken } from "../../../../../utils/authhelper";
 
-const dummyComplaints = [
-  {
-    complaint_id: "C001",
-    ride_id: "R001",
-    complainant_id: "U001",
-    complainant_name: "John Doe",
-    against_user_id: "U002",
-    against_user_name: "Jane Smith",
-    category: "driver_behavior",
-    description: "Driver was rude during the trip.",
-    status: "Pending",
-    remark: "-",
-    created_at: "2025-10-07T09:45:00Z",
-    resolved_at: null,
-    pickup_location: "MG Road, Bangalore",
-    drop_location: "HSR Layout, Bangalore",
-    trip_date: "2025-10-07",
-    trip_time: "09:00 AM",
-    fare: "450",
-    distance: "12 km",
-  },
-  {
-    complaint_id: "C002",
-    ride_id: "R002",
-    complainant_id: "U003",
-    complainant_name: "Robert Johnson",
-    against_user_id: "U004",
-    against_user_name: "Alice Williams",
-    category: "fare_issue",
-    description: "Fare was charged incorrectly.",
-    status: "Resolved",
-    remark: "Refund issued",
-    created_at: "2025-10-05T14:20:00Z",
-    resolved_at: "2025-10-06T10:00:00Z",
-    pickup_location: "Koramangala, Bangalore",
-    drop_location: "Indiranagar, Bangalore",
-    trip_date: "2025-10-05",
-    trip_time: "02:00 PM",
-    fare: "300",
-    distance: "8 km",
-  },
-  {
-    complaint_id: "C003",
-    ride_id: "R003",
-    complainant_id: "U005",
-    complainant_name: "Emma Brown",
-    against_user_id: "U006",
-    against_user_name: "Michael Lee",
-    category: "delay",
-    description: "Driver arrived 30 minutes late.",
-    status: "Escalated",
-    remark: "Forwarded to management",
-    created_at: "2025-10-08T11:30:00Z",
-    resolved_at: null,
-    pickup_location: "Whitefield, Bangalore",
-    drop_location: "Electronic City, Bangalore",
-    trip_date: "2025-10-08",
-    trip_time: "11:00 AM",
-    fare: "600",
-    distance: "18 km",
-  },
-];
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+const getAuthHeaders = () => ({
+  Authorization: `Bearer ${getToken()}`,
+});
 
 export const ComplaintLogs = () => {
   const navigate = useNavigate();
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  // Filters and pagination
   const [search, setSearch] = useState("");
+  const [status, setStatus] = useState("");
+  const [date, setDate] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Modal States
@@ -88,29 +39,64 @@ export const ComplaintLogs = () => {
   const [newStatus, setNewStatus] = useState("");
   const [remark, setRemark] = useState("");
 
-  useEffect(() => {
+  // 🔹 Fetch API Data
+  const fetchComplaints = async (page = 1) => {
     setLoading(true);
-    setTimeout(() => {
-      setComplaints(dummyComplaints);
+    try {
+      const params = {
+        page,
+        limit: itemsPerPage,
+        module_id: getModuleId("complaintlogs"),
+      };
+
+      if (status) params.status = status;
+      if (date) params.date = date;
+
+      const response = await axios.get(`${API_BASE_URL}/getAllComplaintLog`, {
+        headers: getAuthHeaders(),
+        params,
+      });
+
+      const apiData = response.data?.data?.models || [];
+      const totalPageCount = response.data?.data?.totalPages || 1;
+
+      // Transform to frontend-friendly format
+      const formatted = apiData.map((item) => ({
+        complaint_id: item.id,
+        ride_id: item.rideId || "-",
+        complainant_id: item.complaintByUser?.id,
+        complainant_name: item.complaintByUser?.fullName || "-",
+        against_user_id: item.complaintToUser?.id,
+        against_user_name: item.complaintToUser?.fullName || "-",
+        category: item.category,
+        description: item.description,
+        status: item.status,
+        remark: item.remark || "-",
+        created_at: item.createdAt,
+        resolved_at: item.resolvedAt,
+      }));
+
+      setComplaints(formatted);
+      setTotalPages(totalPageCount);
+      setCurrentPage(response.data?.data?.currentPage || 1);
+    } catch (err) {
+      console.error("Error fetching complaints:", err);
+      setComplaints([]);
+    } finally {
       setLoading(false);
-    }, 500);
-  }, []);
+    }
+  };
 
-  const filteredComplaints = complaints.filter((c) =>
-    c.complainant_name.toLowerCase().includes(search.toLowerCase())
-  );
+  useEffect(() => {
+    fetchComplaints(currentPage);
+  }, [currentPage, status, date, itemsPerPage]);
 
-  const totalPages = Math.ceil(filteredComplaints.length / itemsPerPage);
-  const displayedComplaints = filteredComplaints.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
+  // 🔹 Handle pagination
   const handlePageChange = (pageNumber) => {
     if (pageNumber >= 1 && pageNumber <= totalPages) setCurrentPage(pageNumber);
   };
 
-  // 🔹 Handle status edit button click
+  // 🔹 Status edit
   const handleStatusEdit = (complaint) => {
     setSelectedComplaint(complaint);
     setNewStatus(complaint.status);
@@ -118,28 +104,58 @@ export const ComplaintLogs = () => {
     setShowStatusModal(true);
   };
 
-  // 🔹 Save updated status & remark
-  const handleStatusSubmit = () => {
+  const handleStatusSubmit = async () => {
     if (!selectedComplaint) return;
 
-    const updated = complaints.map((c) =>
-      c.complaint_id === selectedComplaint.complaint_id
-        ? {
-          ...c,
-          status: newStatus,
-          remark: remark || "-",
-          resolved_at:
-            newStatus.toLowerCase() === "resolved"
-              ? new Date().toISOString()
-              : c.resolved_at,
-        }
-        : c
-    );
+    try {
+      const payload = {
+        complaintByuserId: selectedComplaint.complainant_id,
+        complaintTouserId: selectedComplaint.against_user_id,
+        category: selectedComplaint.category,
+        description: selectedComplaint.description,
+        status: newStatus,
+        remark: remark.trim(),
+        resolvedAt:
+          newStatus.toLowerCase() === "pending"
+            ? null
+            : new Date().toISOString().split("T")[0],
+        module_id: getModuleId("complaintlogs"),
+      };
 
-    setComplaints(updated);
-    setShowStatusModal(false);
-    setSelectedComplaint(null);
-    setRemark("");
+      const response = await axios.put(
+        `${API_BASE_URL}/updateComplaintLog/${selectedComplaint.complaint_id}`,
+        payload,
+        { headers: getAuthHeaders() }
+      );
+
+      if (response.data?.success) {
+        // Update locally
+        const updated = complaints.map((c) =>
+          c.complaint_id === selectedComplaint.complaint_id
+            ? {
+              ...c,
+              status: newStatus,
+              remark: remark || "-",
+              resolved_at:
+                newStatus.toLowerCase() === "pending"
+                  ? null
+                  : new Date().toISOString(),
+            }
+            : c
+        );
+        setComplaints(updated);
+        alert("Complaint status updated successfully!");
+      } else {
+        alert(response.data?.message || "Failed to update complaint status");
+      }
+    } catch (err) {
+      console.error("Error updating complaint status:", err);
+      alert("Error updating complaint status");
+    } finally {
+      setShowStatusModal(false);
+      setSelectedComplaint(null);
+      setRemark("");
+    }
   };
 
   return (
@@ -148,10 +164,54 @@ export const ComplaintLogs = () => {
         <h3>Complaint Logs</h3>
       </div>
 
-      {/* Search Filter */}
-      <div className="filter-search-container mb-3">
+      {/* Filters */}
+      <div className="filter-search-container">
+        <div className="filter-container">
+          {/* Filter by Status */}
+          <DropdownButton
+            title={`Filter by Status: ${status === ""
+              ? "All"
+              : status === "pending"
+                ? "Pending"
+                : status === "resolved"
+                  ? "Resolved"
+                  : status === "escalated"
+                    ? "Escalated"
+                    : "Rejected"
+              }`}
+          >
+            <Dropdown.Item onClick={() => { setStatus(""); setCurrentPage(1); }}>
+              All
+            </Dropdown.Item>
+            <Dropdown.Item onClick={() => { setStatus("pending"); setCurrentPage(1); }}>
+              Pending
+            </Dropdown.Item>
+            <Dropdown.Item onClick={() => { setStatus("resolved"); setCurrentPage(1); }}>
+              Resolved
+            </Dropdown.Item>
+            <Dropdown.Item onClick={() => { setStatus("escalated"); setCurrentPage(1); }}>
+              Escalated
+            </Dropdown.Item>
+            <Dropdown.Item onClick={() => { setStatus("rejected"); setCurrentPage(1); }}>
+              Rejected
+            </Dropdown.Item>
+          </DropdownButton>
+          <p className="btn btn-primary mb-0">Filter by Date -</p>
+          <Form.Group>
+            <Form.Control
+              type="date"
+              value={date}
+              onChange={(e) => {
+                setDate(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+          </Form.Group>
+        </div>
+        {/* Search */}
         <InputGroup className="dms-custom-width">
           <Form.Control
+            type="text"
             placeholder="Search by complainant name..."
             value={search}
             onChange={(e) => {
@@ -165,7 +225,9 @@ export const ComplaintLogs = () => {
       {/* Table */}
       <div className="dms-table-container">
         {loading ? (
-          <div className="text-center py-5 fs-4">Loading...</div>
+          <div className="text-center py-5 fs-4">
+            <Spinner animation="border" size="sm" /> Loading...
+          </div>
         ) : (
           <>
             <Table striped bordered hover responsive>
@@ -178,63 +240,112 @@ export const ComplaintLogs = () => {
                   <th>Description</th>
                   <th>Status</th>
                   <th>Remark</th>
-                  <th>Ride ID</th>
                   <th>Created At</th>
                   <th>Resolved At</th>
                   <th>Action</th>
                 </tr>
               </thead>
               <tbody>
-                {displayedComplaints.length > 0 ? (
-                  displayedComplaints.map((c, idx) => (
-                    <tr key={c.complaint_id}>
-                      <td>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
-                      <td>
-                        {c.complainant_name} <br />
-                        <small className="text-muted">({c.complainant_id})</small>
-                      </td>
-                      <td>
-                        {c.against_user_name} <br />
-                        <small className="text-muted">({c.against_user_id})</small>
-                      </td>
-                      <td>{c.category.replace("_", " ")}</td>
-                      <td>{c.description}</td>
-                      <td>
-                        <span>
+                {complaints.length > 0 ? (
+                  complaints
+                    .filter((c) =>
+                      c.complainant_name
+                        ?.toLowerCase()
+                        .includes(search.toLowerCase())
+                    )
+                    .map((c, idx) => (
+                      <tr key={c.complaint_id}>
+                        <td>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
+                        {/* Complainant (Clickable) */}
+                        <td>
+                          <span
+                            className="rider-id-link "
+                            onClick={() => {
+                              const isRider = c.category?.toLowerCase().includes("rider");
+                              const targetPath = isRider
+                                ? `/dms/rider/view/${c.complainant_id}`
+                                : `/dms/driver/view/${c.complainant_id}`;
+
+                              navigate(targetPath, {
+                                state: {
+                                  [isRider ? "rider" : "driver"]: {
+                                    id: c.complainant_id,
+                                    userId: c.complainant_id, 
+                                    fullName: c.complainant_name,
+                                    profileImage: c.complainant_profile_image || null,
+                                  },
+                                },
+                              });
+                            }}
+                          >
+                            {c.complainant_name || "-"}
+                          </span>
+                          <br />
+                          <small className="text-muted">({c.complainant_id})</small>
+                        </td>
+
+                        {/* Against User (Clickable) */}
+                        <td>
+                          <span
+                            className="rider-id-link "
+                            onClick={() => {
+                              const isDriver = c.category?.toLowerCase().includes("driver");
+                              const targetPath = isDriver
+                                ? `/dms/driver/view/${c.against_user_id}`
+                                : `/dms/rider/view/${c.against_user_id}`;
+
+                              navigate(targetPath, {
+                                state: {
+                                  [isDriver ? "driver" : "rider"]: {
+                                    id: c.against_user_id,
+                                    userId: c.against_user_id,
+                                    fullName: c.against_user_name,
+                                    profileImage: c.against_user_profile_image || null,
+                                  },
+                                },
+                              });
+                            }}
+                          >
+                            {c.against_user_name || "-"}
+                          </span>
+                          <br />
+                          <small className="text-muted">({c.against_user_id})</small>
+                        </td>
+                        <td>{c.category?.replace("_", " ")}</td>
+                        <td>{c.description}</td>
+                        <td>
                           {c.status}
-                        </span>
-                        <FaEdit
-                          title="Edit Status"
-                          className="icon icon-green ms-2"
-                          style={{ cursor: "pointer" }}
-                          onClick={() => handleStatusEdit(c)}
-                        />
-                      </td>
-                      <td>{c.remark || "-"}</td>
-                      <td>{c.ride_id || "-"}</td>
-                      <td>{new Date(c.created_at).toLocaleString()}</td>
-                      <td>
-                        {c.resolved_at
-                          ? new Date(c.resolved_at).toLocaleString()
-                          : "-"}
-                      </td>
-                      <td>
-                        <FaEye
-                          title="View"
-                          className="icon icon-blue me-2"
-                          style={{ cursor: "pointer" }}
-                          onClick={() =>
-                            navigate(`/dms/complaintlogs/view/${c.complaint_id}`, {
-                              state: { complaint: c },
-                            })
-                          }
-                        />
-                      </td>
-                    </tr>
-                  ))
+                          <FaEdit
+                            title="Edit Status"
+                            className="icon icon-green ms-2"
+                            style={{ cursor: "pointer" }}
+                            onClick={() => handleStatusEdit(c)}
+                          />
+                        </td>
+                        <td>{c.remark || "-"}</td>
+                        <td>{new Date(c.created_at).toLocaleString()}</td>
+                        <td>
+                          {c.resolved_at
+                            ? new Date(c.resolved_at).toLocaleString()
+                            : "-"}
+                        </td>
+                        <td>
+                          <FaEye
+                            title="View Details"
+                            className="icon icon-blue"
+                            style={{ cursor: "pointer" }}
+                            onClick={() =>
+                              navigate(`/dms/complaintlogs/view/${c.complaint_id}`, {
+                                state: { complaint: c },
+                              })
+                            }
+                          />
+                        </td>
+                      </tr>
+                    ))
                 ) : (
                   <tr>
-                    <td colSpan="11" className="text-center">
+                    <td colSpan="10" className="text-center">
                       No complaints found.
                     </td>
                   </tr>
@@ -270,18 +381,20 @@ export const ComplaintLogs = () => {
                   setItemsPerPage(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="pagination-option w-auto"
+                className='pagination-option w-auto'
               >
                 <option value="5">Show 5</option>
                 <option value="10">Show 10</option>
                 <option value="20">Show 20</option>
+                <option value="30">Show 30</option>
+                <option value="50">Show 50</option>
               </Form.Select>
             </div>
           </>
         )}
       </div>
 
-      {/* 🔹 Modal for Status Update */}
+      {/* Modal */}
       <Modal show={showStatusModal} onHide={() => setShowStatusModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Change Complaint Status</Modal.Title>
@@ -289,15 +402,15 @@ export const ComplaintLogs = () => {
         <Modal.Body>
           <Form>
             <Form.Group className="mb-3">
-              <Form.Label>Select Status</Form.Label>
+              <Form.Label>Status</Form.Label>
               <Form.Select
                 value={newStatus}
                 onChange={(e) => setNewStatus(e.target.value)}
               >
-                <option value="Pending">Pending</option>
-                <option value="Resolved">Resolved</option>
-                <option value="Escalated">Escalated</option>
-                <option value="Rejected">Rejected</option>
+                <option value="pending">Pending</option>
+                <option value="resolved">Resolved</option>
+                <option value="escalated">Escalated</option>
+                <option value="rejected">Rejected</option>
               </Form.Select>
             </Form.Group>
             <Form.Group>

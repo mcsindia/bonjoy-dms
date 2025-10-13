@@ -47,8 +47,8 @@ export const FareSettingAdd = () => {
       setIsLoading(true);
       setError("");
 
-      const token = getToken(); // ✅ get token
-      const moduleId = getModuleId("faresettings"); // ✅ dynamic module id
+      const token = getToken(); //  get token
+      const moduleId = getModuleId("faresettings"); //  dynamic module id
 
       const payload = {
         ...formData,

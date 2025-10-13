@@ -26,7 +26,7 @@ export const FareNightRulesEdit = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
 
-  // ✅ Fetch region list from API
+  //  Fetch region list from API
   useEffect(() => {
     const fetchRegions = async () => {
       try {
@@ -53,7 +53,7 @@ export const FareNightRulesEdit = () => {
     fetchRegions();
   }, []);
 
-  // ✅ Prefill form on edit
+  //  Prefill form on edit
   useEffect(() => {
     if (rule && !hasInitialized) {
       setFormData({
@@ -78,7 +78,7 @@ export const FareNightRulesEdit = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // ✅ Handle update API call
+  //  Handle update API call
   const handleSubmit = async (e) => {
     e.preventDefault();
 

@@ -166,7 +166,7 @@ export const JobPostList = () => {
   const [careerToDelete, setCareerToDelete] = useState(null);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  // ✅ Permission extraction
+  //  Permission extraction
   const userData = JSON.parse(localStorage.getItem('userData'));
   let permissions = [];
 

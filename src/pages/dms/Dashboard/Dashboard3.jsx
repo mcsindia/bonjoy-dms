@@ -39,30 +39,22 @@ export const Dashboard3 = () => {
     const driverPendingCount = 7;
     const newDocumentsCount = 4;
     const userData = JSON.parse(localStorage.getItem("userData"));
-     let permissions = [];
+    let permissions = [];
 
-if (Array.isArray(userData?.employeeRole)) {
-  for (const role of userData.employeeRole) {
-    for (const child of role.childMenus || []) {
-      for (const mod of child.modules || []) {
-        if (mod.moduleUrl?.toLowerCase() === "dashboard") {
-          permissions = mod.permission
-            ?.toLowerCase()
-            .split(',')
-            .map(p => p.trim()) || [];
+    if (Array.isArray(userData?.employeeRole)) {
+        for (const role of userData.employeeRole) {
+            for (const child of role.childMenus || []) {
+                for (const mod of child.modules || []) {
+                    if (mod.moduleUrl?.toLowerCase() === "dashboard") {
+                        permissions = mod.permission
+                            ?.toLowerCase()
+                            .split(',')
+                            .map(p => p.trim()) || [];
+                    }
+                }
+            }
         }
-      }
     }
-  }
-}
-
-    const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
-        if (permissions.includes(permissionType)) {
-            action(); // allowed, run the actual function
-        } else {
-            alert(fallbackMessage || `You don't have permission to ${permissionType} this employee.`);
-        }
-    };
 
     const handleFilterChange = (selectedFilter) => {
         setFilter(selectedFilter);
@@ -410,7 +402,13 @@ if (Array.isArray(userData?.employeeRole)) {
                     <div className="col-md-6">
                         <div
                             className="card quick-action-card shadow-sm p-3 d-flex flex-row align-items-center justify-content-between bg-warning-subtle border-start border-4 border-warning"
-                            onClick={() => handlePermissionCheck("view", () => navigate("/dms/driver"))}
+                            onClick={() => {
+                                if (permissions.includes("view")) {
+                                    navigate("/dms/driver");
+                                } else {
+                                    alert("You don't have permission to view drivers.");
+                                }
+                            }}
                             style={{ cursor: "pointer" }}
                         >
                             <div className="d-flex flex-row align-items-center">
@@ -429,7 +427,13 @@ if (Array.isArray(userData?.employeeRole)) {
                     <div className="col-md-6">
                         <div
                             className="card quick-action-card shadow-sm p-3 d-flex flex-row align-items-center justify-content-between bg-info-subtle border-start border-4 border-info"
-                            onClick={() => handlePermissionCheck("view", () => navigate("/dms/driver"))}
+                            onClick={() => {
+                                if (permissions.includes("view")) {
+                                    navigate("/dms/driver");
+                                } else {
+                                    alert("You don't have permission to view documents.");
+                                }
+                            }}
                             style={{ cursor: "pointer" }}
                         >
                             <div className="d-flex flex-row align-items-center">
@@ -457,9 +461,13 @@ if (Array.isArray(userData?.employeeRole)) {
                                             <span>
                                                 {stat.icon}
                                                 <span
-                                                    onClick={() =>
-                                                        handlePermissionCheck("view", () => navigate(stat.link), "You don't have permission to view this page.")
-                                                    }
+                                                    onClick={() => {
+                                                        if (permissions.includes("view")) {
+                                                            navigate(stat.link);
+                                                        } else {
+                                                            alert("You don't have permission to view this page.");
+                                                        }
+                                                    }}
                                                     style={{ color: 'white', textDecoration: 'none', cursor: 'pointer' }}
                                                 >
                                                     {stat.category}

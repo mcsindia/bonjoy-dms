@@ -35,14 +35,6 @@ export const CommissionFeeList = () => {
         }
     }
 
-    const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
-        if (permissions.includes(permissionType)) {
-            action();
-        } else {
-            alert(fallbackMessage || `You don't have permission to ${permissionType} this setting.`);
-        }
-    };
-
     const handleDelete = (commissionId) => {
         if (window.confirm(`Are you sure you want to delete commission record #${commissionId}?`)) {
             setCommissionData(commissionData.filter((commission) => commission.S_No !== commissionId));

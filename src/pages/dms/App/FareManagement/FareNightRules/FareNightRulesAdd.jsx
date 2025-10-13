@@ -23,7 +23,7 @@ export const FareNightRulesAdd = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingRegions, setIsFetchingRegions] = useState(false);
 
-  // ✅ Fetch regions dynamically from API
+  //  Fetch regions dynamically from API
   useEffect(() => {
     const fetchRegions = async () => {
       try {

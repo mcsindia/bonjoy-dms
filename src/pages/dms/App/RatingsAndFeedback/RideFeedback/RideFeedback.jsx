@@ -4,101 +4,19 @@ import {
     Form,
     InputGroup,
     Pagination,
+    Spinner
 } from "react-bootstrap";
 import { FaStar, FaEye } from "react-icons/fa";
-import {useNavigate} from 'react-router-dom'
+import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "../../../../../layouts/dms/AdminLayout/AdminLayout";
+import axios from "axios";
+import { getModuleId, getToken } from "../../../../../utils/authhelper";
 
-// Dummy data (matches your feedback table)
-const dummyFeedbacks = [
-  {
-    feedback_id: "FB001",
-    ride_id: "R001",
-    ride_date: "2025-10-07T08:45:00Z",
-    pickup_location: "MG Road, Pune",
-    drop_location: "Shivaji Nagar, Pune",
-    distance_km: 12.5,
-    duration_min: 25,
-    payment_mode: "UPI",
-    payment_status: "Paid",
-    amount: 220,
-    reviewer_id: "U101",
-    reviewer_name: "Rohit Sharma",
-    reviewed_id: "U201",
-    reviewed_name: "Amit Patel",
-    driver_name: "Amit Patel",
-    driver_mobile: "9876543210",
-    vehicle_no: "MH12 AB 1234",
-    vehicle_type: "Sedan",
-    rider_name: "Rohit Sharma",
-    rider_mobile: "9998887771",
-    role: "rider_to_driver",
-    rating: 4.7,
-    driving_quality: 4.8,
-    behavior: 4.6,
-    punctuality: 4.9,
-    feedback_text: "Smooth ride and polite driver!",
-    created_at: "2025-10-08T10:00:00Z",
-  },
-  {
-    feedback_id: "FB002",
-    ride_id: "R002",
-    ride_date: "2025-10-06T09:30:00Z",
-    pickup_location: "Viman Nagar, Pune",
-    drop_location: "Hadapsar, Pune",
-    distance_km: 8.2,
-    duration_min: 18,
-    payment_mode: "Cash",
-    payment_status: "Paid",
-    amount: 180,
-    reviewer_id: "U102",
-    reviewer_name: "Priya Verma",
-    reviewed_id: "U202",
-    reviewed_name: "Rajesh Singh",
-    driver_name: "Rajesh Singh",
-    driver_mobile: "9765432109",
-    vehicle_no: "MH14 CD 4567",
-    vehicle_type: "Hatchback",
-    rider_name: "Priya Verma",
-    rider_mobile: "9898776655",
-    role: "driver_to_rider",
-    rating: 4.3,
-    driving_quality: null,
-    behavior: 4.2,
-    punctuality: 4.0,
-    feedback_text: "Good passenger, on time.",
-    created_at: "2025-10-07T09:30:00Z",
-  },
-  {
-    feedback_id: "FB003",
-    ride_id: "R003",
-    ride_date: "2025-10-05T11:00:00Z",
-    pickup_location: "Baner, Pune",
-    drop_location: "Kothrud, Pune",
-    distance_km: 10.4,
-    duration_min: 22,
-    payment_mode: "Wallet",
-    payment_status: "Pending",
-    amount: 200,
-    reviewer_id: "U103",
-    reviewer_name: "Sana Khan",
-    reviewed_id: "U203",
-    reviewed_name: "Karan Mehta",
-    driver_name: "Karan Mehta",
-    driver_mobile: "9123456789",
-    vehicle_no: "MH12 XY 9876",
-    vehicle_type: "SUV",
-    rider_name: "Sana Khan",
-    rider_mobile: "9876500012",
-    role: "rider_to_driver",
-    rating: 3.8,
-    driving_quality: 3.9,
-    behavior: 3.7,
-    punctuality: 3.5,
-    feedback_text: "Driver was late but friendly.",
-    created_at: "2025-10-06T12:15:00Z",
-  },
-];
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
+const getAuthHeaders = () => ({
+    Authorization: `Bearer ${getToken()}`,
+});
 
 export const RideFeedback = () => {
     const navigate = useNavigate();
@@ -108,23 +26,67 @@ export const RideFeedback = () => {
     const [search, setSearch] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
+    const [totalPages, setTotalPages] = useState(1);
+    const [date, setDate] = useState("");
+
+    // 🔹 Fetch API Feedbacks
+    const fetchFeedbacks = async (page = 1) => {
+        setLoading(true);
+        try {
+            const params = {
+                page,
+                limit: itemsPerPage,
+                module_id: getModuleId("ridefeedback"),
+            };
+
+            if (date) params.date = date;
+
+            const response = await axios.get(`${API_BASE_URL}/getAllFeedback`, {
+                headers: getAuthHeaders(),
+                params,
+            });
+
+            const apiData = response.data?.data?.models || [];
+            const totalPageCount = response.data?.data?.totalPages || 1;
+
+            // Transform API to frontend-friendly structure
+            const formatted = apiData.map((item) => ({
+                feedback_id: item.id,
+                ride_id: item.rideid,
+                reviewer_id: item.feedbackByUser?.id,
+                reviewer_name: item.feedbackByUser?.fullName || "-",
+                reviewed_id: item.feedbackToUser?.id,
+                reviewed_name: item.feedbackToUser?.fullName || "-",
+                role: item.role || "-", // from API
+                rating: item.rating,
+                driving_quality: item.driving_quality,
+                behavior: item.behavior,
+                punctuality: item.punctuality,
+                feedback_text: item.feedback_text,
+                created_at: item.createdAt,
+            }));
+
+            setFeedbacks(formatted);
+            setTotalPages(totalPageCount);
+            setCurrentPage(response.data?.data?.currentPage || 1);
+        } catch (err) {
+            console.error("Error fetching feedbacks:", err);
+            setFeedbacks([]);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        setLoading(true);
-        setTimeout(() => {
-            setFeedbacks(dummyFeedbacks);
-            setLoading(false);
-        }, 500);
-    }, []);
+        fetchFeedbacks(currentPage);
+    }, [currentPage, itemsPerPage, date]);
 
-    // Filter feedbacks based on role or comment text
+    // Filtered & Paginated Feedbacks
     const filteredFeedbacks = feedbacks.filter(
         (fb) =>
             fb.role.toLowerCase().includes(search.toLowerCase()) ||
             fb.feedback_text?.toLowerCase().includes(search.toLowerCase())
     );
-
-    const totalPages = Math.ceil(filteredFeedbacks.length / itemsPerPage);
 
     const displayedFeedbacks = filteredFeedbacks.slice(
         (currentPage - 1) * itemsPerPage,
@@ -141,8 +103,21 @@ export const RideFeedback = () => {
                 <h3>Ride Feedback</h3>
             </div>
 
-            {/* Search Filter */}
-            <div className="filter-search-container mb-3">
+            {/* Filters */}
+            <div className="filter-search-container">
+                <div className="filter-container">
+                    <p className="btn btn-primary mb-0">Filter by Date -</p>
+                    <Form.Group className="me-3">
+                        <Form.Control
+                            type="date"
+                            value={date}
+                            onChange={(e) => {
+                                setDate(e.target.value);
+                                setCurrentPage(1);
+                            }}
+                        />
+                    </Form.Group>
+                </div>
                 <InputGroup className="dms-custom-width">
                     <Form.Control
                         placeholder="Search by feedback text or role..."
@@ -158,7 +133,9 @@ export const RideFeedback = () => {
             {/* Table */}
             <div className="dms-table-container">
                 {loading ? (
-                    <div className="text-center py-5 fs-4">Loading...</div>
+                    <div className="text-center py-5 fs-4">
+                        <Spinner animation="border" size="sm" /> Loading...
+                    </div>
                 ) : (
                     <>
                         <Table striped bordered hover responsive>
@@ -184,10 +161,12 @@ export const RideFeedback = () => {
                                             <td>{fb.ride_id}</td>
                                             <td>{fb.role.replace("_", " ")}</td>
                                             <td>
-                                                <div className="d-flex align-items-center">
-                                                    <FaStar className="icon star-icon me-1" />
-                                                    {fb.rating?.toFixed(1)}
-                                                </div>
+                                                {fb.rating && (
+                                                    <div className="d-flex align-items-center">
+                                                        <FaStar className="icon star-icon me-1" />
+                                                        {fb.rating.toFixed(1)}
+                                                    </div>
+                                                )}
                                             </td>
                                             <td>
                                                 {fb.driving_quality ? (
@@ -195,9 +174,7 @@ export const RideFeedback = () => {
                                                         <FaStar className="icon star-icon me-1" />
                                                         {fb.driving_quality.toFixed(1)}
                                                     </div>
-                                                ) : (
-                                                    "-"
-                                                )}
+                                                ) : "-"}
                                             </td>
                                             <td>
                                                 {fb.behavior ? (
@@ -205,9 +182,7 @@ export const RideFeedback = () => {
                                                         <FaStar className="icon star-icon me-1" />
                                                         {fb.behavior.toFixed(1)}
                                                     </div>
-                                                ) : (
-                                                    "-"
-                                                )}
+                                                ) : "-"}
                                             </td>
                                             <td>
                                                 {fb.punctuality ? (
@@ -215,9 +190,7 @@ export const RideFeedback = () => {
                                                         <FaStar className="icon star-icon me-1" />
                                                         {fb.punctuality.toFixed(1)}
                                                     </div>
-                                                ) : (
-                                                    "-"
-                                                )}
+                                                ) : "-"}
                                             </td>
                                             <td>{fb.feedback_text || "-"}</td>
                                             <td>{new Date(fb.created_at).toLocaleDateString()}</td>
@@ -226,14 +199,18 @@ export const RideFeedback = () => {
                                                     title="View"
                                                     className="icon icon-blue"
                                                     style={{ cursor: "pointer" }}
-                                                    onClick={() => navigate(`/dms/ridefeedback/view/${fb.feedback_id}`, { state: { feedback: fb } })}
+                                                    onClick={() =>
+                                                        navigate(`/dms/ridefeedback/view/${fb.feedback_id}`, {
+                                                            state: { feedback: fb },
+                                                        })
+                                                    }
                                                 />
                                             </td>
                                         </tr>
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="9" className="text-center">
+                                        <td colSpan="10" className="text-center">
                                             No feedback found.
                                         </td>
                                     </tr>

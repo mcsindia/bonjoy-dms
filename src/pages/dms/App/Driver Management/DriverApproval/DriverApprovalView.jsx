@@ -47,14 +47,6 @@ export const DriverApprovalView = () => {
         }
     }
 
-    const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
-        if (permissions.includes(permissionType)) {
-            action(); // allowed, run the actual function
-        } else {
-            alert(fallbackMessage || `You don't have permission to ${permissionType} this employee.`);
-        }
-    };
-
     const handleAction = async (action, docName, doc = null, type = 'driver', driverId = null, vehicleId = null) => {
         if (!doc?.id) return alert("Document ID is missing");
 
@@ -134,18 +126,49 @@ export const DriverApprovalView = () => {
 
     const getActionsByStatus = (status, docName, doc, type = 'driver') => {
         const actions = [
-            <li key="view" onClick={() => handlePermissionCheck("view", () => handleAction("View", docName, doc))}>
+            <li
+                key="view"
+                onClick={() =>
+                    permissions.includes("view")
+                        ? handleAction("View", docName, doc)
+                        : alert("You don't have permission to view this document.")
+                }
+            >
                 <FaEye className="dms-menu-icon" /> View
             </li>,
-            <li key="download" onClick={() => handlePermissionCheck("view", () => handleAction("Download", docName, doc))}>
+
+            <li
+                key="download"
+                onClick={() =>
+                    permissions.includes("view")
+                        ? handleAction("Download", docName, doc)
+                        : alert("You don't have permission to download this document.")
+                }
+            >
                 <FaDownload className="dms-menu-icon" /> Download
             </li>,
-            <li key="versions" onClick={() => handlePermissionCheck("view", () => handleViewVersions(doc, type))}>
+
+            <li
+                key="versions"
+                onClick={() =>
+                    permissions.includes("view")
+                        ? handleViewVersions(doc, type)
+                        : alert("You don't have permission to view versions.")
+                }
+            >
                 <FaHistory className="dms-menu-icon" /> View Versions
             </li>,
-            <li key="remark" onClick={() => handlePermissionCheck("edit", () => handleRemarkAction(doc, docName, type))}>
+
+            <li
+                key="remark"
+                onClick={() =>
+                    permissions.includes("edit")
+                        ? handleRemarkAction(doc, docName, type)
+                        : alert("You don't have permission to add remarks.")
+                }
+            >
                 <FaEdit className="dms-menu-icon" /> Remark
-            </li>
+            </li>,
         ];
 
         return actions;
@@ -552,7 +575,7 @@ export const DriverApprovalView = () => {
                 <tbody>
                     {bankDocuments.map((doc) => (
                         <tr key={doc.id}>
-                           <td>{doc.details?.docType || "N/A"}</td>
+                            <td>{doc.details?.docType || "N/A"}</td>
                             <td>{doc.details?.accountNo || "N/A"}</td>
                             <td>{doc.details?.bankName || "N/A"}</td>
                             <td>{doc.details?.branchName || "N/A"}</td>

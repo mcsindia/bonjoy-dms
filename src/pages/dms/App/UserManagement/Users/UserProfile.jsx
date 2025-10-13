@@ -36,7 +36,6 @@ export const UserProfile = () => {
     }
   }
 
-  // ✅ Single API fetch with module_id
   useEffect(() => {
     const userId = location.state?.user?.id || paramId;
     if (!user && userId) {
@@ -103,14 +102,14 @@ export const UserProfile = () => {
   const username = fullName;
   const account_creation_date = createdAt?.split("T")[0];
 
-  // ✅ Dummy Feedback Data
+  //  Dummy Feedback Data
   const feedbackData = [
     { tripId: "TRIP001", driverId: "DRV001", rating: 4, remark: "Great ride!" },
     { tripId: "TRIP002", driverId: "DRV002", rating: 5, remark: "Excellent service!" },
     { tripId: "TRIP003", driverId: "DRV003", rating: 3, remark: "Could be better." },
   ];
 
-  // ✅ Dummy Wallet Data
+  //  Dummy Wallet Data
   const walletData = [
     {
       date: "2023-12-18",

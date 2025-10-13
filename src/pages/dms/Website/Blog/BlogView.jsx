@@ -10,7 +10,7 @@ export const BlogView = () => {
 
   const blog = location.state?.blog;
 
-  // ✅ Extract Blog permissions from userData
+  //  Extract Blog permissions from userData
   const userData = JSON.parse(localStorage.getItem("userData"));
   let permissions = [];
 

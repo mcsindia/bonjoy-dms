@@ -39,14 +39,6 @@ export const EmployeeRoleView = () => {
     }
   }
 
-  const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
-    if (permissions.includes(permissionType)) {
-      action();
-    } else {
-      alert(fallbackMessage || `You don't have permission to ${permissionType} this role.`);
-    }
-  };
-
   useEffect(() => {
     const fetchRole = async () => {
       if (!roleId) {

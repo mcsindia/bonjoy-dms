@@ -46,14 +46,6 @@ export const DriversDetailsView = () => {
     }
   }
 
-  const handlePermissionCheck = (permissionType, action, fallbackMessage = null) => {
-    if (permissions.includes(permissionType)) {
-      action(); // allowed, run the actual function
-    } else {
-      alert(fallbackMessage || `You don't have permission to ${permissionType} this employee.`);
-    }
-  };
-
   const isExpiringSoon = (expiryDate) => {
     if (!expiryDate) return false;
     const today = new Date();
@@ -71,31 +63,39 @@ export const DriversDetailsView = () => {
   };
 
   const getActionsByStatus = (status, docName, doc, type = 'driver', expiryDate = null) => {
-    const actions = [
-      <li key="view" onClick={() => handlePermissionCheck("view", () => window.open(`${IMAGE_BASE_URL}${doc.file_url}`, '_blank'))}>
-        <FaEye className="dms-menu-icon" /> View
-      </li>,
-      <li key="download" onClick={() => handlePermissionCheck("view", () => handleDownload(`${IMAGE_BASE_URL}${doc.file_url}`))}>
-        <FaDownload className="dms-menu-icon" /> Download
-      </li>,
-      <li key="versions" onClick={() => handlePermissionCheck("view", () => handleViewVersions(doc, type))}>
-        <FaHistory className="dms-menu-icon" /> View Versions
-      </li>
-    ];
+    const actions = [];
 
-    // Show Remark if status is pending
-    if (status?.toLowerCase() === "pending") {
+    if (permissions.includes("view")) {
       actions.push(
-        <li key="remark" onClick={() => handlePermissionCheck("edit", () => handleRemarkAction(doc, docName, type))}>
+        <li key="view" onClick={() => window.open(`${IMAGE_BASE_URL}${doc.file_url}`, '_blank')}>
+          <FaEye className="dms-menu-icon" /> View
+        </li>
+      );
+
+      actions.push(
+        <li key="download" onClick={() => handleDownload(`${IMAGE_BASE_URL}${doc.file_url}`)}>
+          <FaDownload className="dms-menu-icon" /> Download
+        </li>
+      );
+
+      actions.push(
+        <li key="versions" onClick={() => handleViewVersions(doc, type)}>
+          <FaHistory className="dms-menu-icon" /> View Versions
+        </li>
+      );
+    }
+
+    if (status?.toLowerCase() === "pending" && permissions.includes("edit")) {
+      actions.push(
+        <li key="remark" onClick={() => handleRemarkAction(doc, docName, type)}>
           <FaEdit className="dms-menu-icon" /> Remark
         </li>
       );
     }
 
-    // Show Reminder if document is not pending and expiring within 30 days
-    if (status?.toLowerCase() !== "pending" && isExpiringSoon(expiryDate)) {
+    if (status?.toLowerCase() !== "pending" && isExpiringSoon(expiryDate) && permissions.includes("edit")) {
       actions.push(
-        <li key="reminder" onClick={() => handlePermissionCheck("edit", () => sendReminder(doc, type))}>
+        <li key="reminder" onClick={() => sendReminder(doc, type)}>
           <FaBell className="dms-menu-icon" /> Reminder
         </li>
       );
@@ -336,7 +336,7 @@ export const DriversDetailsView = () => {
             driverId,
             documentType,
             documentId: doc.id,
-            module_id: "driver" 
+            module_id: "driver"
           }
         }
       );
@@ -362,7 +362,7 @@ export const DriversDetailsView = () => {
         const token = JSON.parse(localStorage.getItem("userData"))?.token;
         const response = await axios.get(`${API_BASE_URL}/getAllUserContacts`, {
           headers: { Authorization: `Bearer ${token}` },
-          params: { module_id: "driver" } 
+          params: { module_id: "driver" }
         });
 
         if (response.data?.success) {
@@ -461,13 +461,17 @@ export const DriversDetailsView = () => {
                   <Card.Title className="mb-4">KYC & Profile Details</Card.Title>
                   <Button
                     className='edit-button'
-                    onClick={() => handlePermissionCheck("edit", () =>
-                      navigate("/dms/driver/edit", {
-                        state: {
-                          driver: driverDetails
-                        }
-                      })
-                    )}
+                    onClick={() => {
+                      if (permissions.includes("edit")) {
+                        navigate("/dms/driver/edit", {
+                          state: {
+                            driver: driverDetails
+                          }
+                        });
+                      } else {
+                        <span>-</span>
+                      }
+                    }}
                   >
                     <FaEdit className="me-2" />
                     Edit
