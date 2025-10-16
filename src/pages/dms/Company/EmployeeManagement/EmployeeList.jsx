@@ -124,51 +124,50 @@ export const EmployeeList = () => {
     }
   };
 
-  const confirmStatusToggle = async () => {
+    const confirmStatusToggle = async () => {
     if (!statusToggleEmployee) return;
 
     const token = JSON.parse(localStorage.getItem("userData"))?.token;
     const employee = statusToggleEmployee;
     const isActive = newStatus === 'Active' ? '1' : '0';
+    const updateId = employee.userType === "Admin" ? employee.userId : employee.id;
 
     const formPayload = new FormData();
-    formPayload.append('fullName', employee.fullName || '');
-    formPayload.append('mobile', employee.mobile || '');
-    formPayload.append('email', employee.email || '');
-    formPayload.append('departmentId', employee.Department?.id || '');
-    formPayload.append('designationId', employee.Designation?.id || '');
-    formPayload.append('role', employee.roleId || '');
-    formPayload.append('dob', employee.date_of_birth || '');
-    formPayload.append('gender', employee.gender || '');
-    formPayload.append('contractStartDate', employee.contractStartDate || '');
-    formPayload.append('contractLastDate', employee.contractLastDate || '');
-    formPayload.append('isActive', isActive);
-    formPayload.append('status', newStatus);
-    formPayload.append('salary', employee.salary || '');
-    formPayload.append('userType', employee.userType || 'Employee');
-    formPayload.append('hireDate', employee.hireDate || '');
-    formPayload.append('remark', remark);
+    formPayload.append("employeeId", employee.id);
+    formPayload.append("fullName", employee.fullName || "");
+    formPayload.append("mobile", employee.mobile || "");
+    formPayload.append("email", employee.email || "");
+    formPayload.append("departmentId", employee.Department?.id || "");
+    formPayload.append("designationId", employee.Designation?.id || "");
+    formPayload.append("role", employee.roleId || employee.Role?.id || "");
+    formPayload.append("dob", employee.date_of_birth || "");
+    formPayload.append("gender", employee.gender || "");
+    formPayload.append("contractStartDate", employee.contractStartDate || "");
+    formPayload.append("contractLastDate", employee.contractLastDate || "");
+    formPayload.append("isActive", isActive);
+    formPayload.append("status", newStatus);
+    formPayload.append("remark", remark);
     formPayload.append("module_id", getModuleId("employee"));
+
+    // <-- ADD THIS
+    const roleName = employee.Role?.roleName || "";
+    formPayload.append("userType", roleName.toLowerCase() === "admin" ? 1 : 0);
 
     if (Array.isArray(employee.employeeRole)) {
       employee.employeeRole.forEach((mod, index) => {
-        const permissions = mod.permission?.split(',') || [];
+        const permissions = mod.permission?.split(",") || [];
         formPayload.append(`module[${index}]`, mod.moduleId);
-        formPayload.append(`permission[${index}]`, permissions.join(','));
+        formPayload.append(`permission[${index}]`, permissions.join(","));
       });
     }
 
     try {
-      await axios.put(
-        `${API_BASE_URL}/updateEmployee/${employee.id}`,
-        formPayload,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data'
-          }
+      await axios.put(`${API_BASE_URL}/updateEmployee/${updateId}`, formPayload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data"
         }
-      );
+      });
 
       setShowRemarkModal(false);
       setStatusToggleEmployee(null);

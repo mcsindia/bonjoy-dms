@@ -2,17 +2,18 @@ import React, { useState } from "react";
 import { Form, Button, Container, Card, Modal } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 export const Login = () => {
   const navigate = useNavigate();
-  const [token, setToken] = useState("");
   const [userType, setUserType] = useState("Admin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [savePassword, setSavePassword] = useState(false);
   const [showOTPModal, setShowOTPModal] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [otp, setOtp] = useState(["", "", "", ""]);
 
   const handleChange = (index, value) => {
@@ -54,7 +55,15 @@ export const Login = () => {
       }
     } catch (error) {
       console.error("Login error:", error.response);
-      alert(error.response?.data?.message || "Login failed.");
+      const errorMsg = error.response?.data?.message?.toLowerCase();
+
+      if (errorMsg?.includes("password")) {
+        alert("Password is wrong. Failed to log in.");
+      } else if (errorMsg?.includes("user") || errorMsg?.includes("not found")) {
+        alert("User not found. Please check your mobile number.");
+      } else {
+        alert(error.response?.data?.message || "Login failed.");
+      }
     }
   };
 
@@ -126,7 +135,13 @@ export const Login = () => {
       }
     } catch (error) {
       console.error("OTP verification failed:", error);
-      alert(error.response?.data?.message || "Failed to verify OTP.");
+      const errorMsg = error.response?.data?.message?.toLowerCase();
+
+      if (errorMsg?.includes("otp")) {
+        alert("OTP is wrong. Failed to verify OTP.");
+      } else {
+        alert(error.response?.data?.message || "Failed to verify OTP.");
+      }
     }
   };
 
@@ -166,13 +181,28 @@ export const Login = () => {
 
               <Form.Group className="dms-form-group">
                 <Form.Label>Password</Form.Label>
-                <Form.Control
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
+                <div style={{ position: "relative" }}>
+                  <Form.Control
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                  <span
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{
+                      position: "absolute",
+                      right: "10px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      cursor: "pointer",
+                      color: "#6c757d"
+                    }}
+                  >
+                    {showPassword ? <FaEyeSlash /> : <FaEye />}
+                  </span>
+                </div>
               </Form.Group>
 
               <div className="d-flex justify-content-between align-items-center mb-3">

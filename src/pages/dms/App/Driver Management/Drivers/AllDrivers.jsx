@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { AdminLayout } from "../../../../../layouts/dms/AdminLayout/AdminLayout";
 import { Button, Table, InputGroup, Form, Pagination, Dropdown, DropdownButton, Modal } from 'react-bootstrap';
-import { FaEdit, FaEye, FaStar, FaFileExport, FaFileExcel, FaFilePdf, FaBell, FaHistory, FaSignInAlt } from 'react-icons/fa';
+import { FaEdit, FaEye, FaStar, FaFileExport, FaPlus, FaFileExcel, FaFilePdf, FaBell, FaHistory, FaSignInAlt } from 'react-icons/fa';
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { getModuleId, getToken, } from '../../../../../utils/authhelper';
@@ -197,15 +197,27 @@ export const AllDrivers = () => {
                         <Button className='green-button'>🚗 Drivers: {totalRecords}</Button>
                     </div>
                 </div>
-                <div className="export-import-container">
-                    <DropdownButton variant="primary" title={<><FaFileExport /> Export</>} className="me-2">
-                        <Dropdown.Item> <FaFileExcel className="icon-green" /> Export to Excel</Dropdown.Item>
-                        <Dropdown.Item> <FaFilePdf className="icon-red" /> Export to PDF</Dropdown.Item>
-                    </DropdownButton>
-                    <DropdownButton variant="primary" title={<><FaFileExport /> Import</>} className="me-2">
-                        <Dropdown.Item> <FaFileExcel className="icon-green" /> Import from Excel</Dropdown.Item>
-                        <Dropdown.Item> <FaFilePdf className="icon-red" /> Import from PDF</Dropdown.Item>
-                    </DropdownButton>
+                    <div className="export-import-container">
+                        <DropdownButton variant="primary" title={<><FaFileExport /> Export</>} className="me-2">
+                            <Dropdown.Item> <FaFileExcel className="icon-green" /> Export to Excel</Dropdown.Item>
+                            <Dropdown.Item> <FaFilePdf className="icon-red" /> Export to PDF</Dropdown.Item>
+                        </DropdownButton>
+                        <DropdownButton variant="primary" title={<><FaFileExport /> Import</>} className="me-2">
+                            <Dropdown.Item> <FaFileExcel className="icon-green" /> Import from Excel</Dropdown.Item>
+                            <Dropdown.Item> <FaFilePdf className="icon-red" /> Import from PDF</Dropdown.Item>
+                        </DropdownButton>
+                        
+                    {permissions.includes("add") && (
+                        <>
+                            <Button
+                                variant="primary"
+                                className="me-2"
+                                onClick={() => navigate("/dms/driver/add")}
+                            >
+                                <FaPlus /> Add Driver
+                            </Button>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -286,7 +298,7 @@ export const AllDrivers = () => {
                                                             state: { driver }
                                                         });
                                                     } else {
-                                                         navigate(`/dms/driver/view/${driver.id}`, {
+                                                        navigate(`/dms/driver/view/${driver.id}`, {
                                                             state: { driver }
                                                         });
                                                     }

@@ -1,13 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation, Link } from "react-router-dom";
-import {
-  FaUsers,
-  FaCubes,
-  FaCaretDown,
-  FaCaretRight,
-  FaDesktop,
-  FaAppStore,
-} from "react-icons/fa";
+import { FaUsers, FaCubes, FaCaretDown, FaCaretRight, FaDesktop, FaAppStore } from "react-icons/fa";
 import { moduleComponentMap } from "../../../utils/ModuleComponentMap";
 import logo from '../../../assets/images/logo-img.png';
 
@@ -74,35 +67,62 @@ export const Sidebar = ({ isOpen, setIsOpen }) => {
     setOpenSubMenu(openSubMenu === subMenuName ? null : subMenuName);
   };
 
+  const isPathMatch = (path, moduleUrl) => {
+    const cleanedPath = path.toLowerCase().replace(/^\/dms\//, "").split("/")[0];
+    const cleanedModule = moduleUrl.toLowerCase();
+    return cleanedPath === cleanedModule;
+  };
+
   // Auto open menu on route change
   useEffect(() => {
     const path = location.pathname.toLowerCase();
+    let matchedParent = null;
+    let matchedSub = null;
 
+    // Check standalone modules
     for (let mod of standaloneModules) {
-      if (path.includes(mod.moduleUrl?.toLowerCase())) {
-        setOpenMenu(null);
-        setOpenSubMenu(null);
-        return;
+      if (isPathMatch(path, mod.moduleUrl)) {
+        matchedParent = null;
+        matchedSub = null;
+        break;
       }
     }
 
-    for (let role of hierarchicalRoles) {
-      for (let child of role.childMenus) {
-        for (let mod of child.modules) {
-          if (path.includes(mod.moduleUrl?.toLowerCase())) {
-            setOpenMenu(role.parentMenu);
-            if (child.childMenu !== "--") setOpenSubMenu(child.childMenu);
-            return;
+    // Check hierarchical modules
+    if (!matchedParent) {
+      for (let role of hierarchicalRoles) {
+        let found = false;
+
+        // Check child menus first
+        for (let child of role.childMenus) {
+          for (let mod of child.modules) {
+            if (isPathMatch(path, mod.moduleUrl)) {
+              matchedParent = role.parentMenu;
+              if (child.childMenu !== "--") matchedSub = child.childMenu;
+              found = true;
+              break;
+            }
+          }
+          if (found) break;
+        }
+
+        // Check direct modules
+        if (!found && role.directModules) {
+          for (let mod of role.directModules) {
+            if (isPathMatch(path, mod.moduleUrl)) {
+              matchedParent = role.parentMenu;
+              found = true;
+              break;
+            }
           }
         }
-      }
-      for (let mod of role.directModules || []) {
-        if (path.includes(mod.moduleUrl?.toLowerCase())) {
-          setOpenMenu(role.parentMenu);
-          return;
-        }
+
+        if (found) break;
       }
     }
+
+    setOpenMenu(matchedParent);
+    setOpenSubMenu(matchedSub);
   }, [location.pathname]);
 
   const parentIcons = {
@@ -139,7 +159,7 @@ export const Sidebar = ({ isOpen, setIsOpen }) => {
           )
           .map((mod) => {
             const key = mod.moduleUrl.toLowerCase();
-            const isActive = location.pathname.includes(key);
+            const isActive = isPathMatch(location.pathname, key);
             const Icon = moduleComponentMap[key]?.icon || FaCaretRight;
 
             return (
@@ -165,9 +185,8 @@ export const Sidebar = ({ isOpen, setIsOpen }) => {
             onMouseLeave={() => isOpen || setOpenSubMenu(null)}
           >
             <div
-              className={`dms-nav-link text-white ${
-                openMenu === role.parentMenu ? "active" : ""
-              }`}
+              className={`dms-nav-link text-white ${openMenu === role.parentMenu ? "active" : ""
+                }`}
               onClick={() => handleMenuToggle(role.parentMenu)}
             >
               <div className="d-flex align-items-center">
@@ -187,9 +206,8 @@ export const Sidebar = ({ isOpen, setIsOpen }) => {
                   <li key={i} className="dms-nav-item">
                     {child.childMenu !== "--" && (
                       <div
-                        className={`dms-nav-link text-white ${
-                          openSubMenu === child.childMenu ? "active" : ""
-                        }`}
+                        className={`dms-nav-link text-white ${openSubMenu === child.childMenu ? "active" : ""
+                          }`}
                         onClick={() => handleSubMenuToggle(child.childMenu)}
                       >
                         <FaCaretRight className="me-2" />
@@ -202,7 +220,7 @@ export const Sidebar = ({ isOpen, setIsOpen }) => {
                         {child.modules.map((mod) => {
                           const key = mod.moduleUrl.toLowerCase();
                           const Icon = moduleComponentMap[key]?.icon || FaCaretRight;
-                          const isActive = location.pathname.includes(key);
+                          const isActive = isPathMatch(location.pathname, key);
 
                           return (
                             <li key={key} className="dms-nav-item">
@@ -228,7 +246,7 @@ export const Sidebar = ({ isOpen, setIsOpen }) => {
                   const moduleKey = mod.moduleUrl?.toLowerCase();
                   const map = moduleComponentMap[moduleKey];
                   if (!map || map.hidden) return null;
-                  const isActive = location.pathname.includes(moduleKey);
+                  const isActive = isPathMatch(location.pathname, moduleKey);
                   const Icon = map?.icon || <FaCaretRight />;
 
                   return (

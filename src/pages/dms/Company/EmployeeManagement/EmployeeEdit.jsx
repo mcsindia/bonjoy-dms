@@ -13,45 +13,50 @@ export const EmployeeEdit = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const employee = location.state?.employee || {};
+
+  // Core States
   const [formData, setFormData] = useState({
     ...employee,
-    department: employee?.Department?.id || '',
-    designation: employee?.Designation?.id || '',
-    role: employee?.Role?.id || employee?.roleId || '',
-    userProfile: employee?.profileImage || '',
-    dob: employee?.date_of_birth || '',
+    department: employee?.Department?.id || "",
+    designation: employee?.Designation?.id || "",
+    role: employee?.Role?.id || employee?.roleId || "",
+    userProfile: employee?.profileImage || "",
+    dob: employee?.date_of_birth || "",
+    email: employee?.email || "",
   });
-  const [status, setStatus] = useState(employee.status || 'Active');
+  const [status, setStatus] = useState(employee.status || "Active");
+
+  // Dropdown data
   const [departments, setDepartments] = useState([]);
   const [designations, setDesignations] = useState([]);
-  const [selectedPermissions, setSelectedPermissions] = useState({});
-  const [successMessage, setSuccessMessage] = useState('');
   const [roles, setRoles] = useState([]);
   const [roleModules, setRoleModules] = useState([]);
   const [allModules, setAllModules] = useState([]);
-  const MODULE_ID = getModuleId('employee');
 
+  // Permissions
+  const [selectedPermissions, setSelectedPermissions] = useState({});
+  const [successMessage, setSuccessMessage] = useState("");
+
+  // Token & Module ID
+  const MODULE_ID = getModuleId("employee");
   const token = JSON.parse(localStorage.getItem("userData"))?.token;
+
   const axiosInstance = axios.create({
     baseURL: API_BASE_URL,
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { Authorization: `Bearer ${token}` },
   });
 
   useEffect(() => {
     const fetchRoles = async () => {
       try {
-        const res = await axiosInstance.get('/getAllRoles', {
-          headers: { Authorization: `Bearer ${token}` },
-          params: { module_id: MODULE_ID }
+        const res = await axiosInstance.get("/getAllRoles", {
+          params: { module_id: MODULE_ID },
         });
         setRoles(res.data.data.rows || []);
       } catch (error) {
-        console.error('Error fetching roles:', error);
+        console.error("Error fetching roles:", error);
       }
     };
-
     fetchRoles();
   }, []);
 
@@ -59,21 +64,15 @@ export const EmployeeEdit = () => {
     const fetchInitialData = async () => {
       try {
         const [deptRes, desigRes] = await Promise.all([
-          axiosInstance.get('/getAllDepartments', {
-            params: { module_id: MODULE_ID }
-          }),
-          axiosInstance.get('/getAllDesignations', {
-            params: { module_id: MODULE_ID }
-          })
+          axiosInstance.get("/getAllDepartments", { params: { module_id: MODULE_ID } }),
+          axiosInstance.get("/getAllDesignations", { params: { module_id: MODULE_ID } }),
         ]);
-
         setDepartments(deptRes.data?.data?.data || []);
         setDesignations(desigRes.data?.data?.data || []);
       } catch (error) {
-        console.error('Error fetching departments or designations:', error);
+        console.error("Error fetching departments or designations:", error);
       }
     };
-
     fetchInitialData();
   }, []);
 
@@ -81,22 +80,24 @@ export const EmployeeEdit = () => {
     if (formData.department) {
       const fetchDesignations = async () => {
         try {
-          const res = axiosInstance.get(`/getDesignationsByDepartmentId/${formData.department}`, {
-            params: { module_id: MODULE_ID }
-          })
+          const res = await axiosInstance.get(
+            `/getDesignationsByDepartmentId/${formData.department}`,
+            { params: { module_id: MODULE_ID } }
+          );
           setDesignations(res.data?.data || []);
         } catch (error) {
-          console.error('Failed to fetch designations by department:', error);
+          console.error("Failed to fetch designations by department:", error);
         }
       };
       fetchDesignations();
     }
   }, [formData.department]);
 
+
   useEffect(() => {
     if (Array.isArray(employee?.employeeRole) && employee.employeeRole.length > 0) {
       const dynamicPerms = employee.employeeRole.map((r) => {
-        const permsArray = r.permission?.split(',') || [];
+        const permsArray = r.permission?.split(",") || [];
         return {
           id: r.moduleId,
           moduleName: r.moduleName,
@@ -107,10 +108,10 @@ export const EmployeeEdit = () => {
       const selectedPerms = {};
       dynamicPerms.forEach((mod) => {
         selectedPerms[mod.moduleName] = {
-          view: mod.permissions.includes('view'),
-          add: mod.permissions.includes('add'),
-          edit: mod.permissions.includes('edit'),
-          delete: mod.permissions.includes('delete'),
+          view: mod.permissions.includes("view"),
+          add: mod.permissions.includes("add"),
+          edit: mod.permissions.includes("edit"),
+          delete: mod.permissions.includes("delete"),
         };
       });
 
@@ -122,58 +123,33 @@ export const EmployeeEdit = () => {
   useEffect(() => {
     const fetchAllModules = async () => {
       try {
-        const token = JSON.parse(localStorage.getItem("userData"))?.token;
-        const res = await axiosInstance.get(`${API_BASE_URL}/getAllModules?page=1&limit=1000`, {
-          headers: { Authorization: `Bearer ${token}` },
-          params: { module_id: MODULE_ID }
+        const res = await axiosInstance.get(`${API_BASE_URL}/getAllModules`, {
+          params: { module_id: MODULE_ID, page: 1, limit: 1000 },
         });
 
-        const flattenModules = (data) => {
-          const modules = [];
-          data.forEach((parent) => {
-            parent.childMenus?.forEach((child) => {
-              child.modules?.forEach((module) => {
-                modules.push(module);
-              });
-            });
-          });
-          return modules;
-        };
-
-        const fetchedModules = (res.data?.data?.result || []).filter(mod => mod.is_active);
+        const fetchedModules = (res.data?.data?.result || []).filter(
+          (mod) => mod.is_active
+        );
         setAllModules(fetchedModules);
-
       } catch (error) {
         console.error("Failed to fetch all modules:", error);
       }
     };
-
     fetchAllModules();
   }, [roleModules]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    const updatedValue = type === 'checkbox' ? checked : value;
-
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: updatedValue,
-    }));
+    const updatedValue = type === "checkbox" ? checked : value;
+    setFormData((prevData) => ({ ...prevData, [name]: updatedValue }));
   };
 
   const handleSelectAll = () => {
     const allPermissions = {};
-
     allModules.forEach((module) => {
       const moduleName = module.moduleName;
-      allPermissions[moduleName] = {
-        view: true,
-        add: true,
-        edit: true,
-        delete: true
-      };
+      allPermissions[moduleName] = { view: true, add: true, edit: true, delete: true };
     });
-
     setSelectedPermissions(allPermissions);
   };
 
@@ -181,12 +157,13 @@ export const EmployeeEdit = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
       const formPayload = new FormData();
-      const selectedRole = roles.find(r => r.id.toString() === formData.role?.toString());
+      const selectedRole = roles.find(
+        (r) => r.id.toString() === formData.role?.toString()
+      );
 
-      // Append module & permission data
+      // Add permissions
       const moduleKeys = Object.keys(selectedPermissions);
       let index = 0;
       moduleKeys.forEach((moduleName) => {
@@ -196,65 +173,52 @@ export const EmployeeEdit = () => {
           .map(([perm]) => perm);
 
         if (enabledPermissions.length === 0) return;
-
         const moduleId =
           roleModules.find((m) => m.moduleName === moduleName)?.id ||
           allModules.find((m) => m.moduleName === moduleName)?.id;
 
         if (moduleId) {
           formPayload.append(`module[${index}]`, moduleId);
-          formPayload.append(`permission[${index}]`, enabledPermissions.join(','));
+          formPayload.append(`permission[${index}]`, enabledPermissions.join(","));
           index++;
         }
       });
 
-      // If role is Admin → skip employee profile fields
-      if (selectedRole?.roleName === 'Admin') {
-        formPayload.append('role', formData.role); // only this is required
-      } else {
-        // Full employee info for other roles
-        const {
-          Department,
-          Designation,
-          employeeRole,
-          createdAt,
-          updatedAt,
-          userProfile,
-          ...cleanedData
-        } = formData;
+      // Common payload fields
+      formPayload.append("employeeId", employee.id);
+      formPayload.append("userType", selectedRole?.roleName === "Admin" ? 1 : 0);
+      formPayload.append("module_id", MODULE_ID);
 
-        formPayload.append('fullName', cleanedData.fullName);
-        formPayload.append('mobile', cleanedData.mobile);
-        formPayload.append('gender', cleanedData.gender || '');
-        formPayload.append('dob', cleanedData.dob || '');
-        formPayload.append('contractStartDate', cleanedData.contractStartDate || '');
-        formPayload.append('contractLastDate', cleanedData.contractLastDate || '');
-        formPayload.append('departmentId', cleanedData.department);
-        formPayload.append('designationId', cleanedData.designation);
-        formPayload.append('role', cleanedData.role);
-        formPayload.append('isActive', cleanedData.isActive ? '1' : '0');
-        formPayload.append('status', status);
+      // Additional info
+      formPayload.append("fullName", formData.fullName);
+      formPayload.append("mobile", formData.mobile);
+      formPayload.append("email", formData.email);
+      formPayload.append("gender", formData.gender || "");
+      formPayload.append("dob", formData.dob || "");
+      formPayload.append("contractStartDate", formData.contractStartDate || "");
+      formPayload.append("contractLastDate", formData.contractLastDate || "");
+      formPayload.append("departmentId", formData.department);
+      formPayload.append("designationId", formData.designation);
+      formPayload.append("role", formData.role);
+      formPayload.append("isActive", formData.isActive ? "1" : "0");
+      formPayload.append("status", status);
 
-        if (typeof formData.userProfile !== 'string') {
-          formPayload.append('userProfile', formData.userProfile);
-        }
+      if (typeof formData.userProfile !== "string") {
+        formPayload.append("userProfile", formData.userProfile);
       }
-      formPayload.append('module_id', MODULE_ID);
 
-      await axiosInstance.put(
-        `/updateEmployee/${employee.id}`,
-        formPayload,
-        {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        }
-      );
+      // Conditional update ID
+      const updateId = employee.userType === "Admin" ? employee.userId : employee.id;
 
-      setSuccessMessage('Employee updated successfully!');
-      navigate('/dms/employee', { state: { reload: true } });
+      await axiosInstance.put(`/updateEmployee/${updateId}`, formPayload, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
 
+      setSuccessMessage("Employee updated successfully!");
+      navigate("/dms/employee", { state: { reload: true } });
     } catch (error) {
-      console.error('Update failed:', error.response?.data?.message || error.message);
-      alert('Failed to update employee.');
+      console.error("Update failed:", error.response?.data?.message || error.message);
+      alert("Failed to update employee.");
     }
   };
 
@@ -265,32 +229,34 @@ export const EmployeeEdit = () => {
           <Col xs={12} md={10} lg={8}>
             {step === 1 && (
               <Form>
-                <h4 className="text-left">Edit Employee Profile</h4>
-                <div className="dms-form-container p-3">
-                  {successMessage && (
-                    <Alert variant="success" className="text-center mb-4">
-                      {successMessage}
-                    </Alert>
-                  )}
+                <h4 className="text-left mb-4">Edit Employee Profile</h4>
+
+                {successMessage && (
+                  <Alert variant="success" className="text-center mb-4">
+                    {successMessage}
+                  </Alert>
+                )}
+
+                <div className="dms-form-container p-4 shadow-sm rounded bg-white">
                   <Tabs activeKey="profile" id="employee-tabs" className="mb-3">
                     <Tab eventKey="profile" title="Profile">
-                      {/* Profile Image Upload */}
-                      <Form.Group className="dms-form-group text-center" controlId="formProfilePhoto">
-                        <div className="d-flex flex-column align-items-left gap-3">
+                      {/* Profile Photo */}
+                      <Form.Group controlId="formProfilePhoto" className="text-center mb-4">
+                        <div className="d-flex flex-column align-items-center gap-3">
                           <img
                             src={
-                              typeof formData.userProfile === 'string' && formData.userProfile.startsWith('/uploads')
+                              typeof formData.userProfile === "string" &&
+                              formData.userProfile.startsWith("/uploads")
                                 ? `${import.meta.env.VITE_IMAGE_BASE_URL}${formData.userProfile}`
                                 : formData.userProfile || profile_img
                             }
                             alt="Profile"
-                            className="profile-img img-fluid rounded-circle"
-                            style={{ maxWidth: '120px', height: 'auto' }}
+                            className="rounded-circle shadow-sm"
+                            style={{ width: "120px", height: "120px", objectFit: "cover" }}
                           />
                           <Form.Control
                             type="file"
                             accept="image/*"
-                            className="w-100"
                             onChange={(e) => {
                               const file = e.target.files[0];
                               if (file) {
@@ -304,91 +270,104 @@ export const EmployeeEdit = () => {
                         </div>
                       </Form.Group>
 
-                      {/* Form Fields */}
-                      <Form.Group className="dms-form-group" controlId="formFirstName">
-                        <Form.Label>Name</Form.Label>
+                      {/* Basic Info */}
+                      <Form.Group className="mb-3" controlId="formFullName">
+                        <Form.Label>Full Name</Form.Label>
                         <Form.Control
                           name="fullName"
                           type="text"
                           placeholder="Enter name"
-                          value={formData.fullName || ''}
+                          value={formData.fullName || ""}
                           onChange={handleChange}
                         />
                       </Form.Group>
 
-                      <Form.Group className="dms-form-group" controlId="formPhone">
-                        <Form.Label>Phone</Form.Label>
+                      <Form.Group className="mb-3" controlId="formMobile">
+                        <Form.Label>Mobile</Form.Label>
                         <Form.Control
+                          name="mobile"
                           type="text"
                           placeholder="Enter phone number"
-                          name="mobile"
-                          value={formData.mobile || ''}
+                          value={formData.mobile || ""}
                           onChange={handleChange}
-                          required
                         />
                       </Form.Group>
 
-                      <Form.Group className="dms-form-group" controlId="formGender">
-                        <Form.Label>Gender</Form.Label>
-                        <Form.Select
-                          name="gender"
-                          value={formData.gender || 'Male'}
-                          onChange={handleChange}
-                          required
-                        >
-                          <option value="Male">Male</option>
-                          <option value="Female">Female</option>
-                        </Form.Select>
-                      </Form.Group>
-
-                      <Form.Group className="dms-form-group" controlId="formDob">
-                        <Form.Label>Date of Birth</Form.Label>
+                      <Form.Group className="mb-3" controlId="formEmail">
+                        <Form.Label>Email</Form.Label>
                         <Form.Control
-                          type="date"
-                          name="dob"
-                          value={formData.dob || ''}
+                          name="email"
+                          type="email"
+                          placeholder="Enter email address"
+                          value={formData.email || ""}
                           onChange={handleChange}
                         />
                       </Form.Group>
-                      {/* Contract Dates */}
+
                       <Row>
                         <Col md={6}>
-                          <Form.Group className="dms-form-group" controlId="formContractStart">
-                            <Form.Label>Contract Start Date</Form.Label>
-                            <Form.Control
-                              type="date"
-                              name="contractStartDate"
-                              value={formData.contractStartDate || ''}
+                          <Form.Group className="mb-3" controlId="formGender">
+                            <Form.Label>Gender</Form.Label>
+                            <Form.Select
+                              name="gender"
+                              value={formData.gender || "Male"}
                               onChange={handleChange}
-                              required
-                            />
+                            >
+                              <option value="Male">Male</option>
+                              <option value="Female">Female</option>
+                            </Form.Select>
                           </Form.Group>
                         </Col>
                         <Col md={6}>
-                          <Form.Group className="dms-form-group" controlId="formContractEnd">
-                            <Form.Label>Contract End Date</Form.Label>
+                          <Form.Group className="mb-3" controlId="formDob">
+                            <Form.Label>Date of Birth</Form.Label>
                             <Form.Control
                               type="date"
-                              name="contractLastDate"
-                              value={formData.contractLastDate || ''}
+                              name="dob"
+                              value={formData.dob || ""}
                               onChange={handleChange}
-                              required
                             />
                           </Form.Group>
                         </Col>
                       </Row>
 
+                      {/* Contract Dates */}
                       <Row>
                         <Col md={6}>
-                          <Form.Group className="dms-form-group" controlId="formDepartment">
+                          <Form.Group className="mb-3" controlId="formContractStart">
+                            <Form.Label>Contract Start</Form.Label>
+                            <Form.Control
+                              type="date"
+                              name="contractStartDate"
+                              value={formData.contractStartDate || ""}
+                              onChange={handleChange}
+                            />
+                          </Form.Group>
+                        </Col>
+                        <Col md={6}>
+                          <Form.Group className="mb-3" controlId="formContractEnd">
+                            <Form.Label>Contract End</Form.Label>
+                            <Form.Control
+                              type="date"
+                              name="contractLastDate"
+                              value={formData.contractLastDate || ""}
+                              onChange={handleChange}
+                            />
+                          </Form.Group>
+                        </Col>
+                      </Row>
+
+                      {/* Department & Designation */}
+                      <Row>
+                        <Col md={6}>
+                          <Form.Group className="mb-3" controlId="formDepartment">
                             <Form.Label>Department</Form.Label>
                             <Form.Select
                               name="department"
-                              value={formData.department || ''}
+                              value={formData.department || ""}
                               onChange={handleChange}
-                              required
                             >
-                              <option value="">Select an option</option>
+                              <option value="">Select Department</option>
                               {departments.map((dept) => (
                                 <option key={dept.id} value={dept.id}>
                                   {dept.departmentName}
@@ -398,18 +377,17 @@ export const EmployeeEdit = () => {
                           </Form.Group>
                         </Col>
                         <Col md={6}>
-                          <Form.Group className="dms-form-group" controlId="formDesignation">
+                          <Form.Group className="mb-3" controlId="formDesignation">
                             <Form.Label>Designation</Form.Label>
                             <Form.Select
                               name="designation"
-                              value={formData.designation || ''}
+                              value={formData.designation || ""}
                               onChange={handleChange}
-                              required
                             >
-                              <option value="">Select an option</option>
-                              {designations.map((designation) => (
-                                <option key={designation.id} value={designation.id}>
-                                  {designation.designation}
+                              <option value="">Select Designation</option>
+                              {designations.map((d) => (
+                                <option key={d.id} value={d.id}>
+                                  {d.designation}
                                 </option>
                               ))}
                             </Form.Select>
@@ -417,10 +395,13 @@ export const EmployeeEdit = () => {
                         </Col>
                       </Row>
 
-                      <Form.Group className="dms-form-group" controlId="formStatus">
+                      {/* Status */}
+                      <Form.Group className="mb-3" controlId="formStatus">
                         <Form.Label>Status</Form.Label>
-                        <Form.Select value={status} onChange={(e) => setStatus(e.target.value)}>
-                          <option value="select">Select an option</option>
+                        <Form.Select
+                          value={status}
+                          onChange={(e) => setStatus(e.target.value)}
+                        >
                           <option value="Active">Active</option>
                           <option value="Inactive">Inactive</option>
                         </Form.Select>
@@ -428,55 +409,63 @@ export const EmployeeEdit = () => {
                     </Tab>
                   </Tabs>
                 </div>
+
                 <div className="d-flex justify-content-center mt-4">
-                  <Button type='cancel' className="me-2" onClick={() => navigate('/dms/employee')}>
+                  <Button
+                    variant="secondary"
+                    className="me-2"
+                    onClick={() => navigate("/dms/employee")}
+                  >
                     Cancel
                   </Button>
-                  <Button type="button" onClick={() => setStep(2)}>
-                    Next
-                  </Button>
+                  <Button onClick={() => setStep(2)}>Next</Button>
                 </div>
               </Form>
             )}
 
+            {/* =================== STEP 2: Permissions =================== */}
             {step === 2 && (
               <Form onSubmit={handleSubmit}>
-                <h4 className="text-left">Edit Employee Permissions</h4>
-                <div className="dms-form-container p-3">
+                <h4 className="text-left mb-4">Edit Employee Permissions</h4>
+
+                <div className="dms-form-container p-4 shadow-sm rounded bg-white">
                   <Tabs activeKey="permission" id="employee-tabs" className="mb-3">
                     <Tab eventKey="permission" title="Permission">
-                      <Row>
-                        <Col md={12}>
-                          <Form.Group className="dms-form-group" controlId="formRole">
-                            <Form.Label>Role</Form.Label>
-                            <Form.Select
-                              name="role"
-                              value={formData.role?.toString() || ''}
-                              onChange={handleChange}
-                              required
-                            >
-                              <option value="">Select an option</option>
-                              {roles.map((role) => (
-                                <option key={role.id} value={role.id.toString()}>
-                                  {role.roleName}
-                                </option>
-                              ))}
-                            </Form.Select>
-                          </Form.Group>
-                        </Col>
-                      </Row>
+                      {/* Role Selection */}
+                      <Form.Group className="mb-4" controlId="formRole">
+                        <Form.Label>Role</Form.Label>
+                        <Form.Select
+                          name="role"
+                          value={formData.role?.toString() || ""}
+                          onChange={handleChange}
+                          required
+                        >
+                          <option value="">Select Role</option>
+                          {roles.map((role) => (
+                            <option key={role.id} value={role.id.toString()}>
+                              {role.roleName}
+                            </option>
+                          ))}
+                        </Form.Select>
+                      </Form.Group>
 
-                      <div className="text-center my-3">
-                        <Button variant="primary" className="me-2" onClick={handleSelectAll}>
+                      {/* Permission Table */}
+                      <div className="text-center mb-4">
+                        <Button
+                          variant="primary"
+                          className="me-2"
+                          onClick={handleSelectAll}
+                        >
                           Select All
                         </Button>
                         <Button variant="secondary" onClick={handleClearAll}>
                           Clear All
                         </Button>
                       </div>
-                      <h5 className="mt-5"> Permissions</h5>
-                      <Table bordered responsive>
-                        <thead>
+
+                      <h5 className="mt-4 mb-3">Module Permissions</h5>
+                      <Table bordered responsive hover>
+                        <thead className="table-light">
                           <tr>
                             <th>Module</th>
                             <th>Permissions</th>
@@ -486,8 +475,7 @@ export const EmployeeEdit = () => {
                           {allModules.map((module) => {
                             const moduleName = module.moduleName;
                             const permissions = ["view", "add", "edit", "delete"];
-
-                            const toggleExtraPermission = (perm) => {
+                            const togglePerm = (perm) => {
                               setSelectedPermissions((prev) => ({
                                 ...prev,
                                 [moduleName]: {
@@ -496,28 +484,18 @@ export const EmployeeEdit = () => {
                                 },
                               }));
                             };
-
                             return (
                               <tr key={module.id}>
-                                <td>
-                                  <Form.Check
-                                    inline
-                                    type="checkbox"
-                                    label={moduleName}
-                                    checked={permissions.some(
-                                      (perm) => selectedPermissions[moduleName]?.[perm]
-                                    )}
-                                  />
-                                </td>
+                                <td>{moduleName}</td>
                                 <td>
                                   {permissions.map((perm) => (
                                     <Form.Check
                                       inline
-                                      key={`${moduleName}-extra-${perm}`}
+                                      key={`${moduleName}-${perm}`}
                                       label={perm.charAt(0).toUpperCase() + perm.slice(1)}
                                       type="checkbox"
                                       checked={selectedPermissions[moduleName]?.[perm] || false}
-                                      onChange={() => toggleExtraPermission(perm)}
+                                      onChange={() => togglePerm(perm)}
                                     />
                                   ))}
                                 </td>
@@ -531,10 +509,16 @@ export const EmployeeEdit = () => {
                 </div>
 
                 <div className="d-flex justify-content-center mt-4">
-                  <Button type='cancel' className="me-2" onClick={() => setStep(1)}>
+                  <Button
+                    variant="secondary"
+                    className="me-2"
+                    onClick={() => setStep(1)}
+                  >
                     Back
                   </Button>
-                  <Button type="submit">Submit</Button>
+                  <Button type="submit" variant="success">
+                    Update Employee
+                  </Button>
                 </div>
               </Form>
             )}

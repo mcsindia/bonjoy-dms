@@ -7,8 +7,8 @@ export const getToken = () => {
 // Get module object or module id by URL
 export const getModuleByUrl = (moduleUrl) => {
   const userData = JSON.parse(localStorage.getItem('userData')) || {};
- /* console.log(userData)  */
-
+ /* console.log(userData) 
+ */
   if (!Array.isArray(userData.employeeRole)) return null;
 
   for (const role of userData.employeeRole) {

@@ -5,8 +5,10 @@ import profile_img from '../../../../assets/images/profile.png';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { getModuleId } from '../../../../utils/authhelper';
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+
 export const EmployeeAdd = () => {
   const [formData, setFormData] = useState({});
   const [step, setStep] = useState(1);
@@ -17,6 +19,7 @@ export const EmployeeAdd = () => {
   const [tabKey, setTabKey] = useState('profile');
   const [roles, setRoles] = useState([]);
   const [allModules, setAllModules] = useState([]);
+  const [showPassword, setShowPassword] = useState(false);
   const MODULE_ID = getModuleId('employee');
 
   const handleChange = (e) => {
@@ -185,7 +188,7 @@ export const EmployeeAdd = () => {
     form.append('departmentId', formData.department || '');
     form.append('designationId', formData.designation || '');
     form.append('status', formData.status || 'Active');
-    form.append('role', formData.role || '');  
+    form.append('role', formData.role || '');
 
     // Dynamic permissions
     const modulesArray = [];
@@ -424,7 +427,27 @@ export const EmployeeAdd = () => {
 
                     <Form.Group className="dms-form-group" controlId="formPassword">
                       <Form.Label>Password</Form.Label>
-                      <Form.Control type="password" name="password" onChange={handleChange} />
+                      <div style={{ position: "relative" }}>
+                        <Form.Control
+                          type={showPassword ? "text" : "password"}
+                          name="password"
+                          onChange={handleChange}
+                          placeholder="Enter password"
+                        />
+                        <span
+                          onClick={() => setShowPassword(!showPassword)}
+                          style={{
+                            position: "absolute",
+                            right: "10px",
+                            top: "50%",
+                            transform: "translateY(-50%)",
+                            cursor: "pointer",
+                            color: "#6c757d",
+                          }}
+                        >
+                          {showPassword ? <FaEyeSlash /> : <FaEye />}
+                        </span>
+                      </div>
                     </Form.Group>
 
                     <div className="d-flex justify-content-between mt-3">

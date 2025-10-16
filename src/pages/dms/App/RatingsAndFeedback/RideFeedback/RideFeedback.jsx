@@ -57,13 +57,34 @@ export const RideFeedback = () => {
                 reviewer_name: item.feedbackByUser?.fullName || "-",
                 reviewed_id: item.feedbackToUser?.id,
                 reviewed_name: item.feedbackToUser?.fullName || "-",
-                role: item.role || "-", // from API
+                role: item.role || "-",
                 rating: item.rating,
                 driving_quality: item.driving_quality,
                 behavior: item.behavior,
                 punctuality: item.punctuality,
                 feedback_text: item.feedback_text,
                 created_at: item.createdAt,
+
+                // 🆕 Ride info (nested object)
+                ride: {
+                    id: item.ride?.id,
+                    pickup_address: item.ride?.pickup_address,
+                    drop_address: item.ride?.drop_address,
+                    pickup_lat: item.ride?.pickup_lat,
+                    pickup_lng: item.ride?.pickup_lng,
+                    drop_lat: item.ride?.drop_lat,
+                    drop_lng: item.ride?.drop_lng,
+                    distance: item.ride?.distance,
+                    fare: item.ride?.fare,
+                    ride_type_id: item.ride?.ride_type_id,
+                    status: item.ride?.status,
+                    pickup_time: item.ride?.pickup_time,
+                    drop_time: item.ride?.drop_time,
+                    scheduled_time: item.ride?.scheduled_time,
+                    completed_at: item.ride?.completed_at,
+                    payment_status: item.ride?.payment_status,
+                    created_at: item.ride?.createdAt,
+                },
             }));
 
             setFeedbacks(formatted);

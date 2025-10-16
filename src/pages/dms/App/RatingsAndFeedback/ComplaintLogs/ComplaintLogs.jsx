@@ -208,18 +208,6 @@ export const ComplaintLogs = () => {
             />
           </Form.Group>
         </div>
-        {/* Search */}
-        <InputGroup className="dms-custom-width">
-          <Form.Control
-            type="text"
-            placeholder="Search by complainant name..."
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setCurrentPage(1);
-            }}
-          />
-        </InputGroup>
       </div>
 
       {/* Table */}
@@ -239,7 +227,6 @@ export const ComplaintLogs = () => {
                   <th>Category</th>
                   <th>Description</th>
                   <th>Status</th>
-                  <th>Remark</th>
                   <th>Created At</th>
                   <th>Resolved At</th>
                   <th>Action</th>
@@ -322,7 +309,6 @@ export const ComplaintLogs = () => {
                             onClick={() => handleStatusEdit(c)}
                           />
                         </td>
-                        <td>{c.remark || "-"}</td>
                         <td>{new Date(c.created_at).toLocaleString()}</td>
                         <td>
                           {c.resolved_at
@@ -412,16 +398,6 @@ export const ComplaintLogs = () => {
                 <option value="escalated">Escalated</option>
                 <option value="rejected">Rejected</option>
               </Form.Select>
-            </Form.Group>
-            <Form.Group>
-              <Form.Label>Remark</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                value={remark}
-                onChange={(e) => setRemark(e.target.value)}
-                placeholder="Enter your remark..."
-              />
             </Form.Group>
           </Form>
         </Modal.Body>

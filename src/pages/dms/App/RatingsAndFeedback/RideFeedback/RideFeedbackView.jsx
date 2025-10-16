@@ -22,6 +22,51 @@ export const RideFeedbackView = () => {
         );
     }
 
+    // 🔹 Navigate to Rider Profile
+    const handleNavigateToRider = () => {
+        const riderId = feedback.role.includes("rider")
+            ? feedback.reviewer_id
+            : feedback.reviewed_id;
+
+        navigate(`/dms/rider/view/${riderId}`, {
+            state: {
+                rider: {
+                    userId: riderId,
+                    fullName: feedback.role.includes("rider")
+                        ? feedback.reviewer_name
+                        : feedback.reviewed_name,
+                },
+            },
+        });
+    };
+
+    // 🔹 Navigate to Driver Profile
+    const handleNavigateToDriver = () => {
+        const driverId = feedback.role.includes("driver")
+            ? feedback.reviewed_id
+            : feedback.reviewer_id;
+
+        navigate(`/dms/driver/view/${driverId}`, {
+            state: {
+                driver: {
+                    userId: driverId,
+                    fullName: feedback.role.includes("driver")
+                        ? feedback.reviewed_name
+                        : feedback.reviewer_name,
+                },
+            },
+        });
+    };
+
+    // 🔹 Navigate to Trip Details
+    const handleNavigateToTrip = () => {
+        if (feedback.ride_id) {
+            navigate(`/dms/trip/view/${feedback.ride_id}`, {
+                state: { trip: { id: feedback.ride_id } },
+            });
+        }
+    };
+
     return (
         <AdminLayout>
             <div className="dms-container">
@@ -42,13 +87,44 @@ export const RideFeedbackView = () => {
                             <Row>
                                 <Col md={6}>
                                     <p><strong>Reviewer Name:</strong> {feedback.reviewer_name}</p>
-                                    <p><strong>Reviewer ID:</strong> {feedback.reviewer_id}</p>
+                                    <p>
+                                        <strong>Reviewer ID:</strong>{" "}
+                                        <span
+                                            className="rider-id-link"
+                                            onClick={() => {
+                                                if (feedback.role.includes("rider")) handleNavigateToRider();
+                                                else handleNavigateToDriver();
+                                            }}
+                                        >
+                                            {feedback.reviewer_id}
+                                        </span>
+                                    </p>
                                     <p><strong>Role:</strong> {feedback.role.replace("_", " ")}</p>
-                                    <p><strong>Ride ID:</strong> {feedback.ride_id}</p>
+                                    <p>
+                                        <strong>Ride ID:</strong>{" "}
+                                        <span
+                                            className="driver-id-link"
+                                             onClick={handleNavigateToTrip}
+                                        >
+                                            {feedback.ride_id}
+                                        </span>
+                                    </p>
                                 </Col>
                                 <Col md={6}>
                                     <p><strong>Reviewed Name:</strong> {feedback.reviewed_name}</p>
-                                    <p><strong>Reviewed ID:</strong> {feedback.reviewed_id}</p>
+                                    <p>
+                                        <strong>Reviewed ID:</strong>{" "}
+                                        <span
+                                            className="text-primary"
+                                            style={{ cursor: "pointer", textDecoration: "underline" }}
+                                            onClick={() => {
+                                                if (feedback.role.includes("driver")) handleNavigateToDriver();
+                                                else handleNavigateToRider();
+                                            }}
+                                        >
+                                            {feedback.reviewed_id}
+                                        </span>
+                                    </p>
                                     <p><strong>Created At:</strong> {new Date(feedback.created_at).toLocaleString()}</p>
                                 </Col>
                             </Row>
@@ -125,78 +201,102 @@ export const RideFeedbackView = () => {
                     </Col>
                 </Row>
 
-                {/* 🆕 Ride / Trip Details Section */}
+                {/* Ride Details */}
                 <Row className="mb-4">
                     <Col md={12}>
                         <Card className="p-3">
                             <h5><strong>Ride / Trip Details</strong></h5>
                             <hr />
-                            <Row>
-                                <Col md={6}>
-                                    <p><strong>Ride Date:</strong> {new Date(feedback.ride_date).toLocaleString()}</p>
-                                    <p><strong>Distance:</strong> {feedback.distance_km} km</p>
-                                    <p><strong>Duration:</strong> {feedback.duration_min} min</p>
-                                </Col>
-                                <Col md={6}>
-                                    <p><strong>Pickup Location:</strong> {feedback.pickup_location}</p>
-                                    <p><strong>Drop Location:</strong> {feedback.drop_location}</p>
-                                </Col>
-                            </Row>
+                            {feedback.ride ? (
+                                <Row>
+                                    <Col md={6}>
+                                        <p>
+                                            <strong>Ride ID:</strong>{" "}
+                                            <span
+                                                className="trip-id-link"
+                                                 onClick={handleNavigateToTrip}
+                                            >
+                                                {feedback.ride.id}
+                                            </span>
+                                        </p>
+                                        <p><strong>Status:</strong> {feedback.ride.status}</p>
+                                        <p><strong>Distance:</strong> {feedback.ride.distance} km</p>
+                                        <p><strong>Fare:</strong> ₹{feedback.ride.fare}</p>
+                                    </Col>
+                                    <Col md={6}>
+                                        <p><strong>Pickup Location:</strong> {feedback.ride.pickup_address}</p>
+                                        <p><strong>Drop Location:</strong> {feedback.ride.drop_address}</p>
+                                        <p><strong>Pickup Time:</strong> {feedback.ride.pickup_time || "-"}</p>
+                                        <p><strong>Drop Time:</strong> {feedback.ride.drop_time || "-"}</p>
+                                    </Col>
+                                </Row>
+                            ) : (
+                                <p>No ride data available.</p>
+                            )}
                         </Card>
                     </Col>
                 </Row>
 
-                {/* 🆕 Rider Details */}
+                {/* Rider / Driver Info */}
                 <Row className="mb-4">
-                    <Col md={12}>
+                    <Col md={6}>
                         <Card className="p-3">
                             <h5><strong>Rider Details</strong></h5>
                             <hr />
-                            <Row>
-                                <Col md={6}>
-                                    <p><strong>Rider Name:</strong> {feedback.rider_name}</p>
-                                    <p><strong>Rider Mobile:</strong> {feedback.rider_mobile}</p>
-                                </Col>
-                            </Row>
+                            <p>
+                                <strong>Name:</strong>{" "}
+                                <span
+                                    className="rider-id-link"
+                                    onClick={handleNavigateToRider}
+                                >
+                                    {feedback.role.includes("rider")
+                                        ? feedback.reviewer_name
+                                        : feedback.reviewed_name}
+                                </span>
+                            </p>
+                            <p><strong>User ID:</strong> {feedback.role.includes("rider") ? feedback.reviewer_id : feedback.reviewed_id}</p>
                         </Card>
                     </Col>
-                </Row>
 
-                {/* 🆕 Driver Details */}
-                <Row className="mb-4">
-                    <Col md={12}>
+                    <Col md={6}>
                         <Card className="p-3">
                             <h5><strong>Driver Details</strong></h5>
                             <hr />
-                            <Row>
-                                <Col md={6}>
-                                    <p><strong>Driver Name:</strong> {feedback.driver_name}</p>
-                                    <p><strong>Driver Mobile:</strong> {feedback.driver_mobile}</p>
-                                </Col>
-                                <Col md={6}>
-                                    <p><strong>Vehicle No:</strong> {feedback.vehicle_no}</p>
-                                    <p><strong>Vehicle Type:</strong> {feedback.vehicle_type}</p>
-                                </Col>
-                            </Row>
+                            <p>
+                                <strong>Name:</strong>{" "}
+                                <span
+                                    className="driver-id-link"
+                                    onClick={handleNavigateToDriver}
+                                >
+                                    {feedback.role.includes("driver")
+                                        ? feedback.reviewed_name
+                                        : feedback.reviewer_name}
+                                </span>
+                            </p>
+                            <p><strong>User ID:</strong> {feedback.role.includes("driver") ? feedback.reviewed_id : feedback.reviewer_id}</p>
                         </Card>
                     </Col>
                 </Row>
 
-                {/* 🆕 Payment Info */}
-                <Row className="mb-5">
+                {/* Payment Info */}
+                <Row className="mb-4">
                     <Col md={12}>
                         <Card className="p-3">
                             <h5><strong>Payment Information</strong></h5>
                             <hr />
-                            <Row>
-                                <Col md={6}>
-                                    <p><strong>Payment Mode:</strong> {feedback.payment_mode}</p>
-                                    <p><strong>Payment Status:</strong> {feedback.payment_status}</p>
-                                </Col>
-                                <Col md={6}>
-                                    <p><strong>Amount:</strong> ₹{feedback.amount}</p>
-                                </Col>
-                            </Row>
+                            {feedback.ride ? (
+                                <Row>
+                                    <Col md={6}>
+                                        <p><strong>Payment Status:</strong> {feedback.ride.payment_status}</p>
+                                    </Col>
+                                    <Col md={6}>
+                                        <p><strong>Fare Amount:</strong> ₹{feedback.ride.fare}</p>
+                                        <p><strong>Completed At:</strong> {feedback.ride.completed_at || "-"}</p>
+                                    </Col>
+                                </Row>
+                            ) : (
+                                <p>No payment data available.</p>
+                            )}
                         </Card>
                     </Col>
                 </Row>

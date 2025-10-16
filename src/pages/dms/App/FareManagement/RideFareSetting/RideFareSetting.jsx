@@ -160,7 +160,6 @@ export const RideFareSetting = () => {
                 <tr>
                   <th>S.No</th>
                   <th>Base Fare</th>
-                  <th>Per Km Fare</th>
                   <th>Waiting Charge</th>
                   <th>Grace Period</th>
                   <th>Cancel Fee (Normal)</th>
@@ -179,7 +178,6 @@ export const RideFareSetting = () => {
                   <tr key={fare.id}>
                     <td>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
                     <td>{fare.base_fare}</td>
-                    <td>{fare.per_km_fare || '-'}</td>
                     <td>{fare.waiting_charge_per_min}</td>
                     <td>{fare.waiting_grace_period}</td>
                     <td>{fare.cancellation_normal}</td>

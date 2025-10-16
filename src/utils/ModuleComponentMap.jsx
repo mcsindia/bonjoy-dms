@@ -108,6 +108,7 @@ import { DriverPerformanceView } from '../pages/dms/App/RatingsAndFeedback/Drive
 import { ComplaintLogs } from '../pages/dms/App/RatingsAndFeedback/ComplaintLogs/ComplaintLogs';
 import { CompalintLogsView } from '../pages/dms/App/RatingsAndFeedback/ComplaintLogs/CompalintLogsView';
 import { UserRatingSummaryView } from '../pages/dms/App/RatingsAndFeedback/UserRatingSummary/UserRatingSummaryView';
+import { DriversAdd } from '../pages/dms/App/Driver Management/Drivers/DriversAdd';
 
 export const moduleComponentMap = {
   dashboard: {
@@ -168,6 +169,7 @@ export const moduleComponentMap = {
   },
   driver: {
     view: AllDrivers,
+    add: DriversAdd,
     edit: DriversEdit,
     viewDetails: DriversDetailsView,
   },

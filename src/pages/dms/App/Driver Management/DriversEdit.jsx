@@ -52,7 +52,7 @@ export const DriversEdit = () => {
   formDataToSend.append("temporaryAddress", formData.temporaryAddress || "");
   formDataToSend.append("State", formData.State || "");
   formDataToSend.append("WorkingCity", formData.WorkingCity || "");
-  formDataToSend.append("module_id", "driver"); // 🔹 added module_id
+  formDataToSend.append("module_id", "driver"); 
 
   if (selectedFile) {
     formDataToSend.append("userProfile", selectedFile);

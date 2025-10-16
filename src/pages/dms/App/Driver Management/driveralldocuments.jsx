@@ -61,12 +61,10 @@ export const DriverAllDocuments = ({ driverId }) => {
   }, [driverId]);
 
   const handleAction = (actionType, docName, doc) => {
-    console.log(`Action: ${actionType}`, docName, doc);
     // Implement logic: open viewer, download file, etc.
   };
 
   const handleViewVersions = (doc, type) => {
-    console.log("Viewing versions for:", doc, type);
   };
 
   const handleRemarkAction = (doc, docName, type) => {

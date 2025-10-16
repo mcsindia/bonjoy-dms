@@ -15,7 +15,6 @@ export const FareSettingEdit = () => {
   const [formData, setFormData] = useState({
     fare_id: "",
     base_fare: "",
-    per_km_fare: "",
     waiting_charge_per_min: "",
     waiting_grace_period: "",
     cancellation_normal: "",
@@ -37,7 +36,6 @@ export const FareSettingEdit = () => {
       setFormData({
         fare_id: fare.id || "",
         base_fare: fare.base_fare || "",
-        per_km_fare: fare.per_km_fare || "",
         waiting_charge_per_min: fare.waiting_charge_per_min || "",
         waiting_grace_period: fare.waiting_grace_period || 3,
         cancellation_normal: fare.cancellation_normal || 25,
@@ -123,19 +121,6 @@ export const FareSettingEdit = () => {
                     onChange={handleChange}
                     placeholder="Enter base fare"
                     required
-                  />
-                </Form.Group>
-              </Col>
-
-              <Col md={6}>
-                <Form.Group className="dms-form-group">
-                  <Form.Label>Per Km Fare</Form.Label>
-                  <Form.Control
-                    type="number"
-                    name="per_km_fare"
-                    value={formData.per_km_fare}
-                    onChange={handleChange}
-                    placeholder="Enter per km fare"
                   />
                 </Form.Group>
               </Col>

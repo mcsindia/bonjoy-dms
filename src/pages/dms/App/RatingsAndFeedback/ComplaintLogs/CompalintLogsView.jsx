@@ -22,6 +22,28 @@ export const CompalintLogsView = () => {
     );
   }
 
+  const handleUserClick = (id, name, profileImage, category, isComplainant = true) => {
+    const isRider = category?.toLowerCase().includes("rider");
+    const targetPath = isComplainant
+      ? isRider
+        ? `/dms/rider/view/${id}`
+        : `/dms/driver/view/${id}`
+      : isRider
+        ? `/dms/driver/view/${id}`
+        : `/dms/rider/view/${id}`;
+
+    navigate(targetPath, {
+      state: {
+        [isRider ? "rider" : "driver"]: {
+          id,
+          userId: id,
+          fullName: name,
+          profileImage: profileImage || null,
+        },
+      },
+    });
+  };
+
   return (
     <AdminLayout>
       <div className="dms-container">
@@ -41,12 +63,46 @@ export const CompalintLogsView = () => {
               <hr />
               <Row>
                 <Col md={6}>
-                  <p><strong>Complainant Name:</strong> {complaint.complainant_name}</p>
+                  <p>
+                    <strong>Complainant Name:</strong>{" "}
+                    <span
+                      className="rider-id-link"
+                      style={{ cursor: "pointer" }}
+                      onClick={() =>
+                        handleUserClick(
+                          complaint.complainant_id,
+                          complaint.complainant_name,
+                          complaint.complainant_profile_image,
+                          complaint.category,
+                          true
+                        )
+                      }
+                    >
+                      {complaint.complainant_name}
+                    </span>
+                  </p>
                   <p><strong>Complainant ID:</strong> {complaint.complainant_id}</p>
                   <p><strong>Ride ID:</strong> {complaint.ride_id || "-"}</p>
                 </Col>
                 <Col md={6}>
-                  <p><strong>Against User Name:</strong> {complaint.against_user_name}</p>
+                  <p>
+                    <strong>Against User Name:</strong>{" "}
+                    <span
+                      className="rider-id-link"
+                      style={{ cursor: "pointer" }}
+                      onClick={() =>
+                        handleUserClick(
+                          complaint.against_user_id,
+                          complaint.against_user_name,
+                          complaint.against_user_profile_image,
+                          complaint.category,
+                          false
+                        )
+                      }
+                    >
+                      {complaint.against_user_name}
+                    </span>
+                  </p>
                   <p><strong>Against User ID:</strong> {complaint.against_user_id}</p>
                   <p><strong>Category:</strong> {complaint.category.replace("_", " ")}</p>
                 </Col>
@@ -62,10 +118,7 @@ export const CompalintLogsView = () => {
               <h5><strong>Complaint Details</strong></h5>
               <hr />
               <p><strong>Description:</strong> {complaint.description}</p>
-              <p>
-                <strong>Status:</strong>{" "}
-                <span>{complaint.status}</span>
-              </p>
+              <p><strong>Status:</strong> <span>{complaint.status}</span></p>
               <p><strong>Created At:</strong> {new Date(complaint.created_at).toLocaleString()}</p>
               <p>
                 <strong>Resolved At:</strong>{" "}
@@ -73,28 +126,6 @@ export const CompalintLogsView = () => {
                   ? new Date(complaint.resolved_at).toLocaleString()
                   : "-"}
               </p>
-            </Card>
-          </Col>
-        </Row>
-
-        {/* Trip Details */}
-        <Row className="mb-4">
-          <Col md={12}>
-            <Card className="p-3">
-              <h5><strong>Trip Details</strong></h5>
-              <hr />
-                   <Row>
-                <Col md={6}>
-              <p><strong>Pickup Location:</strong> {complaint.pickup_location || "-"}</p>
-              <p><strong>Drop Location:</strong> {complaint.drop_location || "-"}</p>
-              <p><strong>Trip Date:</strong> {complaint.trip_date || "-"}</p>
-              <p><strong>Trip Time:</strong> {complaint.trip_time || "-"}</p>
-              </Col>
-               <Col md={6}>
-              <p><strong>Fare:</strong> ₹{complaint.fare || "-"}</p>
-              <p><strong>Distance:</strong> {complaint.distance || "-"} km</p>
-              </Col>
-              </Row>
             </Card>
           </Col>
         </Row>

@@ -430,26 +430,6 @@ export const DriversDetailsView = () => {
                 </p>
               </div>
             </div>
-
-            {/* Right Side - Driver Type */}
-            <div className="d-flex flex-column align-items-end">
-              <Form.Group className='mb-5' style={{ minWidth: "200px" }}>
-                <Form.Label><strong>Driver Type</strong></Form.Label>
-                <Form.Select
-                  value={driverDetails?.driverType || ""}
-                  onChange={(e) =>
-                    setDriverDetails(prev => ({
-                      ...prev,
-                      driverType: e.target.value
-                    }))
-                  }
-                >
-                  <option value="">Select Type</option>
-                  <option value="emergency">Emergency</option>
-                  <option value="commission">Commission</option>
-                </Form.Select>
-              </Form.Group>
-            </div>
           </Card.Body>
         </Card>
 

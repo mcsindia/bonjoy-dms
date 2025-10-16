@@ -12,7 +12,6 @@ export const FareSettingAdd = () => {
 
   const [formData, setFormData] = useState({
     base_fare: "",
-    per_km_fare: "",
     per_km_fare_night: "",
     night_start_time: "",
     night_end_time: "",
@@ -70,7 +69,6 @@ export const FareSettingAdd = () => {
         setSuccessMessage(response.data.message || "Fare setting saved successfully!");
         setFormData({
           base_fare: "",
-          per_km_fare: "",
           per_km_fare_night: "",
           night_start_time: "",
           night_end_time: "",
@@ -115,19 +113,6 @@ export const FareSettingAdd = () => {
                     value={formData.base_fare}
                     onChange={handleChange}
                     placeholder="Enter base fare"
-                    required
-                  />
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group className="dms-form-group">
-                  <Form.Label>Per Km Fare</Form.Label>
-                  <Form.Control
-                    type="number"
-                    name="per_km_fare"
-                    value={formData.per_km_fare}
-                    onChange={handleChange}
-                    placeholder="Enter per km fare"
                     required
                   />
                 </Form.Group>

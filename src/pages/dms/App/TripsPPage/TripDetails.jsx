@@ -1,38 +1,48 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button, Card, Row, Col, Image, Spinner } from "react-bootstrap";
 import { FaMotorcycle, FaMapMarkerAlt, FaEdit } from "react-icons/fa";
 import { AdminLayout } from "../../../../layouts/dms/AdminLayout/AdminLayout";
 import axios from "axios";
 import { getModuleId, getToken } from "../../../../utils/authhelper";
+import { io } from "socket.io-client";
+import { GoogleMap, Marker, Polyline, useJsApiLoader } from "@react-google-maps/api";
+import { DirectionRender } from "./DirectionRender";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const IMAGE_BASE_URL = import.meta.env.VITE_IMAGE_BASE_URL;
 const googleMapsKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL;
 
 export const TripDetails = () => {
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: googleMapsKey,
+  });
+
   const { id } = useParams();
   const navigate = useNavigate();
   const [trip, setTrip] = useState(null);
+  const [driverLocation, setDriverLocation] = useState(null);
+  const [driverPath, setDriverPath] = useState([]);
   const [loading, setLoading] = useState(true);
-
+  const mapRef = useRef(null);
+  const markerRef = useRef(null);
+  const animationRef = useRef(null);
   const userData = JSON.parse(localStorage.getItem("userData"));
   let permissions = [];
-
   if (Array.isArray(userData?.employeeRole)) {
     for (const role of userData.employeeRole) {
       for (const child of role.childMenus || []) {
         for (const mod of child.modules || []) {
           if (mod.moduleUrl?.toLowerCase() === "trip") {
-            permissions =
-              mod.permission?.toLowerCase().split(",").map((p) => p.trim()) ||
-              [];
+            permissions = mod.permission?.toLowerCase().split(",").map((p) => p.trim()) || [];
           }
         }
       }
     }
   }
 
+  // ==================== Fetch Trip Info ====================
   useEffect(() => {
     const fetchTrip = async () => {
       setLoading(true);
@@ -44,7 +54,6 @@ export const TripDetails = () => {
           headers: { Authorization: `Bearer ${token}` },
           params: { module_id: moduleId },
         });
-
         setTrip(response.data);
       } catch (error) {
         console.error("Error fetching trip:", error);
@@ -54,6 +63,64 @@ export const TripDetails = () => {
     };
     fetchTrip();
   }, [id]);
+
+  // ==================== Socket Live Location ====================
+  useEffect(() => {
+    const socket = io(SOCKET_URL, { transports: ["websocket"], reconnection: true });
+
+    socket.on("connect", () => console.log("✅ Socket connected:", socket.id));
+    socket.emit("joinTrip", { tripId: id });
+
+    socket.on("emi", (data) => {
+      if (data?.latitude && data?.longitude) {
+        const newLoc = {
+          lat: parseFloat(data.latitude),
+          lng: parseFloat(data.longitude),
+        };
+        setDriverLocation((prev) => {
+          if (!prev) return newLoc;
+          // Smooth transition
+          animateMarker(prev, newLoc);
+          return newLoc;
+        });
+        setDriverPath((prev) => [...prev, newLoc]);
+      }
+    });
+
+    return () => socket.disconnect();
+  }, [id]);
+
+  // ==================== Animate Marker Movement ====================
+  const animateMarker = (start, end) => {
+    if (!markerRef.current) return;
+
+    let progress = 0;
+    const steps = 30; // smoothness
+    const stepTime = 100; // ms per frame
+    const deltaLat = (end.lat - start.lat) / steps;
+    const deltaLng = (end.lng - start.lng) / steps;
+
+    const move = () => {
+      progress++;
+      const lat = start.lat + deltaLat * progress;
+      const lng = start.lng + deltaLng * progress;
+      markerRef.current.setPosition({ lat, lng });
+
+      if (progress < steps) {
+        animationRef.current = requestAnimationFrame(move);
+      }
+    };
+
+    cancelAnimationFrame(animationRef.current);
+    animationRef.current = requestAnimationFrame(move);
+  };
+
+  // ==================== Auto Pan Map ====================
+  useEffect(() => {
+    if (driverLocation && mapRef.current) {
+      mapRef.current.panTo(driverLocation);
+    }
+  }, [driverLocation]);
 
   if (loading) {
     return (
@@ -77,6 +144,15 @@ export const TripDetails = () => {
       </AdminLayout>
     );
   }
+
+  const pickup = {
+    lat: parseFloat(trip.pickup_lat),
+    lng: parseFloat(trip.pickup_lng),
+  };
+  const drop = {
+    lat: parseFloat(trip.drop_lat),
+    lng: parseFloat(trip.drop_lng),
+  };
 
   const {
     rider_name,
@@ -172,7 +248,6 @@ export const TripDetails = () => {
         </Card>
 
         {/* Rider Info */}
-        {/* Rider Info */}
         <Row>
           <Col md={6}>
             <Card className="p-4 mb-4 shadow-sm">
@@ -262,13 +337,63 @@ export const TripDetails = () => {
         <Card className="p-4 mb-4 shadow-sm border-dark">
           <h4>Trip Map</h4>
           <div className="trip-map-container">
-            <iframe
-              title="trip map"
-              className="trip-iframe"
-              src={`https://www.google.com/maps/embed/v1/directions?key=${googleMapsKey}&origin=${source}&destination=${destination}`}
-              frameBorder="0"
-              allowFullScreen
-            />
+            {!isLoaded ? (
+              <div className="text-center py-5">
+                <Spinner animation="border" />
+              </div>
+            ) : (
+              <GoogleMap
+                onLoad={(map) => (mapRef.current = map)}
+                mapContainerStyle={{ height: "400px", width: "100%" }}
+                zoom={13}
+                center={pickup}
+                options={{
+                  streetViewControl: false,
+                  mapTypeControl: false,
+                  fullscreenControl: false,
+                }}
+              >
+                <DirectionRender origin={pickup} destination={drop} />
+
+                {driverPath.length > 1 && (
+                  <Polyline
+                    path={driverPath}
+                    options={{
+                      strokeColor: "#00008B", // Dark blue color
+                      strokeOpacity: 0.8,
+                      strokeWeight: 4,
+                    }}
+                  />
+                )}
+                {/* Pickup Marker */}
+                <Marker
+                  position={pickup}
+                  title={pickup_address} // shows address on hover
+                />
+
+                {/* Drop Marker */}
+                <Marker
+                  position={drop}
+                  title={drop_address} // shows address on hover
+                />
+
+                {/* Driver Marker (with visible label) */}
+                <Marker
+                  position={driverLocation || pickup} // initially at pickup
+                  onLoad={(marker) => (markerRef.current = marker)}
+                  label={{
+                    text: driver_name || "Driver",
+                    color: "#000",
+                    fontWeight: "600",
+                    fontSize: "12px",
+                  }}
+                  icon={{
+                    url: "https://maps.google.com/mapfiles/kml/shapes/motorcycling.png",
+                    scaledSize: new window.google.maps.Size(45, 45),
+                  }}
+                />
+              </GoogleMap>
+            )}
           </div>
         </Card>
       </div>
