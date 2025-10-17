@@ -197,16 +197,16 @@ export const AllDrivers = () => {
                         <Button className='green-button'>🚗 Drivers: {totalRecords}</Button>
                     </div>
                 </div>
-                    <div className="export-import-container">
-                        <DropdownButton variant="primary" title={<><FaFileExport /> Export</>} className="me-2">
-                            <Dropdown.Item> <FaFileExcel className="icon-green" /> Export to Excel</Dropdown.Item>
-                            <Dropdown.Item> <FaFilePdf className="icon-red" /> Export to PDF</Dropdown.Item>
-                        </DropdownButton>
-                        <DropdownButton variant="primary" title={<><FaFileExport /> Import</>} className="me-2">
-                            <Dropdown.Item> <FaFileExcel className="icon-green" /> Import from Excel</Dropdown.Item>
-                            <Dropdown.Item> <FaFilePdf className="icon-red" /> Import from PDF</Dropdown.Item>
-                        </DropdownButton>
-                        
+                <div className="export-import-container">
+                    <DropdownButton variant="primary" title={<><FaFileExport /> Export</>} className="me-2">
+                        <Dropdown.Item> <FaFileExcel className="icon-green" /> Export to Excel</Dropdown.Item>
+                        <Dropdown.Item> <FaFilePdf className="icon-red" /> Export to PDF</Dropdown.Item>
+                    </DropdownButton>
+                    <DropdownButton variant="primary" title={<><FaFileExport /> Import</>} className="me-2">
+                        <Dropdown.Item> <FaFileExcel className="icon-green" /> Import from Excel</Dropdown.Item>
+                        <Dropdown.Item> <FaFilePdf className="icon-red" /> Import from PDF</Dropdown.Item>
+                    </DropdownButton>
+
                     {permissions.includes("add") && (
                         <>
                             <Button
@@ -364,6 +364,11 @@ export const AllDrivers = () => {
                                                                         {permissions.includes("view") && (
                                                                             <li onClick={() => navigate("/dms/drivers/login-logs", { state: { driver } })}>
                                                                                 <FaSignInAlt className="dms-menu-icon" /> Login Logs
+                                                                            </li>
+                                                                        )}
+                                                                        {permissions.includes("edit") && (
+                                                                            <li onClick={() => navigate("/dms/driver/edit", { state: { driver } })}>
+                                                                                <FaEdit className="dms-menu-icon" /> Edit
                                                                             </li>
                                                                         )}
                                                                     </>

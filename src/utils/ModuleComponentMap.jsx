@@ -44,7 +44,8 @@ import { RidersList } from '../pages/dms/App/Rider Management/RidersList'
 import { RiderProfile } from '../pages/dms/App/Rider Management/RiderProfile'
 /* Driver */
 import { AllDrivers } from '../pages/dms/App/Driver Management/Drivers/AllDrivers'
-import { DriversEdit } from '../pages/dms/App/Driver Management/DriversEdit'
+import { DriversEdit } from '../pages/dms/App/Driver Management/Drivers/DriversEdit'
+import { DriversAdd } from '../pages/dms/App/Driver Management/Drivers/DriversAdd';
 import { DriversDetailsView } from '../pages/dms/App/Driver Management/DriversDetailsView'
 /* Trip */
 import { TripList } from '../pages/dms/App/TripsPPage/TripList'
@@ -108,7 +109,6 @@ import { DriverPerformanceView } from '../pages/dms/App/RatingsAndFeedback/Drive
 import { ComplaintLogs } from '../pages/dms/App/RatingsAndFeedback/ComplaintLogs/ComplaintLogs';
 import { CompalintLogsView } from '../pages/dms/App/RatingsAndFeedback/ComplaintLogs/CompalintLogsView';
 import { UserRatingSummaryView } from '../pages/dms/App/RatingsAndFeedback/UserRatingSummary/UserRatingSummaryView';
-import { DriversAdd } from '../pages/dms/App/Driver Management/Drivers/DriversAdd';
 
 export const moduleComponentMap = {
   dashboard: {
