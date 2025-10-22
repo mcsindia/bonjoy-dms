@@ -260,7 +260,7 @@ export const AllDrivers = () => {
 
                 <InputGroup className="dms-custom-width">
                     <Form.Control
-                        placeholder="Search drivers by name..."
+                        placeholder="Search drivers by name or mobile..."
                         value={search}
                         onChange={handleSearchChange}
                     />
@@ -276,6 +276,7 @@ export const AllDrivers = () => {
                             <tr>
                                 <th>S.no</th>
                                 <th>Full Name</th>
+                                <th>Mobile Number</th>
                                 <th>Rating</th>
                                 <th>Status</th>
                                 <th>Ride Status</th>
@@ -307,6 +308,7 @@ export const AllDrivers = () => {
                                                 {driver.fullName || "NA"}
                                             </span>
                                         </td>
+                                        <td>{driver.mobile}</td>
                                         <td>
                                             <div className='d-flex'>
                                                 <FaStar className='icon star-icon' />
@@ -383,7 +385,7 @@ export const AllDrivers = () => {
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="8" className="text-center">
+                                    <td colSpan="10" className="text-center">
                                         No drivers found.
                                     </td>
                                 </tr>

@@ -159,7 +159,7 @@ export const RidersList = () => {
 
         <InputGroup className="dms-custom-width">
           <Form.Control
-            placeholder="Search by rider name..."
+            placeholder="Search by rider name or mobile..."
             value={search}
             onChange={handleSearch}
           />
@@ -182,6 +182,7 @@ export const RidersList = () => {
                   <th>Ratings</th>
                   <th>Wallet</th>
                   <th>Status</th>
+                  <th>Created At </th>
                   <th>Action</th>
                 </tr>
               </thead>
@@ -220,6 +221,7 @@ export const RidersList = () => {
                           <span>-</span>
                         )}
                       </td>
+                      <td>{rider.createdAt}</td>
                       <td className="actions">
                         {permissions.includes("view") || permissions.includes("rideHistory") ? (
                           <>
@@ -246,7 +248,7 @@ export const RidersList = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="8" className="text-center">No riders found.</td>
+                    <td colSpan="10" className="text-center">No riders found.</td>
                   </tr>
                 )}
               </tbody>

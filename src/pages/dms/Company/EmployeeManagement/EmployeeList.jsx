@@ -124,13 +124,17 @@ export const EmployeeList = () => {
     }
   };
 
-    const confirmStatusToggle = async () => {
+  const confirmStatusToggle = async () => {
     if (!statusToggleEmployee) return;
 
     const token = JSON.parse(localStorage.getItem("userData"))?.token;
     const employee = statusToggleEmployee;
     const isActive = newStatus === 'Active' ? '1' : '0';
-    const updateId = employee.userType === "Admin" ? employee.userId : employee.id;
+
+    // Determine correct update ID (Admin → userId, Employee → id)
+    const roleName = employee.Role?.roleName?.toLowerCase() || "";
+    const isAdmin = roleName === "admin" || employee.userType === 1;
+    const updateId = isAdmin ? employee.userId : employee.id;
 
     const formPayload = new FormData();
     formPayload.append("employeeId", employee.id);
@@ -149,9 +153,8 @@ export const EmployeeList = () => {
     formPayload.append("remark", remark);
     formPayload.append("module_id", getModuleId("employee"));
 
-    // <-- ADD THIS
-    const roleName = employee.Role?.roleName || "";
-    formPayload.append("userType", roleName.toLowerCase() === "admin" ? 1 : 0);
+    // userType flag for backend
+    formPayload.append("userType", isAdmin ? 1 : 0);
 
     if (Array.isArray(employee.employeeRole)) {
       employee.employeeRole.forEach((mod, index) => {

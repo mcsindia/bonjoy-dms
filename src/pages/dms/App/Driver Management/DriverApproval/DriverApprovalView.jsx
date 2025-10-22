@@ -167,7 +167,7 @@ export const DriverApprovalView = () => {
                         : alert("You don't have permission to add remarks.")
                 }
             >
-                <FaEdit className="dms-menu-icon" /> Remark
+                <FaEdit className="dms-menu-icon" /> Change Status
             </li>,
         ];
 
@@ -215,13 +215,12 @@ export const DriverApprovalView = () => {
             setDriverVehicle(data.VehicleDetail?.[0] || {});
 
             const formattedBankDocs = (data.BankDocumentDetail || []).map((doc) => {
-                // fallback to the first BankDetail if matching fails
                 const matchingBankDetail =
                     (data.BankDetail || []).find(
                         (detail) =>
                             detail.accountNo === doc.account_number ||
                             detail.docType?.toLowerCase() === doc.file_label?.toLowerCase()
-                    ) || data.BankDetail?.[0]; // fallback if nothing matches
+                    ) || data.BankDetail?.[0];
 
                 return {
                     id: doc.id,
@@ -237,7 +236,7 @@ export const DriverApprovalView = () => {
                         docType: matchingBankDetail?.docType || "N/A",
                     },
                 };
-            });
+            }).sort((a, b) => new Date(a.details.uploadetAt) - new Date(b.details.uploadetAt)); // ✅ sort ascending
 
             const formattedDriverDocs = (data.Document || []).map((doc) => ({
                 id: doc.id,
@@ -250,12 +249,12 @@ export const DriverApprovalView = () => {
                     version: null,
                     expiryDate: null,
                 },
-            }));
+            })).sort((a, b) => new Date(a.uploadetAt) - new Date(b.uploadetAt)); // ✅ sort ascending
 
             const formattedVehicleDocs = (data.VehicleDocument || []).map((doc) => ({
                 id: doc.id,
                 fileLabel: doc.file_label || doc.doc_type,
-                docFile: doc.file_url,
+                docFile: doc.doc_url,
                 verificationStatus: doc.status,
                 uploadetAt: doc.createdAt,
                 details: {
@@ -263,7 +262,7 @@ export const DriverApprovalView = () => {
                     version: null,
                     expiryDate: doc.expiry_date || null,
                 },
-            }));
+            })).sort((a, b) => new Date(a.uploadetAt) - new Date(b.uploadetAt)); // ✅ sort ascending
 
             setCurrentDocuments(formattedDriverDocs);
             setCurrentVehicleDocuments(formattedVehicleDocs);
@@ -409,20 +408,31 @@ export const DriverApprovalView = () => {
 
             <Card className="p-3 mb-4">
                 <div className="approval-card-header d-flex align-items-center justify-content-between">
-                    <a
-                        href={`${IMAGE_BASE_URL}${driverDetails.profileImage?.startsWith("/") ? "" : "/"}${driverDetails.profileImage}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        <img
-                            src={`${IMAGE_BASE_URL}${driverDetails.profileImage?.startsWith("/") ? "" : "/"}${driverDetails.profileImage}`}
-                            alt="Driver Profile"
-                            className="rounded-circle"
-                            width="80"
-                            height="80"
-                            style={{ cursor: 'pointer' }}
-                        />
-                    </a>
+                    <div className="d-flex align-items-center gap-3">
+                        <a
+                            href={`${IMAGE_BASE_URL}${driverDetails.profileImage?.startsWith("/") ? "" : "/"}${driverDetails.profileImage}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                        >
+                            <img
+                                src={`${IMAGE_BASE_URL}${driverDetails.profileImage?.startsWith("/") ? "" : "/"}${driverDetails.profileImage}`}
+                                alt="Driver Profile"
+                                className="rounded-circle"
+                                width="80"
+                                height="80"
+                                style={{ cursor: 'pointer' }}
+                            />
+                        </a>
+                        <h5 className="mb-0">
+                            {driverDetails?.fullName || "NA"}{" "}
+                            {driverDetails?.is_emergency_driver === 1
+                                ? "(Emergency)"
+                                : driverDetails?.is_emergency_driver === 0
+                                    ? "(Commission)"
+                                    : ""}
+                        </h5>
+                    </div>
+
                     <div className="d-flex align-items-center justify-content-between gap-2">
                         <Button
                             className="btn-sm"
@@ -435,7 +445,7 @@ export const DriverApprovalView = () => {
                 </div>
                 <hr />
                 <Row>
-                    <Col md={4}><p><strong>Full Name:</strong> {driverDetails.fullName}</p></Col>
+                    <Col md={4}><p><strong>Mobile No.</strong>{driverDetails.mobile}</p></Col>
                     <Col md={4}><p><strong>DOB:</strong> {driverDetails.date_of_birth ? new Date(driverDetails.date_of_birth).toLocaleDateString() : "N/A"}</p></Col>
                     <Col md={4}><p><strong>Age:</strong> {
                         driverDetails.date_of_birth

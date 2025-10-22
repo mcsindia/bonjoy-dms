@@ -207,8 +207,21 @@ export const EmployeeEdit = () => {
         formPayload.append("userProfile", formData.userProfile);
       }
 
-      // Conditional update ID
-      const updateId = employee.userType === "Admin" ? employee.userId : employee.id;
+      // Derive actual role name safely
+      const currentRoleName =
+        formData.roleName ||
+        employee?.Role?.roleName ||
+        roles.find(r => r.id === Number(formData.role))?.roleName ||
+        "";
+
+      // Determine if admin
+      const isAdmin =
+        currentRoleName.toLowerCase() === "admin" ||
+        formData.userType === 1 ||
+        employee.userType === 1;
+
+      // Select correct ID
+      const updateId = isAdmin ? employee.userId : employee.id;
 
       await axiosInstance.put(`/updateEmployee/${updateId}`, formPayload, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -246,7 +259,7 @@ export const EmployeeEdit = () => {
                           <img
                             src={
                               typeof formData.userProfile === "string" &&
-                              formData.userProfile.startsWith("/uploads")
+                                formData.userProfile.startsWith("/uploads")
                                 ? `${import.meta.env.VITE_IMAGE_BASE_URL}${formData.userProfile}`
                                 : formData.userProfile || profile_img
                             }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Card, Table, Button, Modal, Row, Col } from "react-bootstrap";
+import { Card, Table, Row, Col } from "react-bootstrap";
 import { AdminLayout } from "../../../../layouts/dms/AdminLayout/AdminLayout";
 import axios from "axios";
 import rider_profile_img from "../../../../assets/images/profile.png";
@@ -12,15 +12,10 @@ export const RiderProfile = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const rider = location.state?.rider || {};
-
   const [riderProfile, setRiderProfile] = useState(null);
   const [riderContacts, setRiderContacts] = useState([]);
-  const [showActivationModal, setShowActivationModal] = useState(false);
   const walletAmt = 100;
 
-  // ---------------------------
-  // Fetch Rider Profile by ID
-  // ---------------------------
   useEffect(() => {
     const riderId = rider?.id || rider?.userId;
     if (!riderId) return;
@@ -33,46 +28,29 @@ export const RiderProfile = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        if (res.data.success && Array.isArray(res.data.data)) {
-          setRiderProfile(res.data.data[0]);
+        if (res.data.success) {
+          setRiderProfile(res.data.data.results[0]);
+          setRiderContacts(res.data.data.userContact || []);
+  
         }
       } catch (err) {
         console.error("Error fetching rider profile:", err);
       }
     };
 
-    const fetchRiderContacts = async () => {
-      try {
-        const res = await axios.get(`${API_BASE_URL}/getAllUserContacts`, {
-          params: { module_id: "rider" },
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (res.data.success && Array.isArray(res.data.data)) {
-          const filtered = res.data.data.filter(
-            (contact) => contact.userId === riderId && contact.userType === "Rider"
-          );
-          setRiderContacts(filtered);
-        }
-      } catch (err) {
-        console.error("Error fetching rider contacts:", err);
-      }
-    };
-
     fetchRiderProfile();
-    fetchRiderContacts();
   }, [rider?.id]);
 
   const displayRider = riderProfile || rider;
+  const contacts = displayRider?.userContact || [];
 
   return (
     <AdminLayout>
       <div className="rider-profile-page container mt-4">
+
         {/* Rider Core Info Card */}
-        {/* Rider Core Info Card - Driver Style */}
         <Card className="mb-4">
           <Card.Body className="d-flex align-items-center m-4 card-body-custom">
-            {/* Left Side - Rider Profile Image */}
             <a
               href={displayRider?.profileImage ? `${IMAGE_BASE_URL}${displayRider.profileImage}` : rider_profile_img}
               target="_blank"
@@ -86,31 +64,23 @@ export const RiderProfile = () => {
                 onError={(e) => { e.target.onerror = null; e.target.src = rider_profile_img; }}
               />
             </a>
-
-            {/* Right Side - Rider Details */}
             <div className="ms-4">
               <h2>{displayRider?.fullName || "N/A"}</h2>
-              <p>
-                <strong>Phone:</strong> {displayRider?.User?.mobile || "N/A"}
-              </p>
+              <p><strong>Phone:</strong> {displayRider?.User?.mobile || "N/A"}</p>
               <p>
                 <strong>Status:</strong>{" "}
                 <span className={`badge ${displayRider?.User?.status === "Active" ? "bg-success" : "bg-secondary"}`}>
                   {displayRider?.User?.status || "Inactive"}
                 </span>
               </p>
-              <p>
-                <strong>User ID:</strong> {displayRider?.User?.id || displayRider?.userId || "N/A"}
-              </p>
+              <p><strong>User ID:</strong> {displayRider?.User?.id || displayRider?.userId || "N/A"}</p>
             </div>
           </Card.Body>
         </Card>
 
         {/* Rider Info Card */}
         <Card className="mb-4">
-          <Card.Header>
-            <h4>Rider Info</h4>
-          </Card.Header>
+          <Card.Header><h4>Rider Info</h4></Card.Header>
           <Card.Body>
             <Row className="mb-2">
               <Col md={4}><strong>Gender:</strong> {displayRider?.gender || "N/A"}</Col>
@@ -126,9 +96,7 @@ export const RiderProfile = () => {
 
         {/* Contact Details Card */}
         <Card className="mb-4">
-          <Card.Header>
-            <h4>Contact Details</h4>
-          </Card.Header>
+          <Card.Header><h4>Contact Details</h4></Card.Header>
           <Card.Body>
             <Table striped bordered hover responsive>
               <thead>
@@ -162,6 +130,7 @@ export const RiderProfile = () => {
             </Table>
           </Card.Body>
         </Card>
+
       </div>
     </AdminLayout>
   );

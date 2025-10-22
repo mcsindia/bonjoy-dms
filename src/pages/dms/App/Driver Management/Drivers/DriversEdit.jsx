@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { AdminLayout } from '../../../../../layouts/dms/AdminLayout/AdminLayout';
 import { Tabs, Tab, Form, Row, Col, Button } from 'react-bootstrap';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import axios from "axios";
-import { getToken, } from '../../../../../utils/authhelper';
+import { getToken } from '../../../../../utils/authhelper';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const IMAGE_BASE_URL = import.meta.env.VITE_IMAGE_BASE_URL;
 
 export const DriversEdit = () => {
   const { state } = useLocation();
+  const navigate = useNavigate();
   const driverId = state?.driver?.userId;
   const [tabKey, setTabKey] = useState('driverInfo');
   const [driverInfo, setDriverInfo] = useState({
@@ -29,23 +30,14 @@ export const DriversEdit = () => {
     is_emergency_driver: false,
     userProfile: null
   });
-  const [driverDocuments, setDriverDocuments] = useState([]);
   const [vehicleInfo, setVehicleInfo] = useState({});
-  const [vehicleDocuments, setVehicleDocuments] = useState([]);
-  const [vehicleImages, setVehicleImages] = useState({
-    left: null,
-    right: null,
-    front: null,
-    back: null,
-    meter: null
-  });
   const [bankInfo, setBankInfo] = useState({});
-  const [bankDocuments, setBankDocuments] = useState([]);
   const [brands, setBrands] = useState([]);
   const [models, setModels] = useState([]);
+  const [allModels, setAllModels] = useState([]);
+
   const token = getToken();
   const isFirstTab = tabKey === 'driverInfo';
-  const isLastTab = tabKey === 'bankDocs';
 
   const formatDate = (date) => {
     if (!date) return '';
@@ -64,9 +56,9 @@ export const DriversEdit = () => {
     }));
   };
 
+  // Fetch driver data
   useEffect(() => {
     const fetchDriverData = async () => {
-
       try {
         const res = await axios.get(`${API_BASE_URL}/getDriverAllDocument/${driverId}`, {
           headers: { Authorization: `Bearer ${token}` }
@@ -81,6 +73,7 @@ export const DriversEdit = () => {
           setDriverInfo({
             fullName: driver.fullName || '',
             dob: formatDate(driver.date_of_birth) || '',
+            gender: driver.gender || '',
             mobile: driver.mobile || '',
             email: driver.email || '',
             state: driver.State || '',
@@ -92,16 +85,27 @@ export const DriversEdit = () => {
             aadharNumber: driver.aadharNumber || '',
             panNumber: driver.panNumber || '',
             licenseNumber: driver.licenseNumber || '',
-            is_emergency_driver: driver.is_emergency_driver || false,
-            userProfile: driver.profileImage || null
+            is_emergency_driver: driver.is_emergency_driver === 1,
+            userProfile: driver.profileImage ? `${API_BASE_URL}${driver.profileImage}` : null
+          });
+        }
+
+        if (vehicle) {
+          setVehicleInfo({
+            id: vehicle.id,
+            type: vehicle.type || '',
+            category: vehicle.category || '',
+            brandId: vehicle.brandId || '',
+            modelId: vehicle.modelId || '',
+            fuelType: vehicle.fuelType || '',
+            vehicleNumber: vehicle.vehicleNumber || '',
+            rcNumber: vehicle.registrationNumber || '',
+            registrationDate: formatDate(vehicle.registrationDate) || '',
+            owned: vehicle.owned || '',
           });
         }
 
         setBankInfo(bank || {});
-        setVehicleInfo(vehicle || {});
-        setDriverDocuments(data?.Document || []);
-        setVehicleDocuments(data?.VehicleDocument || []);
-        setBankDocuments(data?.BankDocumentDetail || []);
 
       } catch (err) {
         console.error("❌ Error fetching driver details:", err);
@@ -112,28 +116,35 @@ export const DriversEdit = () => {
   }, [driverId]);
 
   const handleBack = () => {
-    if (tabKey === 'driverDocs') setTabKey('driverInfo');
-    else if (tabKey === 'vehicleInfo') setTabKey('driverDocs');
+    if (tabKey === 'vehicleInfo') setTabKey('driverInfo');
     else if (tabKey === 'bankDocs') setTabKey('vehicleInfo');
+  };
+
+  const handleSubmitAll = () => {
+    alert('Driver updated successfully');
+    navigate('/dms/driver');
+  };
+
+  const handleSaveTab = (tab) => {
+    if (tab === 'Driver Info') handleSaveDriverInfo();
+    else if (tab === 'Vehicle Info') handleSaveVehicleInfo();
+    else if (tab === 'Bank Document') handleSaveBankInfo();
   };
 
   const handleSaveDriverInfo = async () => {
     try {
       const formData = new FormData();
       formData.append("driverId", driverId);
+
       Object.entries(driverInfo).forEach(([key, value]) => {
         if (value !== null && value !== undefined) {
-          if (key === 'dob') {
-            formData.append(key, formatDate(value));
-          } else if (key === 'is_emergency_driver') {
-            formData.append(key, value ? 1 : 0);
-          } else {
-            formData.append(key, value);
-          }
+          if (key === 'dob') formData.append(key, formatDate(value));
+          else if (key === 'is_emergency_driver') formData.append(key, value ? 1 : 0);
+          else formData.append(key, value);
         }
       });
 
-      const res = await axios.post(`${API_BASE_URL}/createDriverProfile`, formData, {
+      await axios.post(`${API_BASE_URL}/createDriverProfile`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
@@ -141,7 +152,7 @@ export const DriversEdit = () => {
       });
 
       alert("Driver Info updated successfully");
-      setTabKey('driverDocs');
+      setTabKey('vehicleInfo');
 
     } catch (err) {
       console.error("Error updating driver info:", err.response?.data || err);
@@ -149,85 +160,61 @@ export const DriversEdit = () => {
     }
   };
 
-  const handleSaveDriverDocuments = async () => {
-    try {
-      for (let doc of driverDocuments) {
-        if (doc.document instanceof File) {
-          const formData = new FormData();
-          formData.append('document', doc.document);
-          formData.append('doc_type', doc.doc_type);
-          formData.append('file_label', doc.file_label);
-
-          await axios.put(`${API_BASE_URL}/updateDriverDocument/${doc.id}`, formData, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-        }
-      }
-      alert('Driver Documents updated successfully');
-       setTabKey('vehicleInfo');
-    } catch (err) {
-      console.error('Error updating driver documents:', err);
-      alert('Failed to update driver documents');
-    }
-  };
-
   const handleSaveVehicleInfo = async () => {
+    const vehicleId = vehicleInfo.id;
     try {
-      await axios.put(`${API_BASE_URL}/updateVehicle/${vehicleInfo.id}`, vehicleInfo, {
+      const payload = {
+        driverId,
+        type: vehicleInfo.type,
+        category: vehicleInfo.category,
+        brandId: vehicleInfo.brandId,
+        modelId: vehicleInfo.modelId,
+        fuelType: vehicleInfo.fuelType,
+        registrationNumber: vehicleInfo.rcNumber,
+        registrationDate: vehicleInfo.registrationDate,
+        owned: vehicleInfo.owned,
+        vehicleNumber: vehicleInfo.vehicleNumber,
+      };
+
+      await axios.put(`${API_BASE_URL}/updateVehicle/${vehicleId}`, payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      for (let doc of vehicleDocuments) {
-        if (doc.document instanceof File) {
-          const formData = new FormData();
-          formData.append('document', doc.document);
-          formData.append('doc_type', doc.doc_type);
-          formData.append('file_label', doc.file_label);
-          if (doc.expiry_date) formData.append('expiry_date', doc.expiry_date);
-
-          await axios.put(`${API_BASE_URL}/updateDriverVehicleDocument/${doc.id}`, formData, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-        }
-      }
-      alert('Vehicle info and documents updated successfully');
-        setTabKey('bankDocs');
+      alert('Vehicle info updated successfully');
+      setTabKey('bankDocs');
     } catch (err) {
-      console.error('Error updating vehicle info/documents:', err);
-      alert('Failed to update vehicle info/documents');
+      console.error('Error updating vehicle info:', err);
+      alert('Failed to update vehicle info');
     }
   };
 
   const handleSaveBankInfo = async () => {
     try {
-      await axios.put(`${API_BASE_URL}/updateDriverBankDetails/${bankInfo.id}`, bankInfo, {
-        headers: { Authorization: `Bearer ${token}` }
+      const bankId = bankInfo.id;
+      if (!bankId) return console.error('Bank ID not found');
+
+      const payload = {
+        driverId: bankInfo.driverId,
+        bankName: bankInfo.bankName,
+        accountNo: bankInfo.accountNo,
+        ifscCode: bankInfo.ifscCode,
+        branchName: bankInfo.branchName,
+      };
+
+      const res = await axios.put(`${API_BASE_URL}/updateDriverBankDetails/${bankId}`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      for (let doc of bankDocuments) {
-        if (doc.document instanceof File) {
-          const formData = new FormData();
-          formData.append('document', doc.document);
-          formData.append('docType', doc.docType);
-          formData.append('file_label', doc.file_label);
+      setBankInfo(res.data.data);
 
-          await axios.put(`${API_BASE_URL}/updateDriverBankDocument/${doc.id}`, formData, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-        }
-      }
-      alert('Bank info and documents updated successfully');
-      setTabKey('bankDocs');
+      alert('Bank info updated successfully');
     } catch (err) {
-      console.error('Error updating bank info/documents:', err);
-      alert('Failed to update bank info/documents');
+      console.error('Error updating bank info:', err.response?.data || err);
+      alert('Failed to update bank info');
     }
   };
 
-  const handleSubmitAll = () => {
-    alert('Driver updated successfully (UI only)');
-  };
-
+  // Fetch brands
   useEffect(() => {
     fetch(`${API_BASE_URL}/getAllBrands`)
       .then(res => res.json())
@@ -237,8 +224,7 @@ export const DriversEdit = () => {
       .catch(err => console.error('Error fetching brands:', err));
   }, []);
 
-  const [allModels, setAllModels] = useState([]);
-
+  // Fetch models
   useEffect(() => {
     fetch(`${API_BASE_URL}/getAllModels`)
       .then(res => res.json())
@@ -275,7 +261,7 @@ export const DriversEdit = () => {
                 <Tab eventKey="driverInfo" title="Driver Info">
                   <Form>
                     <Row>
-                      <Col md={6}>
+                      <Col md={4}>
                         <Form.Group className="mb-3">
                           <Form.Label>Full Name</Form.Label>
                           <Form.Control
@@ -287,7 +273,22 @@ export const DriversEdit = () => {
                           />
                         </Form.Group>
                       </Col>
-                      <Col md={6}>
+                      <Col md={4}>
+                        <Form.Group className="mb-3">
+                          <Form.Label>Gender</Form.Label>
+                          <Form.Select
+                            name="gender"
+                            value={driverInfo.gender || ''}
+                            onChange={(e) => handleChange(e, setDriverInfo)}
+                          >
+                            <option value="">Select Gender</option>
+                            <option value="Male">Male</option>
+                            <option value="Female">Female</option>
+                            <option value="Other">Other</option>
+                          </Form.Select>
+                        </Form.Group>
+                      </Col>
+                      <Col md={4}>
                         <Form.Group className="mb-3">
                           <Form.Label>Date of Birth</Form.Label>
                           <Form.Control
@@ -329,28 +330,35 @@ export const DriversEdit = () => {
                     </Row>
 
                     <Row>
+                      {/* State Dropdown */}
                       <Col md={4}>
                         <Form.Group className="mb-3">
                           <Form.Label>State</Form.Label>
-                          <Form.Control
-                            type="text"
+                          <Form.Select
                             name="state"
-                            placeholder="Enter state"
                             value={driverInfo.state || ''}
                             onChange={(e) => handleChange(e, setDriverInfo)}
-                          />
+                          >
+                            <option value="">Select State</option>
+                            <option value="Rajasthan">Rajasthan</option>
+                          </Form.Select>
                         </Form.Group>
                       </Col>
+
+                      {/* City Dropdown */}
                       <Col md={4}>
                         <Form.Group className="mb-3">
                           <Form.Label>City</Form.Label>
-                          <Form.Control
-                            type="text"
+                          <Form.Select
                             name="city"
-                            placeholder="Enter city"
                             value={driverInfo.city || ''}
                             onChange={(e) => handleChange(e, setDriverInfo)}
-                          />
+                          >
+                            <option value="">Select City</option>
+                            <option value="Ajmer">Ajmer</option>
+                            <option value="Kota">Kota</option>
+                            <option value="Jaipur">Jaipur</option>
+                          </Form.Select>
                         </Form.Group>
                       </Col>
                       <Col md={4}>
@@ -396,82 +404,42 @@ export const DriversEdit = () => {
                       <Col md={4}>
                         <Form.Group className="mb-3">
                           <Form.Label>Working City</Form.Label>
-                          <Form.Control
-                            type="text"
+                          <Form.Select
                             name="workingCity"
-                            placeholder="Enter working city"
                             value={driverInfo.workingCity || ''}
                             onChange={(e) => handleChange(e, setDriverInfo)}
-                          />
-                        </Form.Group>
-                      </Col>
-                    </Row>
-
-                    <Row>
-                      <Col md={4}>
-                        <Form.Group className="mb-3">
-                          <Form.Label>Aadhar Number</Form.Label>
-                          <Form.Control
-                            type="text"
-                            name="aadharNumber"
-                            placeholder="Enter Aadhar Number"
-                            value={driverInfo.aadharNumber || ''}
-                            onChange={(e) => handleChange(e, setDriverInfo)}
-                          />
-                        </Form.Group>
-                      </Col>
-                      <Col md={4}>
-                        <Form.Group className="mb-3">
-                          <Form.Label>Pan Number</Form.Label>
-                          <Form.Control
-                            type="text"
-                            name="panNumber"
-                            placeholder="Enter Pan Number"
-                            value={driverInfo.panNumber || ''}
-                            onChange={(e) => handleChange(e, setDriverInfo)}
-                          />
-                        </Form.Group>
-                      </Col>
-                      <Col md={4}>
-                        <Form.Group className="mb-3">
-                          <Form.Label>License Number</Form.Label>
-                          <Form.Control
-                            type="text"
-                            name="licenseNumber"
-                            placeholder="Enter License Number"
-                            value={driverInfo.licenseNumber || ''}
-                            onChange={(e) => handleChange(e, setDriverInfo)}
-                          />
+                          >
+                            <option value="">Select Working City</option>
+                            <option value="Ajmer">Ajmer</option>
+                            <option value="Kota">Kota</option>
+                            <option value="Jaipur">Jaipur</option>
+                          </Form.Select>
                         </Form.Group>
                       </Col>
                     </Row>
 
                     <Form.Group className="mb-3">
                       <Form.Label>Profile Image</Form.Label>
-                      {driverInfo.userProfile && (
-                        <div className="mb-2">
+                      <div className="d-flex align-items-center">
+                        <Form.Control
+                          type="file"
+                          name="userProfile"
+                          onChange={(e) => handleChange(e, setDriverInfo)}
+                        />
+                        {driverInfo.userProfile && typeof driverInfo.userProfile === 'string' && (
                           <img
-                            src={
-                              driverInfo.userProfile instanceof File
-                                ? URL.createObjectURL(driverInfo.userProfile)
-                                : `${IMAGE_BASE_URL}${driverInfo.userProfile}`
-                            }
-                            alt="Driver Profile"
+                            src={`${IMAGE_BASE_URL}${driverInfo.userProfile.startsWith(API_BASE_URL) ? driverInfo.userProfile.replace(API_BASE_URL, '') : driverInfo.userProfile}`}
+                            alt="Profile Preview"
                             style={{
-                              width: '100px',
-                              height: '100px',
-                              borderRadius: '8px',
-                              objectFit: 'cover',
-                              border: '1px solid #ddd'
+                              width: "80px",
+                              height: "80px",
+                              objectFit: "cover",
+                              borderRadius: "50%",
+                              marginLeft: "10px"
                             }}
                           />
-                        </div>
-                      )}
-                      <Form.Control
-                        type="file"
-                        name="userProfile"
-                        onChange={(e) => handleChange(e, setDriverInfo)}
-                      />
+                        )}
+                      </div>
                     </Form.Group>
 
                     <Form.Group className="mb-3">
@@ -487,42 +455,13 @@ export const DriversEdit = () => {
 
                     <div className="d-flex justify-content-between mt-3">
                       {!isFirstTab && <Button variant="secondary" onClick={handleBack}>Back</Button>}
-                      <Button variant="primary" onClick={handleSaveDriverInfo}>Save Changes</Button>
-                    </div>
-                  </Form>
-                </Tab>
-
-                {/* Driver Documents */}
-                <Tab eventKey="driverDocs" title="Driver Documents">
-                  <Form>
-                    {['Aadhar', 'Pan Card', 'License'].map((doc) => (
-                      <div key={doc}>
-                        {['Front', 'Back'].map((side) => (
-                          <Form.Group className="mb-3" key={`${doc} ${side}`}>
-                            <Form.Label>{`${doc} ${side}`}</Form.Label>
-                            <Form.Control
-                              type="file"
-                              onChange={(e) =>
-                                setDriverDocuments(prev => [
-                                  ...prev.filter(d => d.file_label !== `${doc} ${side}`),
-                                  { doc_type: doc, document: e.target.files[0], file_label: `${doc} ${side}` }
-                                ])
-                              }
-                            />
-                          </Form.Group>
-                        ))}
-                      </div>
-                    ))}
-
-                    <div className="d-flex justify-content-between mt-3">
-                      <Button variant="secondary" onClick={handleBack}>Back</Button>
-                      <Button variant="primary" onClick={handleSaveDriverDocuments}>Save Changes</Button>
+                      <Button variant="primary" onClick={() => handleSaveTab('Driver Info')}>Save Changes</Button>
                     </div>
                   </Form>
                 </Tab>
 
                 {/* Vehicle Info + Documents */}
-                <Tab eventKey="vehicleInfo" title="Vehicle Info + Documents">
+                <Tab eventKey="vehicleInfo" title="Vehicle Info">
                   <Form>
                     <Row>
                       <Col md={4}>
@@ -607,12 +546,12 @@ export const DriversEdit = () => {
                       </Col>
                       <Col md={4}>
                         <Form.Group className="mb-3">
-                          <Form.Label>Registration Number</Form.Label>
+                          <Form.Label>Vehicle Number</Form.Label>
                           <Form.Control
                             type="text"
-                            name="registrationNumber"
-                            placeholder="Enter registration number"
-                            value={vehicleInfo.registrationNumber || ''}
+                            name="vehicleNumber"
+                            placeholder="Enter vehicle number"
+                            value={vehicleInfo.vehicleNumber || ''}
                             onChange={(e) => handleChange(e, setVehicleInfo)}
                           />
                         </Form.Group>
@@ -627,7 +566,7 @@ export const DriversEdit = () => {
                             type="date"
                             name="registrationDate"
                             placeholder="Select registration date"
-                            value={formatDate(vehicleInfo.registrationDate) || ''}
+                            value={vehicleInfo.registrationDate || ''}
                             onChange={(e) => handleChange(e, setVehicleInfo)}
                           />
                         </Form.Group>
@@ -659,63 +598,9 @@ export const DriversEdit = () => {
                         </Form.Group>
                       </Col>
                     </Row>
-                    {/* Vehicle Documents with expiry date */}
-                    {['RC', 'Insurance', 'Permit', 'PUC'].map((label) => (
-                      <Row key={label}>
-                        <Col md={6}>
-                          <Form.Group className="mb-3">
-                            <Form.Label>{label} Document</Form.Label>
-                            <Form.Control
-                              type="file"
-                              onChange={(e) => setVehicleDocuments(prev => [
-                                ...prev.filter(d => d.file_label !== label),
-                                {
-                                  doc_type: label,
-                                  document: e.target.files[0],
-                                  file_label: label,
-                                  expiry_date: prev.find(d => d.file_label === label)?.expiry_date || ''
-                                }
-                              ])}
-                            />
-                          </Form.Group>
-                        </Col>
-                        <Col md={6}>
-                          <Form.Group className="mb-3">
-                            <Form.Label>{label} Expiry Date</Form.Label>
-                            <Form.Control
-                              type="date"
-                              value={formatDate(vehicleDocuments.find(d => d.file_label === label)?.expiry_date) || ''}
-                              onChange={(e) =>
-                                setVehicleDocuments(prev => prev.map(d =>
-                                  d.file_label === label ? { ...d, expiry_date: e.target.value } : d
-                                ))
-                              }
-                            />
-                          </Form.Group>
-                        </Col>
-                      </Row>
-                    ))}
-
-                    <h5>Vehicle Images</h5>
-                    <Row>
-                      {['left', 'right', 'front', 'back', 'meter'].map((pos) => (
-                        <Col md={4} key={pos}>
-                          <Form.Group className="mb-3">
-                            <Form.Label>{`Vehicle ${pos.charAt(0).toUpperCase() + pos.slice(1)}`}</Form.Label>
-                            <Form.Control
-                              type="file"
-                              onChange={(e) =>
-                                setVehicleImages(prev => ({ ...prev, [pos]: e.target.files[0] }))
-                              }
-                            />
-                          </Form.Group>
-                        </Col>
-                      ))}
-                    </Row>
-
                     <div className="d-flex justify-content-between mt-3">
                       <Button variant="secondary" onClick={handleBack}>Back</Button>
-                      <Button variant="primary" onClick={handleSaveVehicleInfo}>Save Changes</Button>
+                      <Button variant="primary" onClick={() => handleSaveTab('Vehicle Info')}>Save Changes</Button>
                     </div>
                   </Form>
                 </Tab>
@@ -759,7 +644,16 @@ export const DriversEdit = () => {
                             name="ifscCode"
                             placeholder="Enter IFSC code"
                             value={bankInfo.ifscCode || ''}
-                            onChange={(e) => handleChange(e, setBankInfo)}
+                            onChange={(e) => {
+                              const value = e.target.value.toUpperCase(); 
+                              const regex = /^[A-Z]{4}0[A-Z0-9]{6}$/; 
+                              if (value === '' || regex.test(value)) {
+                                handleChange({ target: { name: 'ifscCode', value } }, setBankInfo);
+                              } else {
+                                handleChange({ target: { name: 'ifscCode', value } }, setBankInfo);
+                              }
+                            }}
+                            maxLength={11}
                           />
                         </Form.Group>
                       </Col>
@@ -777,19 +671,10 @@ export const DriversEdit = () => {
                       </Col>
                     </Row>
 
-                    <Form.Group className="mb-3">
-                      <Form.Label>Passbook / Cheque Image</Form.Label>
-                      <Form.Control
-                        type="file"
-                        placeholder="Upload passbook or cheque image"
-                        onChange={(e) => setBankDocuments([{ docType: 'passbook', document: e.target.files[0], file_label: 'Passbook' }])}
-                      />
-                    </Form.Group>
-
                     <div className="d-flex justify-content-between mt-3">
                       <div>
                         <Button variant="secondary" onClick={handleBack} className="me-2">Back</Button>
-                        <Button variant="primary" onClick={handleSaveBankInfo}>Save Changes</Button>
+                        <Button variant="primary" onClick={() => handleSaveTab('Bank Document')}>Save Changes</Button>
                       </div>
                       <Button variant="success" onClick={handleSubmitAll}>Submit All</Button>
                     </div>

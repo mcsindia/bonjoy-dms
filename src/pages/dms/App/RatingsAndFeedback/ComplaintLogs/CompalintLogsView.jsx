@@ -22,28 +22,6 @@ export const CompalintLogsView = () => {
     );
   }
 
-  const handleUserClick = (id, name, profileImage, category, isComplainant = true) => {
-    const isRider = category?.toLowerCase().includes("rider");
-    const targetPath = isComplainant
-      ? isRider
-        ? `/dms/rider/view/${id}`
-        : `/dms/driver/view/${id}`
-      : isRider
-        ? `/dms/driver/view/${id}`
-        : `/dms/rider/view/${id}`;
-
-    navigate(targetPath, {
-      state: {
-        [isRider ? "rider" : "driver"]: {
-          id,
-          userId: id,
-          fullName: name,
-          profileImage: profileImage || null,
-        },
-      },
-    });
-  };
-
   return (
     <AdminLayout>
       <div className="dms-container">
@@ -64,44 +42,14 @@ export const CompalintLogsView = () => {
               <Row>
                 <Col md={6}>
                   <p>
-                    <strong>Complainant Name:</strong>{" "}
-                    <span
-                      className="rider-id-link"
-                      style={{ cursor: "pointer" }}
-                      onClick={() =>
-                        handleUserClick(
-                          complaint.complainant_id,
-                          complaint.complainant_name,
-                          complaint.complainant_profile_image,
-                          complaint.category,
-                          true
-                        )
-                      }
-                    >
-                      {complaint.complainant_name}
-                    </span>
+                    <strong>Complainant Name:</strong> {complaint.complainant_name}
                   </p>
                   <p><strong>Complainant ID:</strong> {complaint.complainant_id}</p>
                   <p><strong>Ride ID:</strong> {complaint.ride_id || "-"}</p>
                 </Col>
                 <Col md={6}>
                   <p>
-                    <strong>Against User Name:</strong>{" "}
-                    <span
-                      className="rider-id-link"
-                      style={{ cursor: "pointer" }}
-                      onClick={() =>
-                        handleUserClick(
-                          complaint.against_user_id,
-                          complaint.against_user_name,
-                          complaint.against_user_profile_image,
-                          complaint.category,
-                          false
-                        )
-                      }
-                    >
-                      {complaint.against_user_name}
-                    </span>
+                    <strong>Against User Name:</strong> {complaint.against_user_name}
                   </p>
                   <p><strong>Against User ID:</strong> {complaint.against_user_id}</p>
                   <p><strong>Category:</strong> {complaint.category.replace("_", " ")}</p>

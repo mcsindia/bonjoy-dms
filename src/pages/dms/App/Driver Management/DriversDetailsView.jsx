@@ -412,7 +412,14 @@ export const DriversDetailsView = () => {
                 />
               </a>
               <div>
-                <h2>{driverDetails?.fullName || 'NA'}</h2>
+                <h2>
+                  {driverDetails?.fullName || 'NA'}{' '}
+                  {driverDetails?.is_emergency_driver === 1
+                    ? '(Emergency)'
+                    : driverDetails?.is_emergency_driver === 0
+                      ? '(Commission)'
+                      : ''}
+                </h2>
                 <p>
                   <strong>Phone: </strong> {driverDetails?.mobile || 'NA'}
                 </p>

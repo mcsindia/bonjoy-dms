@@ -236,68 +236,26 @@ export const ComplaintLogs = () => {
                 {complaints.length > 0 ? (
                   complaints
                     .filter((c) =>
-                      c.complainant_name
-                        ?.toLowerCase()
-                        .includes(search.toLowerCase())
+                      c.complainant_name?.toLowerCase().includes(search.toLowerCase())
                     )
                     .map((c, idx) => (
                       <tr key={c.complaint_id}>
                         <td>{(currentPage - 1) * itemsPerPage + idx + 1}</td>
-                        {/* Complainant (Clickable) */}
-                        <td>
-                          <span
-                            className="rider-id-link "
-                            onClick={() => {
-                              const isRider = c.category?.toLowerCase().includes("rider");
-                              const targetPath = isRider
-                                ? `/dms/rider/view/${c.complainant_id}`
-                                : `/dms/driver/view/${c.complainant_id}`;
 
-                              navigate(targetPath, {
-                                state: {
-                                  [isRider ? "rider" : "driver"]: {
-                                    id: c.complainant_id,
-                                    userId: c.complainant_id, 
-                                    fullName: c.complainant_name,
-                                    profileImage: c.complainant_profile_image || null,
-                                  },
-                                },
-                              });
-                            }}
-                          >
-                            {c.complainant_name || "-"}
-                          </span>
+                        {/* Complainant (plain text) */}
+                        <td>
+                          {c.complainant_name || "-"}
                           <br />
                           <small className="text-muted">({c.complainant_id})</small>
                         </td>
 
-                        {/* Against User (Clickable) */}
+                        {/* Against User (plain text) */}
                         <td>
-                          <span
-                            className="rider-id-link "
-                            onClick={() => {
-                              const isDriver = c.category?.toLowerCase().includes("driver");
-                              const targetPath = isDriver
-                                ? `/dms/driver/view/${c.against_user_id}`
-                                : `/dms/rider/view/${c.against_user_id}`;
-
-                              navigate(targetPath, {
-                                state: {
-                                  [isDriver ? "driver" : "rider"]: {
-                                    id: c.against_user_id,
-                                    userId: c.against_user_id,
-                                    fullName: c.against_user_name,
-                                    profileImage: c.against_user_profile_image || null,
-                                  },
-                                },
-                              });
-                            }}
-                          >
-                            {c.against_user_name || "-"}
-                          </span>
+                          {c.against_user_name || "-"}
                           <br />
                           <small className="text-muted">({c.against_user_id})</small>
                         </td>
+
                         <td>{c.category?.replace("_", " ")}</td>
                         <td>{c.description}</td>
                         <td>
@@ -311,9 +269,7 @@ export const ComplaintLogs = () => {
                         </td>
                         <td>{new Date(c.created_at).toLocaleString()}</td>
                         <td>
-                          {c.resolved_at
-                            ? new Date(c.resolved_at).toLocaleString()
-                            : "-"}
+                          {c.resolved_at ? new Date(c.resolved_at).toLocaleString() : "-"}
                         </td>
                         <td>
                           <FaEye
