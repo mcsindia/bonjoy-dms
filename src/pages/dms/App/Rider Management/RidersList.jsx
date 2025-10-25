@@ -221,7 +221,7 @@ export const RidersList = () => {
                           <span>-</span>
                         )}
                       </td>
-                      <td>{rider.createdAt}</td>
+                      <td>{new Date(rider.createdAt).toLocaleString()}</td>
                       <td className="actions">
                         {permissions.includes("view") || permissions.includes("rideHistory") ? (
                           <>

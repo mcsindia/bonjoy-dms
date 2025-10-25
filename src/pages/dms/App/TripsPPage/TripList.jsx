@@ -242,7 +242,6 @@ export const TripList = () => {
                                         <td>
                                             <span
                                                 className="driver-id-link"
-                                                style={{ cursor: "pointer" }}
                                                 onClick={() =>
                                                     navigate(`/dms/driver/view/${trip.driver_id}`, {
                                                         state: {

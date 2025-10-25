@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AdminLayout } from '../../../layouts/dms/AdminLayout/AdminLayout';
-import { Dropdown, DropdownButton, Form } from "react-bootstrap";
+import { Dropdown, DropdownButton, Form, Table, Button } from "react-bootstrap";
 import { FaUserCheck, FaFileAlt, FaCalendarAlt } from "react-icons/fa";
 import { Bar, Pie, Line } from "react-chartjs-2";
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -31,10 +32,14 @@ ChartJS.register(
     ArcElement
 );
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const IMAGE_BASE_URL = import.meta.env.VITE_IMAGE_BASE_URL;
+
 export const Dashboard3 = () => {
     const [filter, setFilter] = useState("Last 7 Days");
     const [fromDate, setFromDate] = useState('');
     const [toDate, setToDate] = useState('');
+    const [expiringDocuments, setExpiringDocuments] = useState([]);
     const navigate = useNavigate();
     const driverPendingCount = 7;
     const newDocumentsCount = 4;
@@ -56,16 +61,44 @@ export const Dashboard3 = () => {
         }
     }
 
-    const handleFilterChange = (selectedFilter) => {
-        setFilter(selectedFilter);
+    // Fetch latest 5 expiring documents
+    const fetchExpiringDocuments = async () => {
+        try {
+            const response = await axios.get(`${API_BASE_URL}/getDriverAllExpiringDocuments`, {
+                params: { page: 0, limit: 5 },
+                headers: { Authorization: `Bearer ${userData?.token}` }
+            });
+
+            const drivers = response.data?.data || [];
+            const allDocs = [];
+
+            drivers.forEach(driver => {
+                driver.expiringDocuments?.forEach(doc => {
+                    allDocs.push({
+                        ...doc,
+                        fullName: driver.fullName // attach driver name
+                    });
+                });
+            });
+
+            setExpiringDocuments(allDocs);
+        } catch (error) {
+            console.error("Failed to fetch expiring documents:", error);
+        }
     };
+
+    useEffect(() => {
+        fetchExpiringDocuments();
+    }, []);
+
+    const handleFilterChange = (selectedFilter) => setFilter(selectedFilter);
 
     const stats = [
         {
             category: "Ride Statistics",
             icon: "🚖",
             status: "✅",
-            link: '/dms/rider',
+            link: '/dms/trip',
             items: [
                 {
                     title: "Total Rides",
@@ -156,12 +189,11 @@ export const Dashboard3 = () => {
             ],
             color: "#118B50"
         },
-
         {
             category: "Payment Overview",
             icon: "💰",
             status: "❌",
-            link: '/dms/payment',
+            link: '/dms/trippayment',
             table: true,
             headers: ["Metrics", "Total", "Payroll", "Commission"],
             rows: [
@@ -189,7 +221,7 @@ export const Dashboard3 = () => {
             category: "Support & Complaints",
             icon: "📞",
             status: "⚠",
-            link: "/dms/support-request",
+            link: "/dms/complaintlogs",
             items: [
                 { title: "Total Support Tickets", value: "50" },
                 { title: "Pending Complaints", value: "20" },
@@ -423,7 +455,6 @@ export const Dashboard3 = () => {
                             </span>
                         </div>
                     </div>
-
                     <div className="col-md-6">
                         <div
                             className="card quick-action-card shadow-sm p-3 d-flex flex-row align-items-center justify-content-between bg-info-subtle border-start border-4 border-info"
@@ -454,6 +485,67 @@ export const Dashboard3 = () => {
                     {/* Left Section */}
                     <div className="col-lg-7 dms-left-section">
                         <div className="row">
+                            {/* Expiring Documents Card */}
+                            <div className="col-12 mb-4">
+                                <div className="card p-shadow-sm">
+                                    <h4
+                                        className="card-header d-flex justify-content-between align-items-center mb-2"
+                                        style={{
+                                            color: 'white',
+                                            backgroundColor: '#FF6F00',
+                                            padding: '10px',
+                                            fontWeight: 'bold'
+                                        }}
+                                          onClick={() => navigate('/dms/driverdocumentexpiry')}
+                                    >
+                                        <span className="d-flex align-items-center">
+                                            <FaFileAlt className="me-2" size={24} />
+                                            Expiring Driver Documents
+                                        </span>
+                                        <Button
+                                            variant="link"
+                                            onClick={() => navigate('/dms/driverdocumentexpiry')}
+                                            style={{ color: 'white', textDecoration: 'none', padding: 0 }}
+                                        >
+                                            View All
+                                        </Button>
+                                    </h4>
+                                    <div className="p-2">
+                                        <Table striped bordered hover responsive className="mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th>Driver</th>
+                                                    <th>Document Type</th>
+                                                    <th>Expiry Date</th>
+                                                    <th>Status</th>
+                                                    <th>View</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {expiringDocuments.length > 0 ? expiringDocuments.map((doc) => (
+                                                    <tr key={doc.id}>
+                                                        <td>{doc.fullName || 'NA'}</td>
+                                                        <td>{doc.doc_type || 'NA'}</td>
+                                                        <td>{doc.expiry_date || 'NA'}</td>
+                                                        <td>{doc.status || 'NA'}</td>
+                                                        <td>
+                                                            <a href={`${IMAGE_BASE_URL}${doc.file_url}`} target="_blank" rel="noopener noreferrer">
+                                                                View
+                                                            </a>
+                                                        </td>
+                                                    </tr>
+                                                )) : (
+                                                    <tr>
+                                                        <td colSpan="5" className="text-center">No expiring documents found.</td>
+                                                    </tr>
+                                                )}
+                                            </tbody>
+                                        </Table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Stats Cards */}
                             {stats.map((stat, index) => (
                                 <div className={`${["Payment Overview", "Ride Statistics", "Driver Performance"].includes(stat.category) ? 'col-12' : 'col-md-6'} mb-4`} key={index}>
                                     <div className="card p-shadow-sm">

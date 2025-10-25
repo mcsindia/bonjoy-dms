@@ -46,7 +46,8 @@ import { RiderProfile } from '../pages/dms/App/Rider Management/RiderProfile'
 import { AllDrivers } from '../pages/dms/App/Driver Management/Drivers/AllDrivers'
 import { DriversEdit } from '../pages/dms/App/Driver Management/Drivers/DriversEdit'
 import { DriversAdd } from '../pages/dms/App/Driver Management/Drivers/DriversAdd';
-import { DriversDetailsView } from '../pages/dms/App/Driver Management/DriversDetailsView'
+import { DriversDetailsView } from '../pages/dms/App/Driver Management/Drivers/DriversDetailsView'
+import { DriverRideHistory } from '../pages/dms/App/Driver Management/Drivers/DriverRiderHistory'
 /* Trip */
 import { TripList } from '../pages/dms/App/TripsPPage/TripList'
 import { TripEdit } from '../pages/dms/App/TripsPPage/TripEdit'
@@ -63,10 +64,10 @@ import { ModelEdit } from '../pages/dms/App/Vehicle Management/Model/ModelEdit'
 import { FeedbackToRider } from '../pages/dms/App/Driver Management/FeedbackToRider'
 import { FeedbackToDriverList } from '../pages/dms/App/Rider Management/FeedbackToDriverList'
 /* Payment and Transaction */
-import {RidePaymentList} from '../pages/dms/App/PaymentPage/RidePayments/RidePaymentList'
-import {RidePaymentAdd} from '../pages/dms/App/PaymentPage/RidePayments/RidePaymentAdd'
-import {RidePaymentEdit} from '../pages/dms/App/PaymentPage/RidePayments/RidePaymentEdit'
-import {RidePaymentDetails} from '../pages/dms/App/PaymentPage/RidePayments/RidePaymentDetails'
+import { RidePaymentList } from '../pages/dms/App/PaymentPage/RidePayments/RidePaymentList'
+import { RidePaymentAdd } from '../pages/dms/App/PaymentPage/RidePayments/RidePaymentAdd'
+import { RidePaymentEdit } from '../pages/dms/App/PaymentPage/RidePayments/RidePaymentEdit'
+import { RidePaymentDetails } from '../pages/dms/App/PaymentPage/RidePayments/RidePaymentDetails'
 import { PendingPayouts } from '../pages/dms/App/PaymentPage/PendingPayouts/PendingPayouts';
 import { PendingPayoutAdd } from '../pages/dms/App/PaymentPage/PendingPayouts/PendingPayoutAdd';
 import { PendingPayoutEdit } from '../pages/dms/App/PaymentPage/PendingPayouts/PendingPayoutEdit';
@@ -80,15 +81,13 @@ import { CommissionFeeList } from '../pages/dms/App/PaymentPage/CommissionFee/Co
 import { CommissionFeeAdd } from '../pages/dms/App/PaymentPage/CommissionFee/CommissionFeeAdd';
 import { CommissionFeeEdit } from '../pages/dms/App/PaymentPage/CommissionFee/CommissionFeeEdit';
 /* Settings */
-import {RideFareSetting} from '../pages/dms/App/FareManagement/RideFareSetting/RideFareSetting'
+import { RideFareSetting } from '../pages/dms/App/FareManagement/RideFareSetting/RideFareSetting'
 import { FareSettingAdd } from '../pages/dms/App/FareManagement/RideFareSetting/FareSettingAdd';
 import { FareSettingEdit } from '../pages/dms/App/FareManagement/RideFareSetting/FareSettingEdit';
 /* Ride Type */
 import { RideTypeList } from '../pages/dms/App/TripsPPage/RideTypes/RideTypeList';
 import { RideTypeAdd } from '../pages/dms/App/TripsPPage/RideTypes/RideTypeAdd';
 import { RideTypeEdit } from '../pages/dms/App/TripsPPage/RideTypes/RideTypeEdit';
-/* Icon */
-import { FaChartLine, } from "react-icons/fa";
 import { FareDynamicRuleList } from '../pages/dms/App/FareManagement/FareDynamicRules/FareDynamicRuleList';
 import { FareDynamicRuleAdd } from '../pages/dms/App/FareManagement/FareDynamicRules/FareDynamicRuleAdd';
 import { FareDynamicRuleEdit } from '../pages/dms/App/FareManagement/FareDynamicRules/FareDynamicRuleEdit';
@@ -103,12 +102,14 @@ import { FareNightRulesAdd } from '../pages/dms/App/FareManagement/FareNightRule
 import { FareNightRulesEdit } from '../pages/dms/App/FareManagement/FareNightRules/FareNightRulesEdit';
 import { RideFeedback } from '../pages/dms/App/RatingsAndFeedback/RideFeedback/RideFeedback';
 import { RideFeedbackView } from '../pages/dms/App/RatingsAndFeedback/RideFeedback/RideFeedbackView';
-import { UserRatingSummery } from '../pages/dms/App/RatingsAndFeedback/UserRatingSummary/UserRatingSummery';
 import { DriverPerformanceMetrics } from '../pages/dms/App/RatingsAndFeedback/DriverPerformanceMetrics/DriverPerformanceMetrics';
 import { DriverPerformanceView } from '../pages/dms/App/RatingsAndFeedback/DriverPerformanceMetrics/DriverPerformanceView';
 import { ComplaintLogs } from '../pages/dms/App/RatingsAndFeedback/ComplaintLogs/ComplaintLogs';
 import { CompalintLogsView } from '../pages/dms/App/RatingsAndFeedback/ComplaintLogs/CompalintLogsView';
-import { UserRatingSummaryView } from '../pages/dms/App/RatingsAndFeedback/UserRatingSummary/UserRatingSummaryView';
+/* Icon */
+import { FaChartLine, } from "react-icons/fa";
+import { DriverLogs } from '../pages/dms/App/Driver Management/DriverLogs/DriverLogs';
+import { DriversDocument } from '../pages/dms/App/Driver Management/Drivers/DriversDocument';
 
 export const moduleComponentMap = {
   dashboard: {
@@ -153,10 +154,10 @@ export const moduleComponentMap = {
     edit: EmployeePermissionEdit,
     viewDetails: EmployeePermissionView,
   },
- /*  activity: {
-    view: ActivityList,
-    viewDetails: ActivityView,
-  }, */
+  /*  activity: {
+     view: ActivityList,
+     viewDetails: ActivityView,
+   }, */
   user: {
     view: UserList,
     add: UserAdd,
@@ -178,10 +179,10 @@ export const moduleComponentMap = {
     edit: TripEdit,
     viewDetails: TripDetails
   },
-  ridetypes:{
-   view: RideTypeList,
-   add: RideTypeAdd,
-   edit: RideTypeEdit
+  ridetypes: {
+    view: RideTypeList,
+    add: RideTypeAdd,
+    edit: RideTypeEdit
   },
   brand: {
     view: BrandList,
@@ -199,28 +200,28 @@ export const moduleComponentMap = {
   feedbacktorider: {
     view: FeedbackToRider,
   },
-  trippayment:{
-  view: RidePaymentList,
-  add: RidePaymentAdd,
-  edit: RidePaymentEdit,
-  viewDetails: RidePaymentDetails
+  trippayment: {
+    view: RidePaymentList,
+    add: RidePaymentAdd,
+    edit: RidePaymentEdit,
+    viewDetails: RidePaymentDetails
   },
-  pendingpayments:{
+  pendingpayments: {
     view: PendingPayouts,
     add: PendingPayoutAdd,
     edit: PendingPayoutEdit
   },
-  driverpayout:{
+  driverpayout: {
     view: DriverPayoutsList,
     add: DriverPayoutAdd,
     edit: DriverPayoutEdit
   },
-  refundrequest:{
+  refundrequest: {
     view: RefundRequestList,
     add: RefundRequestAdd,
     edit: RefundRequestEdit
   },
-  commissionfee:{
+  commissionfee: {
     view: CommissionFeeList,
     add: CommissionFeeAdd,
     edit: CommissionFeeEdit
@@ -230,40 +231,48 @@ export const moduleComponentMap = {
     add: FareSettingAdd,
     edit: FareSettingEdit
   },
-  faredynamicrules:{
-   view: FareDynamicRuleList,
-   add: FareDynamicRuleAdd,
-   edit: FareDynamicRuleEdit,
+  faredynamicrules: {
+    view: FareDynamicRuleList,
+    add: FareDynamicRuleAdd,
+    edit: FareDynamicRuleEdit,
   },
-  fareregion:{
+  fareregion: {
     view: FareRegionList,
     add: FareRegionAdd,
     edit: FareRegionEdit,
   },
-  fareslab:{
-   view: FareSlabList,
-   add: FareSlabAdd,
-   edit: FareSlabEdit
+  fareslab: {
+    view: FareSlabList,
+    add: FareSlabAdd,
+    edit: FareSlabEdit
   },
-  farenightrules:{
-   view: FareNightRulesList,
-   add: FareNightRulesAdd,
-   edit: FareNightRulesEdit,
+  farenightrules: {
+    view: FareNightRulesList,
+    add: FareNightRulesAdd,
+    edit: FareNightRulesEdit,
   },
-  ridefeedback:{
+  ridefeedback: {
     view: RideFeedback,
     viewDetails: RideFeedbackView,
   },
-  userratingsummary:{
-    view: UserRatingSummery,
-    viewDetails: UserRatingSummaryView,
-  },
-  driverperformancemetrics:{
+  driverperformancemetrics: {
     view: DriverPerformanceMetrics,
     viewDetails: DriverPerformanceView,
   },
-  complaintlogs:{
+  complaintlogs: {
     view: ComplaintLogs,
     viewDetails: CompalintLogsView,
+  },
+  driverridehistory: {
+    view: DriverRideHistory,
+    hidden: true
+  },
+  driverloginlogs: {
+    view: DriverLogs,
+    hidden: true
+  },
+  driverdocumentexpiry: {
+    view: DriversDocument,
+    hidden: true
   }
 };

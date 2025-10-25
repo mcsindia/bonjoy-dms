@@ -2,8 +2,7 @@ import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { generateDynamicRoutes, getDefaultEmployeePath } from "../../utils/GenerateDynamicRoutes";
 import { moduleComponentMap } from "../../utils/ModuleComponentMap"; 
-import { DriverApprovalView } from "../../pages/dms/App/Driver Management/DriverApproval/DriverApprovalView";
-import {DriverLogs} from '../../pages/dms/App/Driver Management/DriverLogs/DriverLogs'
+import { DriverApprovalView } from "../../pages/dms/App/Driver Management/Drivers/DriverApprovalView";
 import {NotificationPage} from '../../pages/dms/NotificationPage/NotificationPage'
 import SessionWatcher from "../SessionWatcher/SessionWatcher";
 
@@ -46,10 +45,9 @@ const DmsRoutes = () => {
       <Route path="/dms" element={<Navigate to={defaultPath} />} />
       {isAdmin ? adminRoutes : generateDynamicRoutes(employeeRole)}
       <Route
-        path="/dms/driver-approval/view/:id"
+        path="/dms/driverapproval/view/:id"
         element={<DriverApprovalView />}
       />
-       <Route path="/dms/drivers/login-logs" element={<DriverLogs/>} />
       <Route path="/dms/notifications" element={<NotificationPage/>} />
       <Route
         path="*"

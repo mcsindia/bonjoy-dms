@@ -63,6 +63,7 @@ export const DriversAdd = () => {
                 formData.append('is_emergency_driver', driverInfo.is_emergency_driver ? 1 : 0);
                 formData.append('mobile', driverInfo.mobile || '');
                 formData.append('email', driverInfo.email || '');
+                formData.append('is_signup', 1); // ✅ new field added
                 if (driverInfo.userProfile) formData.append('userProfile', driverInfo.userProfile);
 
                 const response = await fetch(`${API_BASE_URL}/addDriver`, { method: 'POST', body: formData });
@@ -80,8 +81,6 @@ export const DriversAdd = () => {
                 }
 
                 fetchDriverDocuments(driverSystemId);
-
-                // 2️⃣ DRIVER DOCUMENTS
             } else if (tab === 'Driver Documents') {
                 if (!driverSystemId) {
                     alert("Please save Driver Info first!");

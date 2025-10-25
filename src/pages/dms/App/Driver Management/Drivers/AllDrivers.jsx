@@ -73,8 +73,7 @@ export const AllDrivers = () => {
 
             const result = res.data?.data;
             if (result?.data) {
-                const sortedDrivers = result.data.sort((a, b) => parseInt(a.id) - parseInt(b.id));
-                setDriverData(sortedDrivers);
+                setDriverData(result.data);
                 setTotalRecords(result.totalRecords || sortedDrivers.length);
                 setTotalPages(result.totalPages || 1);
             } else {
@@ -295,7 +294,7 @@ export const AllDrivers = () => {
                                                 className="driver-id-link"
                                                 onClick={() => {
                                                     if (driver.status?.toLowerCase() === "pending") {
-                                                        navigate(`/dms/driver-approval/view/${driver.id}`, {
+                                                        navigate(`/dms/driverapproval/view/${driver.id}`, {
                                                             state: { driver }
                                                         });
                                                     } else {
@@ -359,12 +358,12 @@ export const AllDrivers = () => {
                                                                 ) : (
                                                                     <>
                                                                         {permissions.includes("view") && (
-                                                                            <li onClick={() => navigate(`/dms/driver-approval/view/${driver.id}`, { state: { driver } })}>
+                                                                            <li onClick={() => navigate(`/dms/driverapproval/view/${driver.id}`, { state: { driver } })}>
                                                                                 <FaEye className="dms-menu-icon" /> View
                                                                             </li>
                                                                         )}
                                                                         {permissions.includes("view") && (
-                                                                            <li onClick={() => navigate("/dms/drivers/login-logs", { state: { driver } })}>
+                                                                            <li onClick={() => navigate("/dms/driverloginlogs", { state: { driver } })}>
                                                                                 <FaSignInAlt className="dms-menu-icon" /> Login Logs
                                                                             </li>
                                                                         )}

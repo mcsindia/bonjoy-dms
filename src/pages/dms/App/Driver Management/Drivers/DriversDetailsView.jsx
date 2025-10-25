@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Table, Pagination, Form, Button, Modal, Tab, Tabs, Row, Col } from 'react-bootstrap';
+import { Card, Table, Pagination, Button, Modal, Tab, Tabs, Row, Col } from 'react-bootstrap';
 import { FaDownload, FaEye, FaStar, FaEdit, FaBell, FaHistory } from 'react-icons/fa';
-import { AdminLayout } from '../../../../layouts/dms/AdminLayout/AdminLayout';
-import profile_img from '../../../../assets/images/profile.png';
+import { AdminLayout } from '../../../../../layouts/dms/AdminLayout/AdminLayout';
+import profile_img from '../../../../../assets/images/profile.png';
 import { useLocation } from "react-router-dom";
 import axios from "axios";
 
@@ -55,12 +55,41 @@ export const DriversDetailsView = () => {
     return diffDays <= 30 && diffDays >= 0; // within 30 days
   };
 
-  const isExpired = (expiryDate) => {
-    if (!expiryDate) return false;
-    const today = new Date();
-    const expiry = new Date(expiryDate);
-    return today > expiry;
-  };
+  const [rideHistoryData, setRideHistoryData] = useState([]);
+  const [rideHistoryPage, setRideHistoryPage] = useState(1);
+  const [rideHistoryTotalPages, setRideHistoryTotalPages] = useState(1);
+  const itemsPerPage = 10;
+
+  useEffect(() => {
+    const fetchRideHistory = async () => {
+      if (!driverId) {
+        console.warn("Driver ID missing, cannot fetch ride history");
+        return;
+      }
+
+      try {
+        const token = JSON.parse(localStorage.getItem("userData"))?.token;
+        const response = await axios.get(`${API_BASE_URL}/getAllRides`, {
+          headers: { Authorization: `Bearer ${token}` },
+          params: {
+            driverId,
+            module_id: 40,
+            page: rideHistoryPage,
+            limit: itemsPerPage
+          }
+        });
+        console.log("Ride history API response:", response.data);
+        if (response.data?.data) {
+          setRideHistoryData(response.data.data || []); // just this
+          setRideHistoryTotalPages(response.data.totalPages || 1); // totalPages is outside data array
+        }
+      } catch (error) {
+        console.error("Failed to fetch ride history:", error);
+      }
+    };
+
+    fetchRideHistory();
+  }, [driverId, rideHistoryPage]);
 
   const getActionsByStatus = (status, docName, doc, type = 'driver', expiryDate = null) => {
     const actions = [];
@@ -110,78 +139,6 @@ export const DriversDetailsView = () => {
       window.open(fullUrl, '_blank');
     } else {
       alert('Document file is missing or not available.');
-    }
-  };
-
-  const handleAction = async (action, docName, doc = null, type = 'driver', driverId = null, vehicleId = null) => {
-    if (!doc?.id) return alert("Document ID is missing");
-
-    if (action === "Resubmit") {
-      setSelectedResubmitDoc(doc);
-      setShowResubmitModal(true);
-    } else if (action === "View") {
-      handleImageView(doc);
-    } else if (action === "Download") {
-      if (doc && doc.docFile) {
-        handleImageDownload(doc.docFile, docName);
-      } else {
-        alert('Document file is missing or not available for download.');
-      }
-    } else if (action === "Approve" || action === "Reject") {
-      if ((type === "driver" && !driverId) || (type === "vehicle" && !vehicleId)) {
-        return alert(`${type.charAt(0).toUpperCase() + type.slice(1)} ID is missing.`);
-      }
-
-      try {
-        const updatedStatus = action === "Approve" ? "Approved" : "Rejected";
-
-        if (type === "driver" && driverId) {
-          const response = await axios.put(
-            `${API_BASE_URL}/updateDriverProfile/${driverId}`,
-            {
-              accountStatus: updatedStatus,
-              reason: action === "Resubmit" ? "accountstatus - resubmission" : ""
-            }
-          );
-          if (response.status === 200) {
-            alert(`Driver profile ${updatedStatus.toLowerCase()} successfully.`);
-            fetchData();
-          } else {
-            alert("Failed to update driver profile. Please try again.");
-          }
-        } else if (type === "vehicle" && vehicleId) {
-          const response = await axios.put(
-            `${API_BASE_URL}/updateVehicle/${vehicleId}`,
-            {
-              status: updatedStatus
-            }
-          );
-          if (response.status === 200) {
-            alert(`Vehicle status updated to ${updatedStatus.toLowerCase()}.`);
-            fetchData();
-          } else {
-            alert("Failed to update vehicle status. Please try again.");
-          }
-        } else if (type === "document") {
-          const response = await axios.put(
-            `${API_BASE_URL}/updateDocumentFile/${doc.id}`,
-            {
-              verificationStatus: updatedStatus
-            }
-          );
-          if (response.status === 200) {
-            alert(`Document ${updatedStatus.toLowerCase()} successfully.`);
-            fetchData();
-          } else {
-            alert("Failed to update document status. Please try again.");
-          }
-        }
-      } catch (error) {
-        console.error(`${action} error:`, error);
-        alert(`Failed to ${action.toLowerCase()} the ${type}.`);
-      }
-    } else {
-      alert(`${action} clicked for ${docName}`);
     }
   };
 
@@ -625,7 +582,7 @@ export const DriversDetailsView = () => {
             <Table striped bordered hover>
               <thead>
                 <tr>
-                  <th>Doc Type</th> {/* Changed from File Label */}
+                  <th>Doc Type</th>
                   <th>Account Number</th>
                   <th>IFSC Code</th>
                   <th>Status</th>
@@ -637,7 +594,7 @@ export const DriversDetailsView = () => {
                 {bankDocs.length > 0 ? (
                   bankDocs.map((doc, idx) => (
                     <tr key={doc.id || idx}>
-                      <td>{doc.docType || 'N/A'}</td> {/* ← here */}
+                      <td>{doc.docType || 'N/A'}</td>
                       <td>{doc.account_number || 'N/A'}</td>
                       <td>{doc.ifsc_code || 'N/A'}</td>
                       <td>{doc.status?.trim() || 'N/A'}</td>
@@ -692,7 +649,85 @@ export const DriversDetailsView = () => {
             </tbody>
           </Table>
         </section>
+
         <hr className="table-hr" />
+        
+        <section className="mt-4">
+          <div className="dms-pages-header">
+            <h4>Driver Ride History</h4>
+            <Button
+              variant="primary"
+              onClick={() =>
+                navigate('/dms/driverridehistory', { state: { driverId: driverId } })
+              }
+            >
+              View All
+            </Button>
+          </div>
+          <Table striped bordered hover>
+            <thead>
+              <tr>
+                <th>Trip ID</th>
+                <th>Rider</th>
+                <th>Pickup Time</th>
+                <th>Drop Time</th>
+                <th>Pickup Address</th>
+                <th>Drop Address</th>
+                <th>Fare (₹)</th>
+                <th>Distance (km)</th>
+                <th>Payment Status</th>
+                <th>Ride Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(rideHistoryData.length > 0 ? rideHistoryData.slice(0, 5) : []).map((ride) => (
+                <tr key={ride.id}>
+                  <td>{ride.id}</td>
+                  <td>
+                    <img
+                      src={ride.rider_profile_image ? `${IMAGE_BASE_URL}${ride.rider_profile_image}` : profile_img}
+                      alt={ride.rider_name}
+                      className="rounded-circle me-2"
+                      style={{ width: 30, height: 30 }}
+                    />
+                    {ride.rider_name || 'NA'}
+                  </td>
+                  <td>{ride.pickup_time || 'NA'}</td>
+                  <td>{ride.drop_time || 'NA'}</td>
+                  <td>{ride.pickup_address || 'NA'}</td>
+                  <td>{ride.drop_address || 'NA'}</td>
+                  <td>₹{ride.fare || 0}</td>
+                  <td>{ride.distance || 0}</td>
+                  <td>{ride.payment_status || 'NA'}</td>
+                  <td>{ride.status || 'NA'}</td>
+                </tr>
+              )) || (
+                  <tr>
+                    <td className="text-center" colSpan="10">No rides found.</td>
+                  </tr>
+                )}
+            </tbody>
+          </Table>
+          <Pagination className="justify-content-center">
+            <Pagination.Prev
+              onClick={() => setRideHistoryPage(prev => Math.max(prev - 1, 1))}
+              disabled={rideHistoryPage === 1}
+            />
+            {[...Array(rideHistoryTotalPages)].map((_, idx) => (
+              <Pagination.Item
+                key={idx + 1}
+                active={idx + 1 === rideHistoryPage}
+                onClick={() => setRideHistoryPage(idx + 1)}
+              >
+                {idx + 1}
+              </Pagination.Item>
+            ))}
+            <Pagination.Next
+              onClick={() => setRideHistoryPage(prev => Math.min(prev + 1, rideHistoryTotalPages))}
+              disabled={rideHistoryPage === rideHistoryTotalPages}
+            />
+          </Pagination>
+        </section>
       </div>
 
       <Modal show={showVersionModal} onHide={() => setShowVersionModal(false)} size="lg">
